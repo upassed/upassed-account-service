@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func SlogUnaryServerInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor {
+func LoggingMiddlewareInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		const op = "middleware.SlogUnaryServerInterceptor()"
+		const op = "middleware.LoggingMiddlewareInterceptor()"
 
 		startTime := time.Now()
 		requestID, _ := GetRequestIDFromContext(ctx)

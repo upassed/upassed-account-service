@@ -9,11 +9,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func PanicRecoveryUnaryServerInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor {
+func PanicRecoveryMiddlewareInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				const op = "middleware.PanicRecoveryUnaryServerInterceptor()"
+				const op = "middleware.PanicRecoveryMiddlewareInterceptor()"
 
 				log := log.With(
 					slog.String("op", op),

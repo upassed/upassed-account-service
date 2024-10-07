@@ -11,7 +11,7 @@ type contextKey string
 
 const RequestIDKey = contextKey("requestID")
 
-func RequestIDUnaryServerInterceptor() grpc.UnaryServerInterceptor {
+func RequestIDMiddlewareInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		requestID := uuid.New().String()
 		ctx = context.WithValue(ctx, RequestIDKey, requestID)
