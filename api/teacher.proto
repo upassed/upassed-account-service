@@ -17,5 +17,5 @@ message TeacherCreateRequest {
 }
 
 message TeacherCreateResponse {
-    string teacher_id = 4;
+    string created_teacher_id = 4;
 }

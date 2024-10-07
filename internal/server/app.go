@@ -7,6 +7,7 @@ import (
 	"net"
 
 	config "github.com/upassed/upassed-account-service/internal/config/app"
+	"github.com/upassed/upassed-account-service/internal/middleware"
 	"google.golang.org/grpc"
 )
 
@@ -28,9 +29,14 @@ type AppServerCreateParams struct {
 }
 
 func New(params AppServerCreateParams) *AppServer {
-	server := grpc.NewServer()
-	registerTeacherServer(server, params.TeacherService)
+	server := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			middleware.RequestIDUnaryServerInterceptor(),
+			middleware.SlogUnaryServerInterceptor(params.Log),
+		),
+	)
 
+	registerTeacherServer(server, params.TeacherService)
 	return &AppServer{
 		config: params.Config,
 		log:    params.Log,
