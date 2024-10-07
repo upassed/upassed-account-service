@@ -1,22 +1,55 @@
-name: Go project build lifecycle
+name: go microservice workflow
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [ '1.23' ]
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Go ${{ matrix.go-version }}
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Go environment
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
-      - name: Display Go version
-        run: go version
+          go-version: 1.23  # Set the Go version according to your needs
+
+      # Install dependencies
+      - name: Install dependencies
+        run: go mod tidy
+
+      # Build the project
+      - name: Build the project
+        run: go build -v ./...
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build  # This ensures the test job runs only after the build job completes successfully
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Go environment
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.23
+
+      # Install dependencies
+      - name: Install dependencies
+        run: go mod tidy
+
+      # Run unit tests
+      - name: Run tests
+        run: go test -v ./...
