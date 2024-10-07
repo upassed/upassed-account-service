@@ -2,7 +2,11 @@ version: "3"
 
 tasks:
     protoc-go-gen:
-        desc: "Generate .go files from .proto files"
-        cmds:
-            - rm -rf ./gen/go/*
-            - protoc -I ./api ./api/teacher.proto --go_out=./pkg/client --go_opt=paths=source_relative --go-grpc_out=./pkg/client --go-grpc_opt=paths=source_relative
+      desc: "Generate .go files from .proto files"
+      cmds:
+        - rm -rf ./gen/go/*
+        - protoc -I ./api ./api/teacher.proto --go_out=./pkg/client --go_opt=paths=source_relative --go-grpc_out=./pkg/client --go-grpc_opt=paths=source_relative
+    run-local:
+      desc: "Run service on a local machine"
+      cmds:
+        - go run ./cmd/app/main.go --config ./config/app/local.yml
