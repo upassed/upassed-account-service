@@ -21,7 +21,7 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 	server := server.New(server.AppServerCreateParams{
 		Config:         config,
 		Log:            log,
-		TeacherService: service.NewTeacherService(),
+		TeacherService: service.NewTeacherService(log),
 	})
 
 	log.Info("app successfully created")
