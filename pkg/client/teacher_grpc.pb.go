@@ -19,101 +19,101 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TeacherService_Create_FullMethodName = "/api.TeacherService/Create"
+	Teacher_Create_FullMethodName = "/api.Teacher/Create"
 )
 
-// TeacherServiceClient is the client API for TeacherService service.
+// TeacherClient is the client API for Teacher service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type TeacherServiceClient interface {
+type TeacherClient interface {
 	Create(ctx context.Context, in *TeacherCreateRequest, opts ...grpc.CallOption) (*TeacherCreateResponse, error)
 }
 
-type teacherServiceClient struct {
+type teacherClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewTeacherServiceClient(cc grpc.ClientConnInterface) TeacherServiceClient {
-	return &teacherServiceClient{cc}
+func NewTeacherClient(cc grpc.ClientConnInterface) TeacherClient {
+	return &teacherClient{cc}
 }
 
-func (c *teacherServiceClient) Create(ctx context.Context, in *TeacherCreateRequest, opts ...grpc.CallOption) (*TeacherCreateResponse, error) {
+func (c *teacherClient) Create(ctx context.Context, in *TeacherCreateRequest, opts ...grpc.CallOption) (*TeacherCreateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TeacherCreateResponse)
-	err := c.cc.Invoke(ctx, TeacherService_Create_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Teacher_Create_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// TeacherServiceServer is the server API for TeacherService service.
-// All implementations must embed UnimplementedTeacherServiceServer
+// TeacherServer is the server API for Teacher service.
+// All implementations must embed UnimplementedTeacherServer
 // for forward compatibility.
-type TeacherServiceServer interface {
+type TeacherServer interface {
 	Create(context.Context, *TeacherCreateRequest) (*TeacherCreateResponse, error)
-	mustEmbedUnimplementedTeacherServiceServer()
+	mustEmbedUnimplementedTeacherServer()
 }
 
-// UnimplementedTeacherServiceServer must be embedded to have
+// UnimplementedTeacherServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedTeacherServiceServer struct{}
+type UnimplementedTeacherServer struct{}
 
-func (UnimplementedTeacherServiceServer) Create(context.Context, *TeacherCreateRequest) (*TeacherCreateResponse, error) {
+func (UnimplementedTeacherServer) Create(context.Context, *TeacherCreateRequest) (*TeacherCreateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedTeacherServiceServer) mustEmbedUnimplementedTeacherServiceServer() {}
-func (UnimplementedTeacherServiceServer) testEmbeddedByValue()                        {}
+func (UnimplementedTeacherServer) mustEmbedUnimplementedTeacherServer() {}
+func (UnimplementedTeacherServer) testEmbeddedByValue()                 {}
 
-// UnsafeTeacherServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to TeacherServiceServer will
+// UnsafeTeacherServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TeacherServer will
 // result in compilation errors.
-type UnsafeTeacherServiceServer interface {
-	mustEmbedUnimplementedTeacherServiceServer()
+type UnsafeTeacherServer interface {
+	mustEmbedUnimplementedTeacherServer()
 }
 
-func RegisterTeacherServiceServer(s grpc.ServiceRegistrar, srv TeacherServiceServer) {
-	// If the following call pancis, it indicates UnimplementedTeacherServiceServer was
+func RegisterTeacherServer(s grpc.ServiceRegistrar, srv TeacherServer) {
+	// If the following call pancis, it indicates UnimplementedTeacherServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&TeacherService_ServiceDesc, srv)
+	s.RegisterService(&Teacher_ServiceDesc, srv)
 }
 
-func _TeacherService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Teacher_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TeacherCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TeacherServiceServer).Create(ctx, in)
+		return srv.(TeacherServer).Create(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TeacherService_Create_FullMethodName,
+		FullMethod: Teacher_Create_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TeacherServiceServer).Create(ctx, req.(*TeacherCreateRequest))
+		return srv.(TeacherServer).Create(ctx, req.(*TeacherCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// TeacherService_ServiceDesc is the grpc.ServiceDesc for TeacherService service.
+// Teacher_ServiceDesc is the grpc.ServiceDesc for Teacher service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var TeacherService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "api.TeacherService",
-	HandlerType: (*TeacherServiceServer)(nil),
+var Teacher_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.Teacher",
+	HandlerType: (*TeacherServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Create",
-			Handler:    _TeacherService_Create_Handler,
+			Handler:    _Teacher_Create_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
