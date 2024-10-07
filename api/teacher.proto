@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "upassed.account.v1;client";
+
+service TeacherService {
+    rpc Create(TeacherCreateRequest) returns (TeacherCreateResponse);
+}
+
+message TeacherCreateRequest {
+    string first_name = 1;
+    string last_name = 2;
+    string middle_name = 3;
+    string report_email = 4;
+    string username = 5;
+}
+
+message TeacherCreateResponse {
+    string teacher_id = 4;
+}
