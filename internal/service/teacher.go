@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/service/converter"
@@ -42,7 +41,6 @@ func (service *TeacherServiceImpl) Create(ctx context.Context, teacher business.
 	log.Debug("started creating teacher")
 	domainTeacher := converter.ConvertTeacher(teacher)
 	if err := service.repository.Save(ctx, domainTeacher); err != nil {
-		log.Error("error while saving a teacher to database", logger.Error(err))
 		return business.TeacherCreateResponse{}, handling.NewServiceLayerError(err.Error(), codes.Internal)
 	}
 

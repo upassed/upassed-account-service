@@ -8,6 +8,7 @@ import (
 
 	config "github.com/upassed/upassed-account-service/internal/config/app"
 	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -16,6 +17,7 @@ import (
 var (
 	ErrorOpeningDbConnection error = errors.New("failed to open connection to a database")
 	ErrorPingingDatabase     error = errors.New("failed to ping database")
+	ErrorSavingTeacher       error = errors.New("error while saving teacher")
 )
 
 type TeacherRepositoryImpl struct {
@@ -61,6 +63,23 @@ func NewTeacherRepository(config *config.Config, log *slog.Logger) (*TeacherRepo
 	}, nil
 }
 
-func (repository *TeacherRepositoryImpl) Save(context.Context, domain.Teacher) error {
-	panic("not implemented!")
+// TODO work with context
+func (repository *TeacherRepositoryImpl) Save(ctx context.Context, teacher domain.Teacher) error {
+	const op = "repository.TeacherRepositoryImpl.Save()"
+
+	log := repository.log.With(
+		slog.String("op", op),
+		slog.String("teacherUsername", teacher.Username),
+		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+	)
+
+	log.Debug("started saving teacher to a database")
+	saveResult := repository.db.Create(&teacher)
+	if saveResult.Error != nil || saveResult.RowsAffected != 1 {
+		log.Error("error while saving teacher data to a database", logger.Error(saveResult.Error))
+		return ErrorSavingTeacher
+	}
+
+	log.Debug("teacher was successfully inserted into a database")
+	return nil
 }

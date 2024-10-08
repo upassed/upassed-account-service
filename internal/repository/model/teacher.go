@@ -10,3 +10,8 @@ type Teacher struct {
 	ReportEmail string
 	Username    string
 }
+
+// TableName overrides the table name used by Teacher to `teacher`
+func (Teacher) TableName() string {
+	return "teacher"
+}
