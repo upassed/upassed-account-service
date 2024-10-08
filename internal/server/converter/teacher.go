@@ -6,19 +6,33 @@ import (
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
-func ConvertTeacherCreateRequest(response *client.TeacherCreateRequest) business.Teacher {
+func ConvertTeacherCreateRequest(request *client.TeacherCreateRequest) business.Teacher {
 	return business.Teacher{
 		ID:          uuid.New(),
-		FirstName:   response.GetFirstName(),
-		LastName:    response.GetLastName(),
-		MiddleName:  response.GetMiddleName(),
-		ReportEmail: response.GetReportEmail(),
-		Username:    response.GetUsername(),
+		FirstName:   request.GetFirstName(),
+		LastName:    request.GetLastName(),
+		MiddleName:  request.GetMiddleName(),
+		ReportEmail: request.GetReportEmail(),
+		Username:    request.GetUsername(),
 	}
 }
 
 func ConvertTeacherCreateResponse(response business.TeacherCreateResponse) client.TeacherCreateResponse {
 	return client.TeacherCreateResponse{
 		CreatedTeacherId: response.CreatedTeacherID.String(),
+	}
+}
+
+// TODO write a test for it
+func ConvertTeacher(teacher business.Teacher) client.TeacherFindByIDResponse {
+	return client.TeacherFindByIDResponse{
+		Teacher: &client.TeacherDTO{
+			Id:          teacher.ID.String(),
+			FirstName:   teacher.FirstName,
+			LastName:    teacher.LastName,
+			MiddleName:  teacher.MiddleName,
+			ReportEmail: teacher.ReportEmail,
+			Username:    teacher.Username,
+		},
 	}
 }

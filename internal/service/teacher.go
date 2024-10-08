@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
@@ -19,6 +20,7 @@ type TeacherServiceImpl struct {
 
 type TeacherRepository interface {
 	Save(context.Context, domain.Teacher) error
+	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
 }
 
 func NewTeacherService(log *slog.Logger, repository TeacherRepository) *TeacherServiceImpl {
@@ -39,13 +41,39 @@ func (service *TeacherServiceImpl) Create(ctx context.Context, teacher business.
 	)
 
 	log.Debug("started creating teacher")
-	domainTeacher := converter.ConvertTeacher(teacher)
+	domainTeacher := converter.ConvertTeacherToDomain(teacher)
 	if err := service.repository.Save(ctx, domainTeacher); err != nil {
-		return business.TeacherCreateResponse{}, handling.NewServiceLayerError(err.Error(), codes.Internal)
+		return business.TeacherCreateResponse{}, handling.HandleApplicationError(err)
 	}
 
-	log.Debug("teacher successfully created")
+	log.Debug("teacher successfully created", slog.Any("createdTeacherID", domainTeacher.ID))
 	return business.TeacherCreateResponse{
 		CreatedTeacherID: domainTeacher.ID,
 	}, nil
+}
+
+// TODO work with ctx timeout. Add the timeout to ctx passing to repo layer.
+func (service *TeacherServiceImpl) FindByID(ctx context.Context, teacherID string) (business.Teacher, error) {
+	const op = "TeacherServiceImpl.FindByID()"
+
+	log := service.log.With(
+		slog.String("op", op),
+		slog.String("teacherID", teacherID),
+		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+	)
+
+	log.Debug("started finding teacher by id")
+	parsedID, err := uuid.Parse(teacherID)
+	if err != nil {
+		log.Error("error while parsing teacher id - wrong UUID passed")
+		return business.Teacher{}, handling.NewApplicationError(err.Error(), codes.InvalidArgument)
+	}
+
+	foundTeacher, err := service.repository.FindByID(ctx, parsedID)
+	if err != nil {
+		return business.Teacher{}, handling.HandleApplicationError(err)
+	}
+
+	log.Debug("teacher successfully found by id")
+	return converter.ConvertTeacherToBusiness(foundTeacher), nil
 }

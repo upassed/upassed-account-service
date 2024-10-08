@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/google/uuid"
 	config "github.com/upassed/upassed-account-service/internal/config/app"
+	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"google.golang.org/grpc/codes"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -18,6 +21,8 @@ var (
 	ErrorOpeningDbConnection error = errors.New("failed to open connection to a database")
 	ErrorPingingDatabase     error = errors.New("failed to ping database")
 	ErrorSavingTeacher       error = errors.New("error while saving teacher")
+	ErrorTeacherNotFound     error = errors.New("teacher not found in database")
+	ErrorSearchingTeacher    error = errors.New("error while searching teacher")
 )
 
 type TeacherRepositoryImpl struct {
@@ -82,4 +87,30 @@ func (repository *TeacherRepositoryImpl) Save(ctx context.Context, teacher domai
 
 	log.Debug("teacher was successfully inserted into a database")
 	return nil
+}
+
+func (repository *TeacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
+	const op = "repository.TeacherRepositoryImpl.FindByID()"
+
+	log := repository.log.With(
+		slog.String("op", op),
+		slog.String("teacherID", teacherID.String()),
+		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+	)
+
+	log.Debug("started searching teacher in a database")
+	foundTeacher := domain.Teacher{}
+	searchResult := repository.db.First(&foundTeacher, teacherID)
+	if searchResult.Error != nil {
+		if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
+			log.Error("teacher was not found in the database", logger.Error(searchResult.Error))
+			return domain.Teacher{}, handling.NewApplicationError(ErrorTeacherNotFound.Error(), codes.NotFound)
+		}
+
+		log.Error("error while searching teacher in the database", logger.Error(searchResult.Error))
+		return domain.Teacher{}, handling.NewApplicationError(ErrorSearchingTeacher.Error(), codes.Internal)
+	}
+
+	log.Debug("teacher was successfully found in a database")
+	return foundTeacher, nil
 }

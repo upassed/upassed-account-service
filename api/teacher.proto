@@ -6,6 +6,7 @@ option go_package = "upassed.account.v1;client";
 
 service Teacher {
     rpc Create(TeacherCreateRequest) returns (TeacherCreateResponse);
+    rpc FindByID(TeacherFindByIDRequest) returns (TeacherFindByIDResponse);
 }
 
 message TeacherCreateRequest {
@@ -17,5 +18,22 @@ message TeacherCreateRequest {
 }
 
 message TeacherCreateResponse {
-    string created_teacher_id = 4;
+    string created_teacher_id = 1;
+}
+
+message TeacherFindByIDRequest {
+    string teacher_id = 1;
+}
+
+message TeacherFindByIDResponse {
+    TeacherDTO teacher = 1;
+}
+
+message TeacherDTO {
+    string id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string middle_name = 4;
+    string report_email = 5;
+    string username = 6;
 }

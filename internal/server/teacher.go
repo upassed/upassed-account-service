@@ -24,6 +24,7 @@ func registerTeacherServer(gRPC *grpc.Server, service teacherService) {
 
 type teacherService interface {
 	Create(context.Context, business.Teacher) (business.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID string) (business.Teacher, error)
 }
 
 func (server *teacherServerAPI) Create(ctx context.Context, request *client.TeacherCreateRequest) (*client.TeacherCreateResponse, error) {
@@ -34,9 +35,22 @@ func (server *teacherServerAPI) Create(ctx context.Context, request *client.Teac
 
 	response, err := server.service.Create(contextWithTimeout, convertedRequest)
 	if err != nil {
-		return nil, handling.HandleServiceLayerError(err)
+		return nil, handling.HandleApplicationError(err)
 	}
 
 	convertedResponse := converter.ConvertTeacherCreateResponse(response)
 	return &convertedResponse, nil
+}
+
+func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.TeacherFindByIDRequest) (*client.TeacherFindByIDResponse, error) {
+	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+
+	teacher, err := server.service.FindByID(contextWithTimeout, request.GetTeacherId())
+	if err != nil {
+		return nil, handling.HandleApplicationError(err)
+	}
+
+	convertedTeacherResponse := converter.ConvertTeacher(teacher)
+	return &convertedTeacherResponse, nil
 }

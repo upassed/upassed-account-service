@@ -23,7 +23,7 @@ var _ = Describe("Converter Tests", func() {
 				Username:    gofakeit.Username(),
 			}
 
-			domainTeacher := converter.ConvertTeacher(teacher)
+			domainTeacher := converter.ConvertTeacherToDomain(teacher)
 
 			Expect(domainTeacher.ID).To(Equal(teacher.ID))
 			Expect(domainTeacher.FirstName).To(Equal(teacher.FirstName))

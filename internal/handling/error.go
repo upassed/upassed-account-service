@@ -10,36 +10,36 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type ServiceLayerError interface {
+type ApplicationError interface {
 	Error() string
 }
 
-type ServiceLayerErrorImpl struct {
+type ApplicationErrorImpl struct {
 	Message string
 	Code    codes.Code
 	Time    time.Time
 }
 
-func NewServiceLayerError(message string, code codes.Code) *ServiceLayerErrorImpl {
-	return &ServiceLayerErrorImpl{
+func NewApplicationError(message string, code codes.Code) ApplicationError {
+	return &ApplicationErrorImpl{
 		Message: message,
 		Code:    code,
 		Time:    time.Now(),
 	}
 }
 
-func (err *ServiceLayerErrorImpl) Error() string {
+func (err *ApplicationErrorImpl) Error() string {
 	return err.Message
 }
 
 const timeFormat string = "2006-01-02 15:04:05"
 
-func HandleServiceLayerError(err error) error {
-	var serviceLayerErr *ServiceLayerErrorImpl
-	if errors.As(err, &serviceLayerErr) {
-		convertedErr := status.New(serviceLayerErr.Code, serviceLayerErr.Message)
+func HandleApplicationError(err error) error {
+	var applicationErr *ApplicationErrorImpl
+	if errors.As(err, &applicationErr) {
+		convertedErr := status.New(applicationErr.Code, applicationErr.Message)
 		timeInfo := errdetails.DebugInfo{
-			Detail: fmt.Sprintf("Time: %s", serviceLayerErr.Time.Format(timeFormat)),
+			Detail: fmt.Sprintf("Time: %s", applicationErr.Time.Format(timeFormat)),
 		}
 
 		convertedErrWithDetails, err := convertedErr.WithDetails(&timeInfo)
@@ -50,5 +50,19 @@ func HandleServiceLayerError(err error) error {
 		return convertedErrWithDetails.Err()
 	}
 
-	return err
+	return wrapAsApplicationError(err)
+}
+
+func wrapAsApplicationError(err error) ApplicationError {
+	convertedErr := status.New(codes.Internal, err.Error())
+	timeInfo := errdetails.DebugInfo{
+		Detail: fmt.Sprintf("Time: %s", time.Now().Format(timeFormat)),
+	}
+
+	convertedErrWithDetails, err := convertedErr.WithDetails(&timeInfo)
+	if err != nil {
+		return convertedErr.Err()
+	}
+
+	return convertedErrWithDetails.Err()
 }
