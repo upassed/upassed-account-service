@@ -29,6 +29,7 @@ func NewTeacherService(log *slog.Logger, repository TeacherRepository) *TeacherS
 	}
 }
 
+// TODO work with ctx timeout. Add the timeout to ctx passing to repo layer.
 func (service *TeacherServiceImpl) Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error) {
 	const op = "TeacherServiceImpl.Create()"
 

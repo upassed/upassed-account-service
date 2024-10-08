@@ -10,6 +10,9 @@ tasks:
       desc: "Run service on a local machine"
       cmds:
         - go run ./cmd/app/main.go --config ./config/app/local.yml
+    migrate-local:
+      cmds:
+        - go run ./cmd/migrator/migrate.go --config ./config/migrator/local.yml
     test:
       desc: "Run all rests"
       cmds:
