@@ -19,7 +19,11 @@ func RequestIDMiddlewareInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-func GetRequestIDFromContext(ctx context.Context) (string, bool) {
+func GetRequestIDFromContext(ctx context.Context) string {
 	requestID, ok := ctx.Value(RequestIDKey).(string)
-	return requestID, ok
+	if !ok {
+		return ""
+	}
+
+	return requestID
 }

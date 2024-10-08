@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	config "github.com/upassed/upassed-account-service/internal/config/app"
+	"github.com/upassed/upassed-account-service/internal/repository"
 	"github.com/upassed/upassed-account-service/internal/server"
 	"github.com/upassed/upassed-account-service/internal/service"
 )
@@ -21,7 +22,7 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 	server := server.New(server.AppServerCreateParams{
 		Config:         config,
 		Log:            log,
-		TeacherService: service.NewTeacherService(log),
+		TeacherService: service.NewTeacherService(log, repository.NewTeacherRepository()),
 	})
 
 	log.Info("app successfully created")

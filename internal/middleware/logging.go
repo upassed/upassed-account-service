@@ -15,7 +15,6 @@ func LoggingMiddlewareInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor 
 		const op = "middleware.LoggingMiddlewareInterceptor()"
 
 		startTime := time.Now()
-		requestID, _ := GetRequestIDFromContext(ctx)
 		resp, err := handler(ctx, req)
 		elapsedTime := time.Since(startTime)
 
@@ -24,7 +23,7 @@ func LoggingMiddlewareInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor 
 		)
 
 		log.Info("handled gRPC request",
-			slog.String("requestID", requestID),
+			slog.String("requestID", GetRequestIDFromContext(ctx)),
 			slog.String("method", info.FullMethod),
 			slog.String("duration", fmt.Sprintf("%.2f ms", elapsedTime.Seconds()*1000)),
 			slog.String("status", status.Code(err).String()),

@@ -31,8 +31,8 @@ type AppServerCreateParams struct {
 func New(params AppServerCreateParams) *AppServer {
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			middleware.PanicRecoveryMiddlewareInterceptor(params.Log),
 			middleware.RequestIDMiddlewareInterceptor(),
+			middleware.PanicRecoveryMiddlewareInterceptor(params.Log),
 			middleware.LoggingMiddlewareInterceptor(params.Log),
 		),
 	)

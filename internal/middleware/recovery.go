@@ -20,6 +20,7 @@ func PanicRecoveryMiddlewareInterceptor(log *slog.Logger) grpc.UnaryServerInterc
 				)
 
 				log.Error("panic recovered",
+					slog.String("requestID", GetRequestIDFromContext(ctx)),
 					slog.Any("message", r),
 					slog.String("method", info.FullMethod),
 				)

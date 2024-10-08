@@ -20,7 +20,7 @@ type ServiceLayerErrorImpl struct {
 	Time    time.Time
 }
 
-func NewServiceLayerError(message string, code codes.Code) ServiceLayerError {
+func NewServiceLayerError(message string, code codes.Code) *ServiceLayerErrorImpl {
 	return &ServiceLayerErrorImpl{
 		Message: message,
 		Code:    code,

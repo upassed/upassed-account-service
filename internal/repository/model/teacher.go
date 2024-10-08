@@ -1,4 +1,4 @@
-package business
+package domain
 
 import "github.com/google/uuid"
 
@@ -9,8 +9,4 @@ type Teacher struct {
 	MiddleName  string
 	ReportEmail string
 	Username    string
-}
-
-type TeacherCreateResponse struct {
-	CreatedTeacherID uuid.UUID
 }

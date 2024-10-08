@@ -23,7 +23,7 @@ func registerTeacherServer(gRPC *grpc.Server, service teacherService) {
 }
 
 type teacherService interface {
-	Create(context.Context, business.TeacherCreateRequest) (business.TeacherCreateResponse, error)
+	Create(context.Context, business.Teacher) (business.TeacherCreateResponse, error)
 }
 
 func (server *teacherServerAPI) Create(ctx context.Context, request *client.TeacherCreateRequest) (*client.TeacherCreateResponse, error) {
@@ -37,6 +37,6 @@ func (server *teacherServerAPI) Create(ctx context.Context, request *client.Teac
 		return nil, handling.HandleServiceLayerError(err)
 	}
 
-	convertedResponse := converter.TestConvertTeacherCreateResponse(response)
+	convertedResponse := converter.ConvertTeacherCreateResponse(response)
 	return &convertedResponse, nil
 }

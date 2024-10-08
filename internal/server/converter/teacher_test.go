@@ -13,7 +13,7 @@ import (
 )
 
 var _ = Describe("Converter Tests", func() {
-	Describe("ConvertTeacherCreateRequest", func() {
+	Describe("Convert TeacherCreateRequest to business-level Teacher model", func() {
 		It("should convert TeacherCreateRequest properly", func() {
 			request := client.TeacherCreateRequest{
 				FirstName:   gofakeit.FirstName(),
@@ -23,23 +23,24 @@ var _ = Describe("Converter Tests", func() {
 				Username:    gofakeit.Username(),
 			}
 
-			convertedRequest := converter.ConvertTeacherCreateRequest(&request)
+			convertedTeacher := converter.ConvertTeacherCreateRequest(&request)
 
-			Expect(convertedRequest.FirstName).To(Equal(request.GetFirstName()))
-			Expect(convertedRequest.LastName).To(Equal(request.GetLastName()))
-			Expect(convertedRequest.MiddleName).To(Equal(request.GetMiddleName()))
-			Expect(convertedRequest.ReportEmail).To(Equal(request.GetReportEmail()))
-			Expect(convertedRequest.Username).To(Equal(request.GetUsername()))
+			Expect(convertedTeacher.ID).NotTo(BeNil())
+			Expect(convertedTeacher.FirstName).To(Equal(request.GetFirstName()))
+			Expect(convertedTeacher.LastName).To(Equal(request.GetLastName()))
+			Expect(convertedTeacher.MiddleName).To(Equal(request.GetMiddleName()))
+			Expect(convertedTeacher.ReportEmail).To(Equal(request.GetReportEmail()))
+			Expect(convertedTeacher.Username).To(Equal(request.GetUsername()))
 		})
 	})
 
-	Describe("ConvertTeacherCreateResponse", func() {
+	Describe("Convert business-level TeacherCreateResponse to gRPC-level TeacherCreateResponse", func() {
 		It("should convert TeacherCreateResponse properly", func() {
 			response := business.TeacherCreateResponse{
 				CreatedTeacherID: uuid.New(),
 			}
 
-			convertedResponse := converter.TestConvertTeacherCreateResponse(response)
+			convertedResponse := converter.ConvertTeacherCreateResponse(response)
 
 			Expect(convertedResponse.GetCreatedTeacherId()).To(Equal(response.CreatedTeacherID.String()))
 		})
