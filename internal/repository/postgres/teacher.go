@@ -2,15 +2,15 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
 
-	_ "github.com/lib/pq"
 	config "github.com/upassed/upassed-account-service/internal/config/app"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 
 type TeacherRepositoryImpl struct {
 	log *slog.Logger
-	db  *sql.DB
+	db  *gorm.DB
 }
 
 func NewTeacherRepository(config *config.Config, log *slog.Logger) (*TeacherRepositoryImpl, error) {
@@ -39,13 +39,17 @@ func NewTeacherRepository(config *config.Config, log *slog.Logger) (*TeacherRepo
 		config.Storage.DatabaseName,
 	)
 
-	db, err := sql.Open("postgres", postgresInfo)
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  postgresInfo,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{})
+
 	if err != nil {
 		log.Error("error while opening connection to a database", logger.Error(err))
 		return nil, fmt.Errorf("%s - %w", op, ErrorOpeningDbConnection)
 	}
 
-	if err := db.Ping(); err != nil {
+	if postgresDB, err := db.DB(); err != nil || postgresDB.Ping() != nil {
 		log.Error("error while pinging a database")
 		return nil, fmt.Errorf("%s - %w", op, ErrorPingingDatabase)
 	}
