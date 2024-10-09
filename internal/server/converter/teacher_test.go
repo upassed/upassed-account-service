@@ -45,6 +45,28 @@ var _ = Describe("Converter Tests", func() {
 			Expect(convertedResponse.GetCreatedTeacherId()).To(Equal(response.CreatedTeacherID.String()))
 		})
 	})
+
+	Describe("Convert business-level Teacher to gRPC-level TeacherFindByIDResponse", func() {
+		It("should convert Teacher properly", func() {
+			teacher := business.Teacher{
+				ID:          uuid.New(),
+				FirstName:   gofakeit.FirstName(),
+				LastName:    gofakeit.LastName(),
+				MiddleName:  gofakeit.MiddleName(),
+				ReportEmail: gofakeit.Email(),
+				Username:    gofakeit.Username(),
+			}
+
+			response := converter.ConvertTeacher(teacher)
+
+			Expect(response.GetTeacher()).NotTo(BeNil())
+			Expect(response.GetTeacher().GetFirstName()).To(Equal(teacher.FirstName))
+			Expect(response.GetTeacher().GetLastName()).To(Equal(teacher.LastName))
+			Expect(response.GetTeacher().GetMiddleName()).To(Equal(teacher.MiddleName))
+			Expect(response.GetTeacher().GetReportEmail()).To(Equal(teacher.ReportEmail))
+			Expect(response.GetTeacher().GetUsername()).To(Equal(teacher.Username))
+		})
+	})
 })
 
 func TestTeacherConverter(t *testing.T) {

@@ -16,7 +16,6 @@ func ConvertTeacherToDomain(teacher business.Teacher) domain.Teacher {
 	}
 }
 
-// TODO write a test for it
 func ConvertTeacherToBusiness(teacher domain.Teacher) business.Teacher {
 	return business.Teacher{
 		ID:          teacher.ID,

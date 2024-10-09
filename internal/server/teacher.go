@@ -9,6 +9,7 @@ import (
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 type teacherServerAPI struct {
@@ -28,8 +29,11 @@ type teacherService interface {
 }
 
 func (server *teacherServerAPI) Create(ctx context.Context, request *client.TeacherCreateRequest) (*client.TeacherCreateResponse, error) {
-	convertedRequest := converter.ConvertTeacherCreateRequest(request)
+	if err := request.Validate(); err != nil {
+		return nil, handling.WrapAsApplicationError(err, handling.WithCode(codes.InvalidArgument))
+	}
 
+	convertedRequest := converter.ConvertTeacherCreateRequest(request)
 	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 

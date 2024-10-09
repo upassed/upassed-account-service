@@ -12,7 +12,27 @@ import (
 
 const timeFormat string = "2006-01-02 15:04:05"
 
-func HandleApplicationError(err error) error {
+type Option func(*wrapOptions)
+
+type wrapOptions struct {
+	code codes.Code
+	time time.Time
+}
+
+func defaultOptions() *wrapOptions {
+	return &wrapOptions{
+		code: codes.Internal,
+		time: time.Now(),
+	}
+}
+
+func WithCode(code codes.Code) Option {
+	return func(opts *wrapOptions) {
+		opts.code = code
+	}
+}
+
+func HandleApplicationError(err error, options ...Option) error {
 	var applicationErr *ApplicationErrorImpl
 	if errors.As(err, &applicationErr) {
 		convertedErr := status.New(applicationErr.Code, applicationErr.Message)
@@ -28,13 +48,18 @@ func HandleApplicationError(err error) error {
 		return convertedErrWithDetails.Err()
 	}
 
-	return wrapAsApplicationError(err)
+	return WrapAsApplicationError(err, options...)
 }
 
-func wrapAsApplicationError(err error) ApplicationError {
-	convertedErr := status.New(codes.Internal, err.Error())
+func WrapAsApplicationError(err error, options ...Option) error {
+	opts := defaultOptions()
+	for _, opt := range options {
+		opt(opts)
+	}
+
+	convertedErr := status.New(opts.code, err.Error())
 	timeInfo := errdetails.DebugInfo{
-		Detail: fmt.Sprintf("Time: %s", time.Now().Format(timeFormat)),
+		Detail: fmt.Sprintf("Time: %s", opts.time.Format(timeFormat)),
 	}
 
 	convertedErrWithDetails, err := convertedErr.WithDetails(&timeInfo)

@@ -23,7 +23,6 @@ func ConvertTeacherCreateResponse(response business.TeacherCreateResponse) clien
 	}
 }
 
-// TODO write a test for it
 func ConvertTeacher(teacher business.Teacher) client.TeacherFindByIDResponse {
 	return client.TeacherFindByIDResponse{
 		Teacher: &client.TeacherDTO{

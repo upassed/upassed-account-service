@@ -21,6 +21,7 @@ type TeacherServiceImpl struct {
 type TeacherRepository interface {
 	Save(context.Context, domain.Teacher) error
 	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
+	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 
 func NewTeacherService(log *slog.Logger, repository TeacherRepository) *TeacherServiceImpl {
@@ -41,6 +42,16 @@ func (service *TeacherServiceImpl) Create(ctx context.Context, teacher business.
 	)
 
 	log.Debug("started creating teacher")
+	reportEmailExists, err := service.repository.CheckDuplicateExists(ctx, teacher.ReportEmail, teacher.Username)
+	if err != nil {
+		return business.TeacherCreateResponse{}, handling.HandleApplicationError(err)
+	}
+
+	if reportEmailExists {
+		log.Error("teacher with this username or report email already exists")
+		return business.TeacherCreateResponse{}, handling.NewApplicationError("teacher duplicate found", codes.AlreadyExists)
+	}
+
 	domainTeacher := converter.ConvertTeacherToDomain(teacher)
 	if err := service.repository.Save(ctx, domainTeacher); err != nil {
 		return business.TeacherCreateResponse{}, handling.HandleApplicationError(err)

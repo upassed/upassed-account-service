@@ -82,7 +82,7 @@ func (repository *TeacherRepositoryImpl) Save(ctx context.Context, teacher domai
 	saveResult := repository.db.Create(&teacher)
 	if saveResult.Error != nil || saveResult.RowsAffected != 1 {
 		log.Error("error while saving teacher data to a database", logger.Error(saveResult.Error))
-		return ErrorSavingTeacher
+		return handling.NewApplicationError(ErrorSavingTeacher.Error(), codes.Internal)
 	}
 
 	log.Debug("teacher was successfully inserted into a database")
@@ -113,4 +113,8 @@ func (repository *TeacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 
 	log.Debug("teacher was successfully found in a database")
 	return foundTeacher, nil
+}
+
+func (repository *TeacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
+	panic("not implemented")
 }

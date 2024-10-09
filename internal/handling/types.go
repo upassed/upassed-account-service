@@ -4,11 +4,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
-
-type ApplicationError interface {
-	Error() string
-}
 
 type ApplicationErrorImpl struct {
 	Message string
@@ -16,7 +13,7 @@ type ApplicationErrorImpl struct {
 	Time    time.Time
 }
 
-func NewApplicationError(message string, code codes.Code) ApplicationError {
+func NewApplicationError(message string, code codes.Code) *ApplicationErrorImpl {
 	return &ApplicationErrorImpl{
 		Message: message,
 		Code:    code,
@@ -26,4 +23,8 @@ func NewApplicationError(message string, code codes.Code) ApplicationError {
 
 func (err *ApplicationErrorImpl) Error() string {
 	return err.Message
+}
+
+func (err *ApplicationErrorImpl) GRPCStatus() *status.Status {
+	return status.New(err.Code, err.Message)
 }
