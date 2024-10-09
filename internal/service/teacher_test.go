@@ -14,6 +14,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logger"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/service"
+	"github.com/upassed/upassed-account-service/internal/service/converter"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -109,6 +110,53 @@ var _ = Describe("Teacher Service Tests", func() {
 			Expect(err).To(BeNil())
 
 			Expect(response.CreatedTeacherID).To(Equal(teacher.ID))
+		})
+	})
+
+	Describe("Find teacher by id tests", func() {
+		It("should return invalid argument status error if the teacher id is not a valid uuid", func() {
+			log := logger.New(config.EnvDev)
+			repository := new(mockTeacherRepository)
+
+			service := service.NewTeacherService(log, repository)
+
+			_, err := service.FindByID(context.Background(), "invalid uuid")
+			Expect(err).NotTo(BeNil())
+
+			convertedError := status.Convert(err)
+			Expect(convertedError.Code()).To(Equal(codes.InvalidArgument))
+		})
+
+		It("should return error if there was an error searching for a teacher in database", func() {
+			log := logger.New(config.EnvDev)
+			repository := new(mockTeacherRepository)
+			teacherID := uuid.New()
+
+			expectedRepoError := handling.NewApplicationError("repo layer error message", codes.NotFound)
+			repository.On("FindByID", mock.Anything, teacherID).Return(domain.Teacher{}, expectedRepoError)
+			service := service.NewTeacherService(log, repository)
+
+			_, err := service.FindByID(context.Background(), teacherID.String())
+			Expect(err).NotTo(BeNil())
+
+			convertedError := status.Convert(err)
+			Expect(convertedError.Code()).To(Equal(expectedRepoError.Code))
+			Expect(convertedError.Message()).To(Equal(expectedRepoError.Message))
+		})
+
+		It("should not return error if the teacher was successfully found in a database", func() {
+			log := logger.New(config.EnvDev)
+			repository := new(mockTeacherRepository)
+			teacherID := uuid.New()
+			expectedFoundTeacher := converter.ConvertTeacherToDomain(randomTeacher())
+
+			repository.On("FindByID", mock.Anything, teacherID).Return(expectedFoundTeacher, nil)
+			service := service.NewTeacherService(log, repository)
+
+			businessTeacher, err := service.FindByID(context.Background(), teacherID.String())
+			Expect(err).To(BeNil())
+
+			Expect(businessTeacher).To(Equal(converter.ConvertTeacherToBusiness(expectedFoundTeacher)))
 		})
 	})
 })
