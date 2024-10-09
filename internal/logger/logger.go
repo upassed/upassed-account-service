@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strconv"
@@ -38,6 +39,8 @@ func New(envType config.EnvType) *slog.Logger {
 		log = slog.New(newCustomFormattedJsonHandler(&slog.HandlerOptions{Level: slog.LevelDebug}))
 	case config.EnvDev:
 		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	case config.EnvTesting:
+		log = slog.New(slog.NewJSONHandler(io.Discard, nil))
 	}
 
 	return log

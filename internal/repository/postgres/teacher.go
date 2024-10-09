@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 var (
@@ -50,7 +51,9 @@ func NewTeacherRepository(config *config.Config, log *slog.Logger) (*TeacherRepo
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  postgresInfo,
 		PreferSimpleProtocol: true,
-	}), &gorm.Config{})
+	}), &gorm.Config{
+		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
+	})
 
 	if err != nil {
 		log.Error("error while opening connection to a database", logger.Error(err))

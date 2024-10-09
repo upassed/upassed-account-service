@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/upassed/upassed-account-service/internal/app"
@@ -13,6 +14,10 @@ import (
 )
 
 func main() {
+	if err := os.Setenv(config.EnvConfigPath, filepath.Join("config", "app", "local.yml")); err != nil {
+		log.Fatal(err)
+	}
+
 	config, err := config.Load()
 	if err != nil {
 		log.Fatal(err)

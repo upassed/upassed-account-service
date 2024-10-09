@@ -42,7 +42,7 @@ func (m *mockTeacherRepository) CheckDuplicateExists(ctx context.Context, report
 var _ = Describe("Teacher Service Tests", func() {
 	Describe("Create teacher tests", func() {
 		It("should return internal status error if there was error checking duplicate teacher", func() {
-			log := logger.New(config.EnvDev)
+			log := logger.New(config.EnvTesting)
 			repository := new(mockTeacherRepository)
 			teacher := randomTeacher()
 
@@ -60,7 +60,7 @@ var _ = Describe("Teacher Service Tests", func() {
 		})
 
 		It("should return not found status error if there was duplicate teacher by email or username", func() {
-			log := logger.New(config.EnvDev)
+			log := logger.New(config.EnvTesting)
 			repository := new(mockTeacherRepository)
 			teacher := randomTeacher()
 
@@ -77,7 +77,7 @@ var _ = Describe("Teacher Service Tests", func() {
 		})
 
 		It("should return error if there was error saving a teacher to a database", func() {
-			log := logger.New(config.EnvDev)
+			log := logger.New(config.EnvTesting)
 			repository := new(mockTeacherRepository)
 			teacher := randomTeacher()
 
@@ -97,7 +97,7 @@ var _ = Describe("Teacher Service Tests", func() {
 		})
 
 		It("should not return error if the teacher was successfully saved to a database", func() {
-			log := logger.New(config.EnvDev)
+			log := logger.New(config.EnvTesting)
 			repository := new(mockTeacherRepository)
 			teacher := randomTeacher()
 
@@ -115,7 +115,7 @@ var _ = Describe("Teacher Service Tests", func() {
 
 	Describe("Find teacher by id tests", func() {
 		It("should return invalid argument status error if the teacher id is not a valid uuid", func() {
-			log := logger.New(config.EnvDev)
+			log := logger.New(config.EnvTesting)
 			repository := new(mockTeacherRepository)
 
 			service := service.NewTeacherService(log, repository)
@@ -128,7 +128,7 @@ var _ = Describe("Teacher Service Tests", func() {
 		})
 
 		It("should return error if there was an error searching for a teacher in database", func() {
-			log := logger.New(config.EnvDev)
+			log := logger.New(config.EnvTesting)
 			repository := new(mockTeacherRepository)
 			teacherID := uuid.New()
 
@@ -145,7 +145,7 @@ var _ = Describe("Teacher Service Tests", func() {
 		})
 
 		It("should not return error if the teacher was successfully found in a database", func() {
-			log := logger.New(config.EnvDev)
+			log := logger.New(config.EnvTesting)
 			repository := new(mockTeacherRepository)
 			teacherID := uuid.New()
 			expectedFoundTeacher := converter.ConvertTeacherToDomain(randomTeacher())

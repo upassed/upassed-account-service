@@ -2,8 +2,8 @@ package config
 
 import (
 	"errors"
-	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -11,15 +11,19 @@ import (
 
 var (
 	ErrorConfigFlagEmpty   error = errors.New("config flag is not passed")
+	ErrorConfigEnvEmpty    error = errors.New("config path env is not set")
 	ErrorConfigFileInvalid error = errors.New("config file has invalid format")
 )
 
 type EnvType string
 
 const (
-	EnvLocal EnvType = "local"
-	EnvDev   EnvType = "dev"
+	EnvLocal   EnvType = "local"
+	EnvDev     EnvType = "dev"
+	EnvTesting EnvType = "testing"
 )
+
+const EnvConfigPath string = "APP_CONFIG_PATH"
 
 type Config struct {
 	Env        EnvType    `yaml:"env" env-required:"true"`
@@ -43,20 +47,16 @@ type GrpcServer struct {
 func Load() (*Config, error) {
 	const op = "config.Load()"
 
-	var configFilename string
-
-	flag.StringVar(&configFilename, "config", "", "path to config file")
-	flag.Parse()
-
-	if configFilename == "" {
-		return nil, fmt.Errorf("%s -> %w", op, ErrorConfigFlagEmpty)
+	pathToConfig := os.Getenv(EnvConfigPath)
+	if pathToConfig == "" {
+		return nil, fmt.Errorf("%s -> %w", op, ErrorConfigEnvEmpty)
 	}
 
-	return loadByPath(configFilename)
+	return loadByPath(pathToConfig)
 }
 
 func loadByPath(pathToConfig string) (*Config, error) {
-	const op = "config.LoadByPath()"
+	const op = "config.loadByPath()"
 
 	var config Config
 
