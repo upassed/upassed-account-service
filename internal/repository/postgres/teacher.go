@@ -18,11 +18,12 @@ import (
 )
 
 var (
-	ErrorOpeningDbConnection error = errors.New("failed to open connection to a database")
-	ErrorPingingDatabase     error = errors.New("failed to ping database")
-	ErrorSavingTeacher       error = errors.New("error while saving teacher")
-	ErrorTeacherNotFound     error = errors.New("teacher not found in database")
-	ErrorSearchingTeacher    error = errors.New("error while searching teacher")
+	ErrorOpeningDbConnection       error = errors.New("failed to open connection to a database")
+	ErrorPingingDatabase           error = errors.New("failed to ping database")
+	ErrorSavingTeacher             error = errors.New("error while saving teacher")
+	ErrorTeacherNotFound           error = errors.New("teacher not found in database")
+	ErrorSearchingTeacher          error = errors.New("error while searching teacher")
+	ErrorCountingDuplicatesTeacher error = errors.New("error while counting duplicates teacher")
 )
 
 type TeacherRepositoryImpl struct {
@@ -116,5 +117,28 @@ func (repository *TeacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 }
 
 func (repository *TeacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
-	panic("not implemented")
+	const op = "repository.TeacherRepositoryImpl.CheckDuplicateExists()"
+
+	log := repository.log.With(
+		slog.String("op", op),
+		slog.String("teacherUsername", username),
+		slog.String("teacherReportEmail", reportEmail),
+		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+	)
+
+	log.Debug("started checking teacher duplicates")
+	var teacherCount int64
+	countResult := repository.db.Model(&domain.Teacher{}).Where("report_email = ?", reportEmail).Or("username = ?", username).Count(&teacherCount)
+	if countResult.Error != nil {
+		log.Error("error while counting teachers with report_email and username in database")
+		return false, handling.NewApplicationError(ErrorCountingDuplicatesTeacher.Error(), codes.Internal)
+	}
+
+	if teacherCount > 0 {
+		log.Debug("found teacher duplicates in database", slog.Int64("teacherDuplicatesCouint", teacherCount))
+		return true, nil
+	}
+
+	log.Debug("teacher duplicates not found in database")
+	return false, nil
 }

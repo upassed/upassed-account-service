@@ -47,6 +47,10 @@ func (server *teacherServerAPI) Create(ctx context.Context, request *client.Teac
 }
 
 func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.TeacherFindByIDRequest) (*client.TeacherFindByIDResponse, error) {
+	if err := request.Validate(); err != nil {
+		return nil, handling.WrapAsApplicationError(err, handling.WithCode(codes.InvalidArgument))
+	}
+
 	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 

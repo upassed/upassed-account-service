@@ -24,7 +24,7 @@ message TeacherCreateResponse {
 }
 
 message TeacherFindByIDRequest {
-    string teacher_id = 1;
+    string teacher_id = 1 [(validate.rules).string.uuid = true];
 }
 
 message TeacherFindByIDResponse {

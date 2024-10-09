@@ -35,6 +35,9 @@ var (
 	_ = sort.Sort
 )
 
+// define the regex for a UUID once up-front
+var _teacher_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
 // Validate checks the field values on TeacherCreateRequest with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -369,10 +372,28 @@ func (m *TeacherFindByIDRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for TeacherId
+	if err := m._validateUuid(m.GetTeacherId()); err != nil {
+		err = TeacherFindByIDRequestValidationError{
+			field:  "TeacherId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return TeacherFindByIDRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *TeacherFindByIDRequest) _validateUuid(uuid string) error {
+	if matched := _teacher_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
