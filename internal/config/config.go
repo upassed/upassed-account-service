@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -33,21 +32,21 @@ type Config struct {
 }
 
 type Storage struct {
-	Host         string `yaml:"host" env-required:"true"`
-	Port         string `yaml:"port" env-required:"true"`
-	DatabaseName string `yaml:"database_name" env-required:"true"`
-	User         string `yaml:"user" env-required:"true"`
-	Password     string `yaml:"password" env-required:"true"`
+	Host         string `yaml:"host" env:"POSTGRES_HOST" env-required:"true"`
+	Port         string `yaml:"port" env:"POSTGRES_PORT" env-required:"true"`
+	DatabaseName string `yaml:"database_name" env:"POSTGRES_DATABASE_NAME" env-required:"true"`
+	User         string `yaml:"user" env:"POSTGRES_USER" env-required:"true"`
+	Password     string `yaml:"password" env:"POSTGRES_PASSWORD" env-required:"true"`
 }
 
 type GrpcServer struct {
-	Port    string        `yaml:"port" env-required:"true"`
-	Timeout time.Duration `yaml:"timeout" env-required:"true"`
+	Port    string `yaml:"port" env:"GRPC_SERVER_PORT" env-required:"true"`
+	Timeout string `yaml:"timeout" env:"GRPC_SERVER_TIMEOUT" env-required:"true"`
 }
 
 type MigrationConfig struct {
-	MigrationsPath      string `yaml:"migrations_path" env-required:"true"`
-	MigrationsTableName string `yaml:"migrations_table_name" env-default:"migrations"`
+	MigrationsPath      string `yaml:"migrations_path" env:"MIGRATIONS_PATH" env-required:"true"`
+	MigrationsTableName string `yaml:"migrations_table_name" env:"MIGRATIONS_TABLE_NAME" env-default:"migrations"`
 }
 
 func Load() (*Config, error) {

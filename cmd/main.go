@@ -8,12 +8,17 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/joho/godotenv"
 	"github.com/upassed/upassed-account-service/internal/app"
 	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
+
 	if err := os.Setenv(config.EnvConfigPath, filepath.Join("config", "local.yml")); err != nil {
 		log.Fatal(err)
 	}
