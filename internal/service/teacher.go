@@ -13,26 +13,31 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-type TeacherServiceImpl struct {
+type teacherServiceImpl struct {
 	log        *slog.Logger
-	repository TeacherRepository
+	repository teacherRepository
 }
 
-type TeacherRepository interface {
-	Save(context.Context, domain.Teacher) error
-	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
-	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
+type teacherService interface {
+	Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID string) (business.Teacher, error)
 }
 
-func NewTeacherService(log *slog.Logger, repository TeacherRepository) *TeacherServiceImpl {
-	return &TeacherServiceImpl{
+func NewTeacherService(log *slog.Logger, repository teacherRepository) teacherService {
+	return &teacherServiceImpl{
 		log:        log,
 		repository: repository,
 	}
 }
 
+type teacherRepository interface {
+	Save(context.Context, domain.Teacher) error
+	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
+	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
+}
+
 // TODO work with ctx timeout. Add the timeout to ctx passing to repo layer.
-func (service *TeacherServiceImpl) Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error) {
+func (service *teacherServiceImpl) Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error) {
 	const op = "TeacherServiceImpl.Create()"
 
 	log := service.log.With(
@@ -64,7 +69,7 @@ func (service *TeacherServiceImpl) Create(ctx context.Context, teacher business.
 }
 
 // TODO work with ctx timeout. Add the timeout to ctx passing to repo layer.
-func (service *TeacherServiceImpl) FindByID(ctx context.Context, teacherID string) (business.Teacher, error) {
+func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID string) (business.Teacher, error) {
 	const op = "TeacherServiceImpl.FindByID()"
 
 	log := service.log.With(

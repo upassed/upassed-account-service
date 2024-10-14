@@ -42,7 +42,7 @@ func RunMigrations(config *config.Config, log *slog.Logger) error {
 	if err := migrator.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			log.Info("no migrations to apply, nothing changed")
-			return err
+			return nil
 		}
 
 		log.Error("error while applying migrations", logger.Error(err))

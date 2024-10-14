@@ -29,12 +29,18 @@ var (
 	ErrorRunningMigrationScripts   error = errors.New("error while running migration scripts")
 )
 
-type TeacherRepositoryImpl struct {
+type teacherRepositoryImpl struct {
 	log *slog.Logger
 	db  *gorm.DB
 }
 
-func NewTeacherRepository(config *config.Config, log *slog.Logger) (*TeacherRepositoryImpl, error) {
+type teacherRepository interface {
+	Save(context.Context, domain.Teacher) error
+	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
+	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
+}
+
+func NewTeacherRepository(config *config.Config, log *slog.Logger) (teacherRepository, error) {
 	const op = "repository.NewTeacherRepository()"
 
 	log = log.With(
@@ -72,14 +78,14 @@ func NewTeacherRepository(config *config.Config, log *slog.Logger) (*TeacherRepo
 		return nil, ErrorRunningMigrationScripts
 	}
 
-	return &TeacherRepositoryImpl{
+	return &teacherRepositoryImpl{
 		db:  db,
 		log: log,
 	}, nil
 }
 
 // TODO work with context
-func (repository *TeacherRepositoryImpl) Save(ctx context.Context, teacher domain.Teacher) error {
+func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domain.Teacher) error {
 	const op = "repository.TeacherRepositoryImpl.Save()"
 
 	log := repository.log.With(
@@ -99,7 +105,7 @@ func (repository *TeacherRepositoryImpl) Save(ctx context.Context, teacher domai
 	return nil
 }
 
-func (repository *TeacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
+func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
 	const op = "repository.TeacherRepositoryImpl.FindByID()"
 
 	log := repository.log.With(
@@ -125,7 +131,7 @@ func (repository *TeacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 	return foundTeacher, nil
 }
 
-func (repository *TeacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
+func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
 	const op = "repository.TeacherRepositoryImpl.CheckDuplicateExists()"
 
 	log := repository.log.With(
