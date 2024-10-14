@@ -33,7 +33,7 @@ func WithCode(code codes.Code) Option {
 }
 
 func HandleApplicationError(err error, options ...Option) error {
-	var applicationErr *ApplicationErrorImpl
+	var applicationErr *applicationErrorImpl
 	if errors.As(err, &applicationErr) {
 		convertedErr := status.New(applicationErr.Code, applicationErr.Message)
 		timeInfo := errdetails.DebugInfo{

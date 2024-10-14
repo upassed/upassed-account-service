@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
@@ -11,6 +13,11 @@ import (
 	"github.com/upassed/upassed-account-service/internal/service/converter"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	ErrorCreateTeacherDeadlineExceeded   error = errors.New("create teacher deadline exceeded")
+	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("find teacher by ud deadline exceeded")
 )
 
 type teacherServiceImpl struct {
@@ -36,7 +43,6 @@ type teacherRepository interface {
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 
-// TODO work with ctx timeout. Add the timeout to ctx passing to repo layer.
 func (service *teacherServiceImpl) Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error) {
 	const op = "TeacherServiceImpl.Create()"
 
@@ -46,29 +52,50 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacher business.
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started creating teacher")
-	reportEmailExists, err := service.repository.CheckDuplicateExists(ctx, teacher.ReportEmail, teacher.Username)
-	if err != nil {
-		return business.TeacherCreateResponse{}, handling.HandleApplicationError(err)
-	}
+	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
 
-	if reportEmailExists {
-		log.Error("teacher with this username or report email already exists")
-		return business.TeacherCreateResponse{}, handling.NewApplicationError("teacher duplicate found", codes.AlreadyExists)
-	}
+	resultChannel := make(chan business.TeacherCreateResponse)
+	errorChannel := make(chan error)
 
-	domainTeacher := converter.ConvertTeacherToDomain(teacher)
-	if err := service.repository.Save(ctx, domainTeacher); err != nil {
-		return business.TeacherCreateResponse{}, handling.HandleApplicationError(err)
-	}
+	go func() {
+		log.Debug("started creating teacher")
+		reportEmailExists, err := service.repository.CheckDuplicateExists(contextWithTimeout, teacher.ReportEmail, teacher.Username)
+		if err != nil {
+			errorChannel <- handling.HandleApplicationError(err)
+			return
+		}
 
-	log.Debug("teacher successfully created", slog.Any("createdTeacherID", domainTeacher.ID))
-	return business.TeacherCreateResponse{
-		CreatedTeacherID: domainTeacher.ID,
-	}, nil
+		if reportEmailExists {
+			log.Error("teacher with this username or report email already exists")
+			errorChannel <- handling.WrapAsApplicationError(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
+			return
+		}
+
+		domainTeacher := converter.ConvertTeacherToDomain(teacher)
+		if err := service.repository.Save(contextWithTimeout, domainTeacher); err != nil {
+			errorChannel <- handling.HandleApplicationError(err)
+			return
+		}
+
+		log.Debug("teacher successfully created", slog.Any("createdTeacherID", domainTeacher.ID))
+		resultChannel <- business.TeacherCreateResponse{
+			CreatedTeacherID: domainTeacher.ID,
+		}
+	}()
+
+	for {
+		select {
+		case <-contextWithTimeout.Done():
+			return business.TeacherCreateResponse{}, ErrorCreateTeacherDeadlineExceeded
+		case createdTeacherData := <-resultChannel:
+			return createdTeacherData, nil
+		case err := <-errorChannel:
+			return business.TeacherCreateResponse{}, err
+		}
+	}
 }
 
-// TODO work with ctx timeout. Add the timeout to ctx passing to repo layer.
 func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID string) (business.Teacher, error) {
 	const op = "TeacherServiceImpl.FindByID()"
 
@@ -78,18 +105,39 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID strin
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started finding teacher by id")
-	parsedID, err := uuid.Parse(teacherID)
-	if err != nil {
-		log.Error("error while parsing teacher id - wrong UUID passed")
-		return business.Teacher{}, handling.NewApplicationError(err.Error(), codes.InvalidArgument)
-	}
+	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
 
-	foundTeacher, err := service.repository.FindByID(ctx, parsedID)
-	if err != nil {
-		return business.Teacher{}, handling.HandleApplicationError(err)
-	}
+	resultChannel := make(chan business.Teacher)
+	errorChannel := make(chan error)
 
-	log.Debug("teacher successfully found by id")
-	return converter.ConvertTeacherToBusiness(foundTeacher), nil
+	go func() {
+		log.Debug("started finding teacher by id")
+		parsedID, err := uuid.Parse(teacherID)
+		if err != nil {
+			log.Error("error while parsing teacher id - wrong UUID passed")
+			errorChannel <- handling.WrapAsApplicationError(err, handling.WithCode(codes.InvalidArgument))
+			return
+		}
+
+		foundTeacher, err := service.repository.FindByID(contextWithTimeout, parsedID)
+		if err != nil {
+			errorChannel <- handling.HandleApplicationError(err)
+			return
+		}
+
+		log.Debug("teacher successfully found by id")
+		resultChannel <- converter.ConvertTeacherToBusiness(foundTeacher)
+	}()
+
+	for {
+		select {
+		case <-contextWithTimeout.Done():
+			return business.Teacher{}, ErrorFindTeacherByIDDeadlineExceeded
+		case foundTeacher := <-resultChannel:
+			return foundTeacher, nil
+		case err := <-errorChannel:
+			return business.Teacher{}, err
+		}
+	}
 }

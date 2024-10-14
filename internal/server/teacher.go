@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"time"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/server/converter"
@@ -34,12 +33,9 @@ func (server *teacherServerAPI) Create(ctx context.Context, request *client.Teac
 	}
 
 	convertedRequest := converter.ConvertTeacherCreateRequest(request)
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-
-	response, err := server.service.Create(contextWithTimeout, convertedRequest)
+	response, err := server.service.Create(ctx, convertedRequest)
 	if err != nil {
-		return nil, handling.HandleApplicationError(err)
+		return nil, err
 	}
 
 	return converter.ConvertTeacherCreateResponse(response), nil
@@ -50,12 +46,9 @@ func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.Te
 		return nil, handling.WrapAsApplicationError(err, handling.WithCode(codes.InvalidArgument))
 	}
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-
-	teacher, err := server.service.FindByID(contextWithTimeout, request.GetTeacherId())
+	teacher, err := server.service.FindByID(ctx, request.GetTeacherId())
 	if err != nil {
-		return nil, handling.HandleApplicationError(err)
+		return nil, err
 	}
 
 	return converter.ConvertTeacher(teacher), nil
