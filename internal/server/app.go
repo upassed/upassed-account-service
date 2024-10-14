@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -8,6 +9,8 @@ import (
 
 	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	"github.com/upassed/upassed-account-service/internal/server/teacher"
+	service "github.com/upassed/upassed-account-service/internal/service/teacher"
 	"google.golang.org/grpc"
 )
 
@@ -28,6 +31,11 @@ type AppServerCreateParams struct {
 	TeacherService teacherService
 }
 
+type teacherService interface {
+	Create(ctx context.Context, teacher service.Teacher) (service.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID string) (service.Teacher, error)
+}
+
 func New(params AppServerCreateParams) *AppServer {
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
@@ -37,7 +45,7 @@ func New(params AppServerCreateParams) *AppServer {
 		),
 	)
 
-	registerTeacherServer(server, params.TeacherService)
+	teacher.RegisterTeacherServer(server, params.TeacherService)
 	return &AppServer{
 		config: params.Config,
 		log:    params.Log,

@@ -4,9 +4,9 @@ import (
 	"log/slog"
 
 	config "github.com/upassed/upassed-account-service/internal/config"
-	repository "github.com/upassed/upassed-account-service/internal/repository/postgres"
+	repository "github.com/upassed/upassed-account-service/internal/repository/teacher"
 	"github.com/upassed/upassed-account-service/internal/server"
-	"github.com/upassed/upassed-account-service/internal/service"
+	service "github.com/upassed/upassed-account-service/internal/service/teacher"
 )
 
 type App struct {
