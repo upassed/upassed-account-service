@@ -1,28 +1,23 @@
-package main
+package migration
 
 import (
 	"errors"
 	"fmt"
-	"log"
-	"os"
+	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
-	appConfig "github.com/upassed/upassed-account-service/internal/config/app"
-	config "github.com/upassed/upassed-account-service/internal/config/migrator"
+	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func main() {
-	config, err := config.Load()
-	if err != nil {
-		log.Fatalf("error while loading migrator config: %s", err.Error())
-	}
+func RunMigrations(config *config.Config, log *slog.Logger) error {
+	const op = "migration.RunMigrations()"
 
 	migrator, err := migrate.New(
-		fmt.Sprintf("file://%s", config.MigrationsPath),
+		fmt.Sprintf("file://%s", config.Migration.MigrationsPath),
 		fmt.Sprintf(
 			"postgres://%s:%s@%s:%s/%s?sslmode=disable&x-migrations-table=%s",
 			config.Storage.User,
@@ -30,26 +25,30 @@ func main() {
 			config.Storage.Host,
 			config.Storage.Port,
 			config.Storage.DatabaseName,
-			config.MigrationsTableName,
+			config.Migration.MigrationsTableName,
 		),
 	)
 
-	log := logger.New(appConfig.EnvLocal)
+	log = log.With(
+		slog.String("op", op),
+	)
 
 	if err != nil {
 		log.Error("error while creating migrator", logger.Error(err))
-		os.Exit(1)
+		return err
 	}
 
+	log.Debug("starting sql migration scripts running")
 	if err := migrator.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			log.Info("no migrations to apply, nothing changed")
-			return
+			return err
 		}
 
 		log.Error("error while applying migrations", logger.Error(err))
-		os.Exit(1)
+		return err
 	}
 
 	log.Info("all migrations applied successfully")
+	return nil
 }

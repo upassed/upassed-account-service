@@ -1,4 +1,4 @@
-env: "local"
+env: "testing"
 storage:
     host: "localhost"
     port: "5432"
@@ -8,3 +8,6 @@ storage:
 grpc_server:
     port: "44044"
     timeout: 10m
+migrations:
+    migrations_path: "./migration/scripts"
+    migrations_table_name: "migrations"

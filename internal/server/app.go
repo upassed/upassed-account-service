@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"net"
 
-	config "github.com/upassed/upassed-account-service/internal/config/app"
+	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	"google.golang.org/grpc"
 )

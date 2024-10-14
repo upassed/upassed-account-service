@@ -7,10 +7,11 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	config "github.com/upassed/upassed-account-service/internal/config/app"
+	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	"github.com/upassed/upassed-account-service/internal/migration"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
 	"gorm.io/driver/postgres"
@@ -25,6 +26,7 @@ var (
 	ErrorTeacherNotFound           error = errors.New("teacher not found in database")
 	ErrorSearchingTeacher          error = errors.New("error while searching teacher")
 	ErrorCountingDuplicatesTeacher error = errors.New("error while counting duplicates teacher")
+	ErrorRunningMigrationScripts   error = errors.New("error while running migration scripts")
 )
 
 type TeacherRepositoryImpl struct {
@@ -66,6 +68,10 @@ func NewTeacherRepository(config *config.Config, log *slog.Logger) (*TeacherRepo
 	}
 
 	log.Debug("database connection established successfully")
+	if err := migration.RunMigrations(config, log); err != nil {
+		return nil, ErrorRunningMigrationScripts
+	}
+
 	return &TeacherRepositoryImpl{
 		db:  db,
 		log: log,

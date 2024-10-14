@@ -9,12 +9,12 @@ import (
 	"syscall"
 
 	"github.com/upassed/upassed-account-service/internal/app"
-	config "github.com/upassed/upassed-account-service/internal/config/app"
+	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
 )
 
 func main() {
-	if err := os.Setenv(config.EnvConfigPath, filepath.Join("config", "app", "local.yml")); err != nil {
+	if err := os.Setenv(config.EnvConfigPath, filepath.Join("config", "local.yml")); err != nil {
 		log.Fatal(err)
 	}
 

@@ -3,7 +3,7 @@ package app
 import (
 	"log/slog"
 
-	config "github.com/upassed/upassed-account-service/internal/config/app"
+	config "github.com/upassed/upassed-account-service/internal/config"
 	repository "github.com/upassed/upassed-account-service/internal/repository/postgres"
 	"github.com/upassed/upassed-account-service/internal/server"
 	"github.com/upassed/upassed-account-service/internal/service"

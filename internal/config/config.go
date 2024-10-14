@@ -26,9 +26,10 @@ const (
 const EnvConfigPath string = "APP_CONFIG_PATH"
 
 type Config struct {
-	Env        EnvType    `yaml:"env" env-required:"true"`
-	Storage    Storage    `yaml:"storage" env-required:"true"`
-	GrpcServer GrpcServer `yaml:"grpc_server" env-required:"true"`
+	Env        EnvType         `yaml:"env" env-required:"true"`
+	Storage    Storage         `yaml:"storage" env-required:"true"`
+	GrpcServer GrpcServer      `yaml:"grpc_server" env-required:"true"`
+	Migration  MigrationConfig `yaml:"migrations" env-required:"true"`
 }
 
 type Storage struct {
@@ -42,6 +43,11 @@ type Storage struct {
 type GrpcServer struct {
 	Port    string        `yaml:"port" env-required:"true"`
 	Timeout time.Duration `yaml:"timeout" env-required:"true"`
+}
+
+type MigrationConfig struct {
+	MigrationsPath      string `yaml:"migrations_path" env-required:"true"`
+	MigrationsTableName string `yaml:"migrations_table_name" env-default:"migrations"`
 }
 
 func Load() (*Config, error) {
