@@ -17,14 +17,14 @@ func ConvertTeacherCreateRequest(request *client.TeacherCreateRequest) business.
 	}
 }
 
-func ConvertTeacherCreateResponse(response business.TeacherCreateResponse) client.TeacherCreateResponse {
-	return client.TeacherCreateResponse{
+func ConvertTeacherCreateResponse(response business.TeacherCreateResponse) *client.TeacherCreateResponse {
+	return &client.TeacherCreateResponse{
 		CreatedTeacherId: response.CreatedTeacherID.String(),
 	}
 }
 
-func ConvertTeacher(teacher business.Teacher) client.TeacherFindByIDResponse {
-	return client.TeacherFindByIDResponse{
+func ConvertTeacher(teacher business.Teacher) *client.TeacherFindByIDResponse {
+	return &client.TeacherFindByIDResponse{
 		Teacher: &client.TeacherDTO{
 			Id:          teacher.ID.String(),
 			FirstName:   teacher.FirstName,

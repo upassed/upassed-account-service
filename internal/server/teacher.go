@@ -42,8 +42,7 @@ func (server *teacherServerAPI) Create(ctx context.Context, request *client.Teac
 		return nil, handling.HandleApplicationError(err)
 	}
 
-	convertedResponse := converter.ConvertTeacherCreateResponse(response)
-	return &convertedResponse, nil
+	return converter.ConvertTeacherCreateResponse(response), nil
 }
 
 func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.TeacherFindByIDRequest) (*client.TeacherFindByIDResponse, error) {
@@ -59,6 +58,5 @@ func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.Te
 		return nil, handling.HandleApplicationError(err)
 	}
 
-	convertedTeacherResponse := converter.ConvertTeacher(teacher)
-	return &convertedTeacherResponse, nil
+	return converter.ConvertTeacher(teacher), nil
 }
