@@ -27,7 +27,7 @@ func NewPostgresTestontainer(ctx context.Context) (PostgresTestcontainer, error)
 		return nil, err
 	}
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+	contextWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	req := testcontainers.ContainerRequest{
@@ -57,7 +57,7 @@ func NewPostgresTestontainer(ctx context.Context) (PostgresTestcontainer, error)
 }
 
 func (p *postgresTestcontainerImpl) Start(ctx context.Context) (int, error) {
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+	contextWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	port, err := p.container.MappedPort(contextWithTimeout, "5432")
@@ -73,7 +73,7 @@ func (p *postgresTestcontainerImpl) Migrate(config *config.Config, log *slog.Log
 }
 
 func (p *postgresTestcontainerImpl) Stop(ctx context.Context) error {
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+	contextWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	err := p.container.Terminate(contextWithTimeout)
