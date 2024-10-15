@@ -9,8 +9,10 @@ import (
 
 	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	"github.com/upassed/upassed-account-service/internal/server/student"
 	"github.com/upassed/upassed-account-service/internal/server/teacher"
-	service "github.com/upassed/upassed-account-service/internal/service/teacher"
+	studentSvc "github.com/upassed/upassed-account-service/internal/service/student"
+	teacherSvc "github.com/upassed/upassed-account-service/internal/service/teacher"
 	"google.golang.org/grpc"
 )
 
@@ -29,11 +31,17 @@ type AppServerCreateParams struct {
 	Config         *config.Config
 	Log            *slog.Logger
 	TeacherService teacherService
+	StudentService studentService
 }
 
 type teacherService interface {
-	Create(ctx context.Context, teacher service.Teacher) (service.TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID string) (service.Teacher, error)
+	Create(ctx context.Context, teacher teacherSvc.Teacher) (teacherSvc.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID string) (teacherSvc.Teacher, error)
+}
+
+type studentService interface {
+	Create(context.Context, studentSvc.Student) (studentSvc.StudentCreateResponse, error)
+	FindByID(ctx context.Context, studentID string) (studentSvc.Student, error)
 }
 
 func New(params AppServerCreateParams) *AppServer {
@@ -46,6 +54,7 @@ func New(params AppServerCreateParams) *AppServer {
 	)
 
 	teacher.Register(server, params.TeacherService)
+	student.Register(server, params.StudentService)
 	return &AppServer{
 		config: params.Config,
 		log:    params.Log,

@@ -48,7 +48,7 @@ var (
 func TestMain(m *testing.M) {
 	projectRoot, err := getProjectRoot()
 	if err != nil {
-		log.Fatal("error to get project root folder", err)
+		log.Fatal("error to get project root folder: ", err)
 	}
 
 	if err := os.Setenv(config.EnvConfigPath, filepath.Join(projectRoot, "config", "test.yml")); err != nil {
@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 
 	config, err := config.Load()
 	if err != nil {
-		log.Fatal("config load error", err)
+		log.Fatal("config load error: ", err)
 	}
 
 	logger := logger.New(config.Env)
@@ -72,7 +72,7 @@ func TestMain(m *testing.M) {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	cc, err := grpc.NewClient(fmt.Sprintf(":%s", config.GrpcServer.Port), opts...)
 	if err != nil {
-		log.Fatal("error creating client connection", err)
+		log.Fatal("error creating client connection: ", err)
 	}
 
 	teacherClient = client.NewTeacherClient(cc)
@@ -121,9 +121,11 @@ func TestCreate_ServiceError(t *testing.T) {
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedError.Error(), convertedError.Message())
 	assert.Equal(t, codes.AlreadyExists, convertedError.Code())
+
+	clearTeacherServiceMockCalls()
 }
 
-func TeacherCreate_HappyPath(t *testing.T) {
+func TestCreate_HappyPath(t *testing.T) {
 	request := client.TeacherCreateRequest{
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),
@@ -140,7 +142,9 @@ func TeacherCreate_HappyPath(t *testing.T) {
 	response, err := teacherClient.Create(context.Background(), &request)
 	require.Nil(t, err)
 
-	assert.Equal(t, createdTeacherID, response.GetCreatedTeacherId())
+	assert.Equal(t, createdTeacherID.String(), response.GetCreatedTeacherId())
+
+	clearTeacherServiceMockCalls()
 }
 
 func TestFindByID_InvalidRequest(t *testing.T) {
@@ -169,6 +173,8 @@ func TestFindByID_ServiceError(t *testing.T) {
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedError.Error(), convertedError.Message())
 	assert.Equal(t, codes.NotFound, convertedError.Code())
+
+	clearTeacherServiceMockCalls()
 }
 
 func TestFindByID_HappyPath(t *testing.T) {
@@ -190,6 +196,13 @@ func TestFindByID_HappyPath(t *testing.T) {
 	require.Nil(t, err)
 
 	assert.Equal(t, teacherID.String(), response.GetTeacher().GetId())
+
+	clearTeacherServiceMockCalls()
+}
+
+func clearTeacherServiceMockCalls() {
+	teacherSvc.ExpectedCalls = nil
+	teacherSvc.Calls = nil
 }
 
 func getProjectRoot() (string, error) {
