@@ -32,7 +32,7 @@ type teacherRepositoryImpl struct {
 	db  *gorm.DB
 }
 
-func NewTeacherRepository(config *config.Config, log *slog.Logger) (teacherRepository, error) {
+func New(config *config.Config, log *slog.Logger) (teacherRepository, error) {
 	const op = "repository.NewTeacherRepository()"
 
 	log = log.With(

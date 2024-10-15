@@ -10,7 +10,7 @@ import (
 
 func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.TeacherFindByIDRequest) (*client.TeacherFindByIDResponse, error) {
 	if err := request.Validate(); err != nil {
-		return nil, handling.WrapAsApplicationError(err, handling.WithCode(codes.InvalidArgument))
+		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
 	teacher, err := server.service.FindByID(ctx, request.GetTeacherId())

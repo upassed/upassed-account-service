@@ -45,7 +45,7 @@ func New(params AppServerCreateParams) *AppServer {
 		),
 	)
 
-	teacher.RegisterTeacherServer(server, params.TeacherService)
+	teacher.Register(server, params.TeacherService)
 	return &AppServer{
 		config: params.Config,
 		log:    params.Log,

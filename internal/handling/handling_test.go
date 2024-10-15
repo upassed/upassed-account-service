@@ -14,9 +14,9 @@ import (
 func TestConvertApplicationError_AddDetails(t *testing.T) {
 	message := gofakeit.Error().Error()
 	code := codes.Internal
-	applicationError := handling.NewApplicationError(message, code)
+	applicationError := handling.New(message, code)
 
-	handledError := handling.HandleApplicationError(applicationError)
+	handledError := handling.Process(applicationError)
 
 	st := status.Convert(handledError)
 	assert.Equal(t, code, st.Code())
@@ -28,8 +28,8 @@ func TestConvertApplicationError_WrapOptions(t *testing.T) {
 	message := "error message"
 	code := codes.AlreadyExists
 
-	applicationError := handling.NewApplicationError(message, code)
-	wrappedError := handling.HandleApplicationError(applicationError, handling.WithCode(codes.OK))
+	applicationError := handling.New(message, code)
+	wrappedError := handling.Process(applicationError, handling.WithCode(codes.OK))
 
 	st := status.Convert(wrappedError)
 	require.NotNil(t, wrappedError)
@@ -41,7 +41,7 @@ func TestConvertApplicationError_WrapOptions(t *testing.T) {
 func TestConvertApplicationError_WrappingNotAnApplicationError(t *testing.T) {
 	initialError := gofakeit.Error()
 
-	handledError := handling.HandleApplicationError(initialError)
+	handledError := handling.Process(initialError)
 
 	st := status.Convert(handledError)
 	assert.Equal(t, codes.Internal, st.Code())
@@ -53,7 +53,7 @@ func TestCreateAnApplicationError(t *testing.T) {
 	message := "error message"
 	code := codes.AlreadyExists
 
-	applicationError := handling.NewApplicationError(message, code)
+	applicationError := handling.New(message, code)
 
 	require.NotNil(t, applicationError)
 

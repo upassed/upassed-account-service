@@ -13,4 +13,5 @@ tasks:
     test:
         desc: "Run all rests"
         cmds:
+            - go clean -testcache
             - go test -cover ./...

@@ -37,7 +37,7 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher Teach
 		saveResult := repository.db.Create(&teacher)
 		if saveResult.Error != nil || saveResult.RowsAffected != 1 {
 			log.Error("error while saving teacher data to a database", logger.Error(saveResult.Error))
-			errorChannel <- handling.NewApplicationError(ErrorSavingTeacher.Error(), codes.Internal)
+			errorChannel <- handling.New(ErrorSavingTeacher.Error(), codes.Internal)
 			return
 		}
 

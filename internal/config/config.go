@@ -20,9 +20,9 @@ const (
 	EnvLocal   EnvType = "local"
 	EnvDev     EnvType = "dev"
 	EnvTesting EnvType = "testing"
-)
 
-const EnvConfigPath string = "APP_CONFIG_PATH"
+	EnvConfigPath string = "APP_CONFIG_PATH"
+)
 
 type Config struct {
 	Env        EnvType         `yaml:"env" env-required:"true"`

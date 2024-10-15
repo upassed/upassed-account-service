@@ -25,7 +25,7 @@ type applicationError struct {
 	Time    time.Time
 }
 
-func NewApplicationError(message string, code codes.Code) *applicationError {
+func New(message string, code codes.Code) *applicationError {
 	return &applicationError{
 		Message: message,
 		Code:    code,
@@ -41,7 +41,7 @@ func (err *applicationError) GRPCStatus() *status.Status {
 	return status.New(err.Code, err.Message)
 }
 
-func HandleApplicationError(err error, options ...Option) error {
+func Process(err error, options ...Option) error {
 	var applicationErr *applicationError
 	if errors.As(err, &applicationErr) {
 		convertedErr := status.New(applicationErr.Code, applicationErr.Message)
@@ -57,10 +57,10 @@ func HandleApplicationError(err error, options ...Option) error {
 		return convertedErrWithDetails.Err()
 	}
 
-	return WrapAsApplicationError(err, options...)
+	return Wrap(err, options...)
 }
 
-func WrapAsApplicationError(err error, options ...Option) error {
+func Wrap(err error, options ...Option) error {
 	opts := defaultOptions()
 	for _, opt := range options {
 		opt(opts)

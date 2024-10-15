@@ -34,19 +34,19 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate T
 		log.Debug("started creating teacher")
 		reportEmailExists, err := service.repository.CheckDuplicateExists(contextWithTimeout, teacherToCreate.ReportEmail, teacherToCreate.Username)
 		if err != nil {
-			errorChannel <- handling.HandleApplicationError(err)
+			errorChannel <- handling.Process(err)
 			return
 		}
 
 		if reportEmailExists {
 			log.Error("teacher with this username or report email already exists")
-			errorChannel <- handling.WrapAsApplicationError(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
+			errorChannel <- handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
 			return
 		}
 
 		domainTeacher := ConvertToRepositoryTeacher(teacherToCreate)
 		if err := service.repository.Save(contextWithTimeout, domainTeacher); err != nil {
-			errorChannel <- handling.HandleApplicationError(err)
+			errorChannel <- handling.Process(err)
 			return
 		}
 

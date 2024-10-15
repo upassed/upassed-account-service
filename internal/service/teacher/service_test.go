@@ -42,10 +42,10 @@ func TestCheckDuplicateTeacher_ErrorOccured(t *testing.T) {
 	repository := new(mockTeacherRepository)
 	duplicateTeacher := randomTeacher()
 
-	expectedRepoError := handling.NewApplicationError("repo layer error message", codes.Internal)
+	expectedRepoError := handling.New("repo layer error message", codes.Internal)
 	repository.On("CheckDuplicateExists", mock.Anything, duplicateTeacher.ReportEmail, duplicateTeacher.Username).Return(false, expectedRepoError)
 
-	service := teacher.NewTeacherService(log, repository)
+	service := teacher.New(log, repository)
 
 	_, err := service.Create(context.Background(), duplicateTeacher)
 	require.NotNil(t, err)
@@ -61,7 +61,7 @@ func TestCheckDuplicateTeacher_TeacherNotFound(t *testing.T) {
 
 	repository.On("CheckDuplicateExists", mock.Anything, duplicateTeacher.ReportEmail, duplicateTeacher.Username).Return(true, nil)
 
-	service := teacher.NewTeacherService(log, repository)
+	service := teacher.New(log, repository)
 
 	_, err := service.Create(context.Background(), duplicateTeacher)
 	require.NotNil(t, err)
@@ -78,10 +78,10 @@ func TestCreateTeacher_ErrorSavingToDatabase(t *testing.T) {
 
 	repository.On("CheckDuplicateExists", mock.Anything, teacherToSave.ReportEmail, teacherToSave.Username).Return(false, nil)
 
-	expectedRepoError := handling.NewApplicationError("repo layer error message", codes.DeadlineExceeded)
+	expectedRepoError := handling.New("repo layer error message", codes.DeadlineExceeded)
 	repository.On("Save", mock.Anything, mock.Anything).Return(expectedRepoError)
 
-	service := teacher.NewTeacherService(log, repository)
+	service := teacher.New(log, repository)
 
 	_, err := service.Create(context.Background(), teacherToSave)
 	require.NotNil(t, err)
@@ -99,7 +99,7 @@ func TestCreateTeacher_HappyPath(t *testing.T) {
 	repository.On("CheckDuplicateExists", mock.Anything, teacherToSave.ReportEmail, teacherToSave.Username).Return(false, nil)
 	repository.On("Save", mock.Anything, mock.Anything).Return(nil)
 
-	service := teacher.NewTeacherService(log, repository)
+	service := teacher.New(log, repository)
 
 	response, err := service.Create(context.Background(), teacherToSave)
 	require.Nil(t, err)
@@ -111,7 +111,7 @@ func TestFindByID_InvalidTeacherID(t *testing.T) {
 	log := logger.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 
-	service := teacher.NewTeacherService(log, repository)
+	service := teacher.New(log, repository)
 
 	_, err := service.FindByID(context.Background(), "invalid uuid")
 	require.NotNil(t, err)
@@ -125,9 +125,9 @@ func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	teacherRepository := new(mockTeacherRepository)
 	teacherID := uuid.New()
 
-	expectedRepoError := handling.NewApplicationError("repo layer error message", codes.NotFound)
+	expectedRepoError := handling.New("repo layer error message", codes.NotFound)
 	teacherRepository.On("FindByID", mock.Anything, teacherID).Return(repository.Teacher{}, expectedRepoError)
-	service := teacher.NewTeacherService(log, teacherRepository)
+	service := teacher.New(log, teacherRepository)
 
 	_, err := service.FindByID(context.Background(), teacherID.String())
 	require.NotNil(t, err)
@@ -144,7 +144,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 	expectedFoundTeacher := teacher.ConvertToRepositoryTeacher(randomTeacher())
 
 	repository.On("FindByID", mock.Anything, teacherID).Return(expectedFoundTeacher, nil)
-	service := teacher.NewTeacherService(log, repository)
+	service := teacher.New(log, repository)
 
 	foundTeacher, err := service.FindByID(context.Background(), teacherID.String())
 	require.Nil(t, err)

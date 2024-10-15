@@ -24,7 +24,7 @@ type teacherRepository interface {
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 
-func NewTeacherService(log *slog.Logger, repository teacherRepository) teacherService {
+func New(log *slog.Logger, repository teacherRepository) teacherService {
 	return &teacherServiceImpl{
 		log:        log,
 		repository: repository,

@@ -18,7 +18,7 @@ type teacherService interface {
 	FindByID(ctx context.Context, teacherID string) (service.Teacher, error)
 }
 
-func RegisterTeacherServer(gRPC *grpc.Server, service teacherService) {
+func Register(gRPC *grpc.Server, service teacherService) {
 	client.RegisterTeacherServer(gRPC, &teacherServerAPI{
 		service: service,
 	})

@@ -19,7 +19,7 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 		slog.String("op", op),
 	)
 
-	teacherRepository, err := repository.NewTeacherRepository(config, log)
+	teacherRepository, err := repository.New(config, log)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 	server := server.New(server.AppServerCreateParams{
 		Config:         config,
 		Log:            log,
-		TeacherService: service.NewTeacherService(log, teacherRepository),
+		TeacherService: service.New(log, teacherRepository),
 	})
 
 	log.Info("app successfully created")

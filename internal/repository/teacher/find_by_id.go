@@ -42,12 +42,12 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 		if searchResult.Error != nil {
 			if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
 				log.Error("teacher was not found in the database", logger.Error(searchResult.Error))
-				errorChannel <- handling.NewApplicationError(ErrorTeacherNotFound.Error(), codes.NotFound)
+				errorChannel <- handling.New(ErrorTeacherNotFound.Error(), codes.NotFound)
 				return
 			}
 
 			log.Error("error while searching teacher in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.NewApplicationError(ErrorSearchingTeacher.Error(), codes.Internal)
+			errorChannel <- handling.New(ErrorSearchingTeacher.Error(), codes.Internal)
 			return
 		}
 

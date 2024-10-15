@@ -36,13 +36,13 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID strin
 		parsedID, err := uuid.Parse(teacherID)
 		if err != nil {
 			log.Error("error while parsing teacher id - wrong UUID passed")
-			errorChannel <- handling.WrapAsApplicationError(err, handling.WithCode(codes.InvalidArgument))
+			errorChannel <- handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 			return
 		}
 
 		foundTeacher, err := service.repository.FindByID(contextWithTimeout, parsedID)
 		if err != nil {
-			errorChannel <- handling.HandleApplicationError(err)
+			errorChannel <- handling.Process(err)
 			return
 		}
 

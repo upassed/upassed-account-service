@@ -112,8 +112,8 @@ func TestCreate_ServiceError(t *testing.T) {
 		Username:    gofakeit.Username(),
 	}
 
-	expectedError := handling.NewApplicationError("some service error", codes.AlreadyExists)
-	teacherSvc.On("Create", mock.Anything, mock.Anything).Return(service.TeacherCreateResponse{}, handling.HandleApplicationError(expectedError))
+	expectedError := handling.New("some service error", codes.AlreadyExists)
+	teacherSvc.On("Create", mock.Anything, mock.Anything).Return(service.TeacherCreateResponse{}, handling.Process(expectedError))
 
 	_, err := teacherClient.Create(context.Background(), &request)
 	require.NotNil(t, err)
@@ -160,8 +160,8 @@ func TestFindByID_ServiceError(t *testing.T) {
 		TeacherId: uuid.NewString(),
 	}
 
-	expectedError := handling.NewApplicationError("some service error", codes.NotFound)
-	teacherSvc.On("FindByID", mock.Anything, request.TeacherId).Return(service.Teacher{}, handling.HandleApplicationError(expectedError))
+	expectedError := handling.New("some service error", codes.NotFound)
+	teacherSvc.On("FindByID", mock.Anything, request.TeacherId).Return(service.Teacher{}, handling.Process(expectedError))
 
 	_, err := teacherClient.FindByID(context.Background(), &request)
 	require.NotNil(t, err)
