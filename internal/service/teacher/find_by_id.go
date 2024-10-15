@@ -17,7 +17,7 @@ var (
 )
 
 func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID string) (Teacher, error) {
-	const op = "TeacherServiceImpl.FindByID()"
+	const op = "teacher.teacherServiceImpl.FindByID()"
 
 	log := service.log.With(
 		slog.String("op", op),

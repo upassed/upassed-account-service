@@ -21,7 +21,7 @@ var (
 	ErrorRunningMigrationScripts error = errors.New("error while running migration scripts")
 )
 
-type teacherRepository interface {
+type TeacherRepository interface {
 	Save(context.Context, Teacher) error
 	FindByID(context.Context, uuid.UUID) (Teacher, error)
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
@@ -32,8 +32,8 @@ type teacherRepositoryImpl struct {
 	db  *gorm.DB
 }
 
-func New(config *config.Config, log *slog.Logger) (teacherRepository, error) {
-	const op = "repository.NewTeacherRepository()"
+func New(config *config.Config, log *slog.Logger) (TeacherRepository, error) {
+	const op = "teacher.New()"
 
 	log = log.With(
 		slog.String("op", op),

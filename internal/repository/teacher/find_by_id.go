@@ -21,7 +21,7 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (Teacher, error) {
-	const op = "repository.TeacherRepositoryImpl.FindByID()"
+	const op = "teacher.teacherRepositoryImpl.FindByID()"
 
 	log := repository.log.With(
 		slog.String("op", op),

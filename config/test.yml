@@ -9,5 +9,5 @@ grpc_server:
     port: "44044"
     timeout: 10m
 migrations:
-    migrations_path: "./migration/scripts"
+    migrations_path: "../../../migration/scripts"
     migrations_table_name: "migrations"

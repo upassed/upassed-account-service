@@ -71,10 +71,10 @@ func (m *TeacherCreateRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if l := utf8.RuneCountInString(m.GetLastName()); l < 5 || l > 20 {
+	if l := utf8.RuneCountInString(m.GetLastName()); l < 3 || l > 30 {
 		err := TeacherCreateRequestValidationError{
 			field:  "LastName",
-			reason: "value length must be between 5 and 20 runes, inclusive",
+			reason: "value length must be between 3 and 30 runes, inclusive",
 		}
 		if !all {
 			return err

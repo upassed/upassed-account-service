@@ -17,7 +17,7 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
-	const op = "repository.TeacherRepositoryImpl.CheckDuplicateExists()"
+	const op = "teacher.teacherRepositoryImpl.CheckDuplicateExists()"
 
 	log := repository.log.With(
 		slog.String("op", op),
@@ -50,7 +50,6 @@ func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 
 		log.Debug("teacher duplicates not found in database")
 		resultChannel <- false
-		return
 	}()
 
 	for {

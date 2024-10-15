@@ -18,7 +18,7 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher Teacher) error {
-	const op = "repository.TeacherRepositoryImpl.Save()"
+	const op = "teacher.teacherRepositoryImpl.Save()"
 
 	log := repository.log.With(
 		slog.String("op", op),

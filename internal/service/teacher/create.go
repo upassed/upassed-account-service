@@ -16,7 +16,7 @@ var (
 )
 
 func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate Teacher) (TeacherCreateResponse, error) {
-	const op = "TeacherServiceImpl.Create()"
+	const op = "teacher.teacherServiceImpl.Create()"
 
 	log := service.log.With(
 		slog.String("op", op),
