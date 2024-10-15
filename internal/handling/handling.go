@@ -19,21 +19,30 @@ type wrapOptions struct {
 	time time.Time
 }
 
-func defaultOptions() *wrapOptions {
-	return &wrapOptions{
-		code: codes.Internal,
-		time: time.Now(),
+type applicationError struct {
+	Message string
+	Code    codes.Code
+	Time    time.Time
+}
+
+func NewApplicationError(message string, code codes.Code) *applicationError {
+	return &applicationError{
+		Message: message,
+		Code:    code,
+		Time:    time.Now(),
 	}
 }
 
-func WithCode(code codes.Code) Option {
-	return func(opts *wrapOptions) {
-		opts.code = code
-	}
+func (err *applicationError) Error() string {
+	return err.Message
+}
+
+func (err *applicationError) GRPCStatus() *status.Status {
+	return status.New(err.Code, err.Message)
 }
 
 func HandleApplicationError(err error, options ...Option) error {
-	var applicationErr *applicationErrorImpl
+	var applicationErr *applicationError
 	if errors.As(err, &applicationErr) {
 		convertedErr := status.New(applicationErr.Code, applicationErr.Message)
 		timeInfo := errdetails.DebugInfo{
@@ -68,4 +77,17 @@ func WrapAsApplicationError(err error, options ...Option) error {
 	}
 
 	return convertedErrWithDetails.Err()
+}
+
+func defaultOptions() *wrapOptions {
+	return &wrapOptions{
+		code: codes.Internal,
+		time: time.Now(),
+	}
+}
+
+func WithCode(code codes.Code) Option {
+	return func(opts *wrapOptions) {
+		opts.code = code
+	}
 }
