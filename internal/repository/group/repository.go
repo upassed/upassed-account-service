@@ -23,7 +23,6 @@ var (
 
 type groupRepository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
-	FindByID(context.Context, uuid.UUID) (Group, error)
 }
 
 type groupRepositoryImpl struct {

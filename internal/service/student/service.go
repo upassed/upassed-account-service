@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/upassed/upassed-account-service/internal/repository/group"
 	"github.com/upassed/upassed-account-service/internal/repository/student"
 )
 
@@ -28,7 +27,6 @@ type studentRepository interface {
 
 type groupRepository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
-	FindByID(context.Context, uuid.UUID) (group.Group, error)
 }
 
 func New(log *slog.Logger, studentRepository studentRepository, groupgroupRepository groupRepository) studentService {
