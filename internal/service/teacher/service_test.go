@@ -37,7 +37,7 @@ func (m *mockTeacherRepository) CheckDuplicateExists(ctx context.Context, report
 	return args.Bool(0), args.Error(1)
 }
 
-func TestCheckDuplicateTeacher_ErrorOccured(t *testing.T) {
+func TestCreate_ErrorCheckingDuplicateExistsOccured(t *testing.T) {
 	log := logger.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	duplicateTeacher := randomTeacher()
@@ -54,7 +54,7 @@ func TestCheckDuplicateTeacher_ErrorOccured(t *testing.T) {
 	assert.Equal(t, expectedRepoError.Error(), convertedError.Message())
 }
 
-func TestCheckDuplicateTeacher_TeacherNotFound(t *testing.T) {
+func TestCreate_DiplicateExists(t *testing.T) {
 	log := logger.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	duplicateTeacher := randomTeacher()
@@ -71,7 +71,7 @@ func TestCheckDuplicateTeacher_TeacherNotFound(t *testing.T) {
 	assert.Equal(t, codes.AlreadyExists, convertedError.Code())
 }
 
-func TestCreateTeacher_ErrorSavingToDatabase(t *testing.T) {
+func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 	log := logger.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	teacherToSave := randomTeacher()
@@ -91,7 +91,7 @@ func TestCreateTeacher_ErrorSavingToDatabase(t *testing.T) {
 	assert.Equal(t, expectedRepoError.Code, convertedError.Code())
 }
 
-func TestCreateTeacher_HappyPath(t *testing.T) {
+func TestCreate_HappyPath(t *testing.T) {
 	log := logger.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	teacherToSave := randomTeacher()
@@ -107,19 +107,6 @@ func TestCreateTeacher_HappyPath(t *testing.T) {
 	assert.Equal(t, teacherToSave.ID, response.CreatedTeacherID)
 }
 
-func TestFindByID_InvalidTeacherID(t *testing.T) {
-	log := logger.New(config.EnvTesting)
-	repository := new(mockTeacherRepository)
-
-	service := teacher.New(log, repository)
-
-	_, err := service.FindByID(context.Background(), "invalid uuid")
-	require.NotNil(t, err)
-
-	convertedError := status.Convert(err)
-	assert.Equal(t, codes.InvalidArgument, convertedError.Code())
-}
-
 func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	log := logger.New(config.EnvTesting)
 	teacherRepository := new(mockTeacherRepository)
@@ -129,7 +116,7 @@ func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	teacherRepository.On("FindByID", mock.Anything, teacherID).Return(repository.Teacher{}, expectedRepoError)
 	service := teacher.New(log, teacherRepository)
 
-	_, err := service.FindByID(context.Background(), teacherID.String())
+	_, err := service.FindByID(context.Background(), teacherID)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
@@ -146,7 +133,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 	repository.On("FindByID", mock.Anything, teacherID).Return(expectedFoundTeacher, nil)
 	service := teacher.New(log, repository)
 
-	foundTeacher, err := service.FindByID(context.Background(), teacherID.String())
+	foundTeacher, err := service.FindByID(context.Background(), teacherID)
 	require.Nil(t, err)
 
 	assert.Equal(t, teacher.ConvertToServiceTeacher(expectedFoundTeacher), foundTeacher)

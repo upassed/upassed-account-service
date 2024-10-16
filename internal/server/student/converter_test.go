@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/server/student"
+	"github.com/upassed/upassed-account-service/internal/service/group"
 	service "github.com/upassed/upassed-account-service/internal/service/student"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
@@ -52,7 +53,7 @@ func TestConvertToFindByIDResponse(t *testing.T) {
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: service.Group{
+		Group: group.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),

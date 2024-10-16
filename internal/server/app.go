@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 
+	"github.com/google/uuid"
 	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	"github.com/upassed/upassed-account-service/internal/server/student"
@@ -36,12 +37,12 @@ type AppServerCreateParams struct {
 
 type teacherService interface {
 	Create(ctx context.Context, teacher teacherSvc.Teacher) (teacherSvc.TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID string) (teacherSvc.Teacher, error)
+	FindByID(ctx context.Context, teacherID uuid.UUID) (teacherSvc.Teacher, error)
 }
 
 type studentService interface {
 	Create(context.Context, studentSvc.Student) (studentSvc.StudentCreateResponse, error)
-	FindByID(ctx context.Context, studentID string) (studentSvc.Student, error)
+	FindByID(ctx context.Context, studentID uuid.UUID) (studentSvc.Student, error)
 }
 
 func New(params AppServerCreateParams) *AppServer {

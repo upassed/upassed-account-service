@@ -2,7 +2,7 @@ package student
 
 import (
 	"github.com/google/uuid"
-	"github.com/upassed/upassed-account-service/internal/service/group"
+	"github.com/upassed/upassed-account-service/internal/repository/group"
 )
 
 type Student struct {
@@ -15,6 +15,6 @@ type Student struct {
 	Group            group.Group
 }
 
-type StudentCreateResponse struct {
-	CreatedStudentID uuid.UUID
+func (Student) TableName() string {
+	return "student"
 }

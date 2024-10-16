@@ -35,7 +35,7 @@ func (m *mockTeacherService) Create(ctx context.Context, teacher service.Teacher
 	return args.Get(0).(service.TeacherCreateResponse), args.Error(1)
 }
 
-func (m *mockTeacherService) FindByID(ctx context.Context, teacherID string) (service.Teacher, error) {
+func (m *mockTeacherService) FindByID(ctx context.Context, teacherID uuid.UUID) (service.Teacher, error) {
 	args := m.Called(ctx, teacherID)
 	return args.Get(0).(service.Teacher), args.Error(1)
 }
@@ -165,7 +165,7 @@ func TestFindByID_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	teacherSvc.On("FindByID", mock.Anything, request.TeacherId).Return(service.Teacher{}, handling.Process(expectedError))
+	teacherSvc.On("FindByID", mock.Anything, uuid.MustParse(request.TeacherId)).Return(service.Teacher{}, handling.Process(expectedError))
 
 	_, err := teacherClient.FindByID(context.Background(), &request)
 	require.NotNil(t, err)
@@ -183,7 +183,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 		TeacherId: teacherID.String(),
 	}
 
-	teacherSvc.On("FindByID", mock.Anything, teacherID.String()).Return(service.Teacher{
+	teacherSvc.On("FindByID", mock.Anything, teacherID).Return(service.Teacher{
 		ID:          teacherID,
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),

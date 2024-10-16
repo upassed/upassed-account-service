@@ -18,6 +18,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/server"
+	"github.com/upassed/upassed-account-service/internal/service/group"
 	service "github.com/upassed/upassed-account-service/internal/service/student"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
@@ -35,7 +36,7 @@ func (m *mockStudentService) Create(ctx context.Context, student service.Student
 	return args.Get(0).(service.StudentCreateResponse), args.Error(1)
 }
 
-func (m *mockStudentService) FindByID(ctx context.Context, studentID string) (service.Student, error) {
+func (m *mockStudentService) FindByID(ctx context.Context, studentID uuid.UUID) (service.Student, error) {
 	args := m.Called(ctx, studentID)
 	return args.Get(0).(service.Student), args.Error(1)
 }
@@ -167,7 +168,7 @@ func TestFindByID_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	studentSvc.On("FindByID", mock.Anything, request.StudentId).Return(service.Student{}, handling.Process(expectedError))
+	studentSvc.On("FindByID", mock.Anything, uuid.MustParse(request.StudentId)).Return(service.Student{}, handling.Process(expectedError))
 
 	_, err := studentClient.FindByID(context.Background(), &request)
 	require.NotNil(t, err)
@@ -185,14 +186,14 @@ func TestFindByID_HappyPath(t *testing.T) {
 		StudentId: studentID.String(),
 	}
 
-	studentSvc.On("FindByID", mock.Anything, studentID.String()).Return(service.Student{
+	studentSvc.On("FindByID", mock.Anything, studentID).Return(service.Student{
 		ID:               studentID,
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: service.Group{
+		Group: group.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),

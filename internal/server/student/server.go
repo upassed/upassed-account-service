@@ -3,6 +3,7 @@ package student
 import (
 	"context"
 
+	"github.com/google/uuid"
 	service "github.com/upassed/upassed-account-service/internal/service/student"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
@@ -15,7 +16,7 @@ type studentServerAPI struct {
 
 type studentService interface {
 	Create(context.Context, service.Student) (service.StudentCreateResponse, error)
-	FindByID(ctx context.Context, studentID string) (service.Student, error)
+	FindByID(ctx context.Context, studentID uuid.UUID) (service.Student, error)
 }
 
 func Register(gRPC *grpc.Server, service studentService) {

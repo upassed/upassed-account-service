@@ -3,6 +3,7 @@ package teacher
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc/codes"
@@ -13,7 +14,7 @@ func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.Te
 		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
-	teacher, err := server.service.FindByID(ctx, request.GetTeacherId())
+	teacher, err := server.service.FindByID(ctx, uuid.MustParse(request.GetTeacherId()))
 	if err != nil {
 		return nil, err
 	}

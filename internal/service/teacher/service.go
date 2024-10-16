@@ -10,7 +10,7 @@ import (
 
 type teacherService interface {
 	Create(ctx context.Context, teacher Teacher) (TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID string) (Teacher, error)
+	FindByID(ctx context.Context, teacherID uuid.UUID) (Teacher, error)
 }
 
 type teacherServiceImpl struct {

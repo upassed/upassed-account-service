@@ -2,6 +2,7 @@ package student
 
 import (
 	"github.com/google/uuid"
+	"github.com/upassed/upassed-account-service/internal/service/group"
 	"github.com/upassed/upassed-account-service/internal/service/student"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
@@ -14,7 +15,7 @@ func ConvertToStudent(request *client.StudentCreateRequest) student.Student {
 		MiddleName:       request.GetMiddleName(),
 		EducationalEmail: request.GetEducationalEmail(),
 		Username:         request.GetUsername(),
-		Group: student.Group{
+		Group: group.Group{
 			ID: uuid.MustParse(request.GetGroupId()),
 		},
 	}

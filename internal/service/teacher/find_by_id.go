@@ -9,19 +9,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
-	"google.golang.org/grpc/codes"
 )
 
 var (
 	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("find teacher by ud deadline exceeded")
 )
 
-func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID string) (Teacher, error) {
+func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (Teacher, error) {
 	const op = "teacher.teacherServiceImpl.FindByID()"
 
 	log := service.log.With(
 		slog.String("op", op),
-		slog.String("teacherID", teacherID),
+		slog.Any("teacherID", teacherID),
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
@@ -33,14 +32,7 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID strin
 
 	go func() {
 		log.Debug("started finding teacher by id")
-		parsedID, err := uuid.Parse(teacherID)
-		if err != nil {
-			log.Error("error while parsing teacher id - wrong UUID passed")
-			errorChannel <- handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
-			return
-		}
-
-		foundTeacher, err := service.repository.FindByID(contextWithTimeout, parsedID)
+		foundTeacher, err := service.repository.FindByID(contextWithTimeout, teacherID)
 		if err != nil {
 			errorChannel <- handling.Process(err)
 			return

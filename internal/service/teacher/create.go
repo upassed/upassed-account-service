@@ -32,13 +32,13 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate T
 
 	go func() {
 		log.Debug("started creating teacher")
-		reportEmailExists, err := service.repository.CheckDuplicateExists(contextWithTimeout, teacherToCreate.ReportEmail, teacherToCreate.Username)
+		duplicateExists, err := service.repository.CheckDuplicateExists(contextWithTimeout, teacherToCreate.ReportEmail, teacherToCreate.Username)
 		if err != nil {
 			errorChannel <- handling.Process(err)
 			return
 		}
 
-		if reportEmailExists {
+		if duplicateExists {
 			log.Error("teacher with this username or report email already exists")
 			errorChannel <- handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
 			return
