@@ -25,7 +25,7 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 
 	log := repository.log.With(
 		slog.String("op", op),
-		slog.String("teacherID", teacherID.String()),
+		slog.Any("teacherID", teacherID),
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 

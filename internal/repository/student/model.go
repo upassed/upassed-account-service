@@ -12,7 +12,8 @@ type Student struct {
 	MiddleName       string
 	EducationalEmail string
 	Username         string
-	Group            group.Group
+	GroupID          uuid.UUID
+	Group            group.Group `gorm:"foreignKey:GroupID;references:ID"`
 }
 
 func (Student) TableName() string {

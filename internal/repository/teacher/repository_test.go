@@ -21,8 +21,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type teacherRepository interface {
+	Save(context.Context, teacher.Teacher) error
+	FindByID(context.Context, uuid.UUID) (teacher.Teacher, error)
+	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
+}
+
 var (
-	repository teacher.TeacherRepository
+	repository teacherRepository
 )
 
 func TestMain(m *testing.M) {
@@ -80,7 +86,7 @@ func TestConnectToDatabase_InvalidCredentials(t *testing.T) {
 	assert.ErrorIs(t, err, teacher.ErrorOpeningDbConnection)
 }
 
-func TestSaveTeacher_InvalidUsernameLength(t *testing.T) {
+func TestSave_InvalidUsernameLength(t *testing.T) {
 	teacherToSave := randomTeacher()
 	teacherToSave.Username = gofakeit.LoremIpsumSentence(50)
 
@@ -92,7 +98,7 @@ func TestSaveTeacher_InvalidUsernameLength(t *testing.T) {
 	assert.Equal(t, teacher.ErrorSavingTeacher.Error(), convertedError.Message())
 }
 
-func TestSaveTeacher_HappyPath(t *testing.T) {
+func TestSave_HappyPath(t *testing.T) {
 	teacherToSave := randomTeacher()
 
 	err := repository.Save(context.Background(), teacherToSave)

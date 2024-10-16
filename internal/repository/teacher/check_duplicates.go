@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrorCountingDuplicatesTeacher              error = errors.New("error while counting duplicates teacher")
+	ErrorCountingDuplicatesTeacher              error = errors.New("error while counting duplicate teachers")
 	ErrorCheckTeacherDuplicatesDeadlineExceeded error = errors.New("checking teacher duplicates in a database deadline exceeded")
 )
 

@@ -228,7 +228,7 @@ func randomServiceStudent() service.Student {
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.UserAgent(),
+		Username:         gofakeit.Username(),
 		Group: groupService.Group{
 			ID: uuid.New(),
 		},
@@ -242,7 +242,7 @@ func randomRepositoryStudent() student.Student {
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.UserAgent(),
+		Username:         gofakeit.Username(),
 		Group: group.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),

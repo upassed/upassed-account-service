@@ -1,4 +1,4 @@
-package teacher
+package student
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	config "github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/migration"
 	"gorm.io/driver/postgres"
@@ -21,19 +21,19 @@ var (
 	ErrorRunningMigrationScripts error = errors.New("error while running migration scripts")
 )
 
-type teacherRepository interface {
-	Save(context.Context, Teacher) error
-	FindByID(context.Context, uuid.UUID) (Teacher, error)
-	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
+type studentRepository interface {
+	Save(context.Context, Student) error
+	FindByID(context.Context, uuid.UUID) (Student, error)
+	CheckDuplicateExists(ctx context.Context, edicationalEmail, username string) (bool, error)
 }
 
-type teacherRepositoryImpl struct {
+type studentRepositoryImpl struct {
 	log *slog.Logger
 	db  *gorm.DB
 }
 
-func New(config *config.Config, log *slog.Logger) (teacherRepository, error) {
-	const op = "teacher.New()"
+func New(config *config.Config, log *slog.Logger) (studentRepository, error) {
+	const op = "student.New()"
 
 	log = log.With(
 		slog.String("op", op),
@@ -70,7 +70,7 @@ func New(config *config.Config, log *slog.Logger) (teacherRepository, error) {
 		return nil, ErrorRunningMigrationScripts
 	}
 
-	return &teacherRepositoryImpl{
+	return &studentRepositoryImpl{
 		db:  db,
 		log: log,
 	}, nil
