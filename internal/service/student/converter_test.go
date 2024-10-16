@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	groupRepository "github.com/upassed/upassed-account-service/internal/repository/group"
+	repository "github.com/upassed/upassed-account-service/internal/repository/student"
 	"github.com/upassed/upassed-account-service/internal/service/group"
 	"github.com/upassed/upassed-account-service/internal/service/student"
 )
@@ -36,4 +38,35 @@ func TestConvertToRepositoryStudent(t *testing.T) {
 	assert.Equal(t, serviceStudent.EducationalEmail, convertedStudent.EducationalEmail)
 	assert.Equal(t, serviceStudent.Username, convertedStudent.Username)
 	assert.Equal(t, serviceStudent.Group.ID, convertedStudent.Group.ID)
+	assert.Equal(t, serviceStudent.Group.SpecializationCode, convertedStudent.Group.SpecializationCode)
+	assert.Equal(t, serviceStudent.Group.GroupNumber, convertedStudent.Group.GroupNumber)
+}
+
+func TestConvertToServiceStudent(t *testing.T) {
+	repositoryrStudent := repository.Student{
+		ID:               uuid.New(),
+		FirstName:        gofakeit.FirstName(),
+		LastName:         gofakeit.LastName(),
+		MiddleName:       gofakeit.MiddleName(),
+		EducationalEmail: gofakeit.Email(),
+		Username:         gofakeit.Username(),
+		Group: groupRepository.Group{
+			ID:                 uuid.New(),
+			SpecializationCode: gofakeit.WeekDay(),
+			GroupNumber:        gofakeit.WeekDay(),
+		},
+	}
+
+	serviceStudent := student.ConvertToServiceStudent(repositoryrStudent)
+	require.NotNil(t, serviceStudent)
+
+	assert.Equal(t, repositoryrStudent.ID, serviceStudent.ID)
+	assert.Equal(t, repositoryrStudent.FirstName, serviceStudent.FirstName)
+	assert.Equal(t, repositoryrStudent.LastName, serviceStudent.LastName)
+	assert.Equal(t, repositoryrStudent.MiddleName, serviceStudent.MiddleName)
+	assert.Equal(t, repositoryrStudent.EducationalEmail, serviceStudent.EducationalEmail)
+	assert.Equal(t, repositoryrStudent.Username, serviceStudent.Username)
+	assert.Equal(t, repositoryrStudent.Group.ID, serviceStudent.Group.ID)
+	assert.Equal(t, repositoryrStudent.Group.SpecializationCode, serviceStudent.Group.SpecializationCode)
+	assert.Equal(t, repositoryrStudent.Group.GroupNumber, serviceStudent.Group.GroupNumber)
 }

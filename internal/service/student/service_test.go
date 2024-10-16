@@ -57,7 +57,7 @@ func TestCreate_ErrorCheckingDuplicateExists(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomStudent()
+	studentToCreate := randomServiceStudent()
 	expectedReposotiryError := errors.New("some repo error")
 	studentRepository.On(
 		"CheckDuplicateExists",
@@ -79,7 +79,7 @@ func TestCreate_DuplicateExists(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomStudent()
+	studentToCreate := randomServiceStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -100,7 +100,7 @@ func TestCreate_ErrorCheckingGroupExists(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomStudent()
+	studentToCreate := randomServiceStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -124,7 +124,7 @@ func TestCreate_GroupNotExists(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomStudent()
+	studentToCreate := randomServiceStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -147,7 +147,7 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomStudent()
+	studentToCreate := randomServiceStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -173,7 +173,7 @@ func TestCreate_HappyPath(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomStudent()
+	studentToCreate := randomServiceStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -191,7 +191,37 @@ func TestCreate_HappyPath(t *testing.T) {
 	assert.Equal(t, studentToCreate.ID, response.CreatedStudentID)
 }
 
-func randomStudent() service.Student {
+func TestFindByID_ErrorSearchingStudentInDatabase(t *testing.T) {
+	studentRepository := new(mockStudentRepository)
+	studentID := uuid.New()
+
+	expectedRepositoryError := errors.New("some repo error")
+	studentRepository.On("FindByID", mock.Anything, studentID).Return(student.Student{}, expectedRepositoryError)
+
+	service := service.New(logger.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
+	_, err := service.FindByID(context.Background(), studentID)
+	require.NotNil(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
+	assert.Equal(t, codes.Internal, convertedError.Code())
+}
+
+func TestFindByID_HappyPath(t *testing.T) {
+	studentRepository := new(mockStudentRepository)
+	studentID := uuid.New()
+	foundStudent := randomRepositoryStudent()
+
+	studentRepository.On("FindByID", mock.Anything, studentID).Return(foundStudent, nil)
+
+	studentService := service.New(logger.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
+	response, err := studentService.FindByID(context.Background(), studentID)
+	require.Nil(t, err)
+
+	assert.Equal(t, foundStudent, service.ConvertToRepositoryStudent(response))
+}
+
+func randomServiceStudent() service.Student {
 	return service.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
@@ -201,6 +231,22 @@ func randomStudent() service.Student {
 		Username:         gofakeit.UserAgent(),
 		Group: groupService.Group{
 			ID: uuid.New(),
+		},
+	}
+}
+
+func randomRepositoryStudent() student.Student {
+	return student.Student{
+		ID:               uuid.New(),
+		FirstName:        gofakeit.FirstName(),
+		LastName:         gofakeit.LastName(),
+		MiddleName:       gofakeit.MiddleName(),
+		EducationalEmail: gofakeit.Email(),
+		Username:         gofakeit.UserAgent(),
+		Group: group.Group{
+			ID:                 uuid.New(),
+			SpecializationCode: gofakeit.WeekDay(),
+			GroupNumber:        gofakeit.WeekDay(),
 		},
 	}
 }

@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("find teacher by ud deadline exceeded")
+	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("find teacher by id deadline exceeded")
 )
 
 func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (Teacher, error) {
