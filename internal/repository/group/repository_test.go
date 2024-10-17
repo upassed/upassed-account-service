@@ -71,6 +71,16 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
+func TestConnectToDatabase_InvalidCredentials(t *testing.T) {
+	config, err := config.Load()
+	require.Nil(t, err)
+
+	config.Storage.DatabaseName = "invalid-db-name"
+	_, err = group.New(config, logger.New(config.Env))
+	require.NotNil(t, err)
+	assert.ErrorIs(t, err, group.ErrorOpeningDbConnection)
+}
+
 func TestExists_GroupNotExists(t *testing.T) {
 	groupID := uuid.New()
 	exists, err := repository.Exists(context.Background(), groupID)
