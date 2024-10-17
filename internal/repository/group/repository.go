@@ -10,6 +10,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/migration"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
@@ -22,6 +23,7 @@ var (
 )
 
 type groupRepository interface {
+	FindStudentsInGroup(context.Context, uuid.UUID) ([]domain.Student, error)
 	Exists(context.Context, uuid.UUID) (bool, error)
 }
 

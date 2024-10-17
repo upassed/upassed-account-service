@@ -62,6 +62,7 @@ func New(params AppServerCreateParams) *AppServer {
 	teacher.Register(server, params.TeacherService)
 	student.Register(server, params.StudentService)
 	group.Register(server, params.GroupService)
+
 	return &AppServer{
 		config: params.Config,
 		log:    params.Log,

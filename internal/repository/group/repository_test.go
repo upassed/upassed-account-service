@@ -16,10 +16,12 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logger"
 	testcontainer "github.com/upassed/upassed-account-service/internal/repository"
 	"github.com/upassed/upassed-account-service/internal/repository/group"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 )
 
 type groupRepository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
+	FindStudentsInGroup(context.Context, uuid.UUID) ([]domain.Student, error)
 }
 
 var (
@@ -113,4 +115,15 @@ func getProjectRoot() (string, error) {
 
 		dir = parentDir
 	}
+}
+
+func TestFindStudentsInGroup_StudentsNotFound(t *testing.T) {
+	groupID := uuid.New()
+	studentsInGroup, err := repository.FindStudentsInGroup(context.Background(), groupID)
+	require.Nil(t, err)
+	assert.Equal(t, 0, len(studentsInGroup))
+}
+
+func TestFindStudentsInGroup_StudentsExistsInGroup(t *testing.T) {
+	// TODO - need to run test migration script with students creation
 }

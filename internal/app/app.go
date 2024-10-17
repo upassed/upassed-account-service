@@ -8,6 +8,7 @@ import (
 	studentRepo "github.com/upassed/upassed-account-service/internal/repository/student"
 	teacherRepo "github.com/upassed/upassed-account-service/internal/repository/teacher"
 	"github.com/upassed/upassed-account-service/internal/server"
+	"github.com/upassed/upassed-account-service/internal/service/group"
 	"github.com/upassed/upassed-account-service/internal/service/student"
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
 )
@@ -42,6 +43,7 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 		Log:            log,
 		TeacherService: teacher.New(log, teacherRepository),
 		StudentService: student.New(log, studentRepository, groupRepository),
+		GroupService:   group.New(log, groupRepository),
 	})
 
 	log.Info("app successfully created")
