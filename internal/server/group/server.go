@@ -16,6 +16,7 @@ type groupServerAPI struct {
 
 type groupService interface {
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]business.Student, error)
+	FindByID(context.Context, uuid.UUID) (business.Group, error)
 }
 
 func Register(gRPC *grpc.Server, service groupService) {

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,6 +33,11 @@ type mockGroupService struct {
 func (m *mockGroupService) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]business.Student, error) {
 	args := m.Called(ctx, groupID)
 	return args.Get(0).([]business.Student), args.Error(1)
+}
+
+func (m *mockGroupService) FindByID(ctx context.Context, groupID uuid.UUID) (business.Group, error) {
+	args := m.Called(ctx, groupID)
+	return args.Get(0).(business.Group), args.Error(1)
 }
 
 var (
@@ -113,6 +119,47 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	for idx := range studentsInGroup {
 		assertStudentsEqual(t, studentsInGroup[idx], response.GetStudentsInGroup()[idx])
 	}
+
+	clearGroupServiceMockCalls()
+}
+
+func TestFindByID_ServiceLayerError(t *testing.T) {
+	request := client.GroupFindByIDRequest{
+		GroupId: uuid.NewString(),
+	}
+
+	expectedError := handling.New("some service error", codes.NotFound)
+	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(business.Group{}, expectedError)
+
+	_, err := groupClient.FindByID(context.Background(), &request)
+	require.NotNil(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, expectedError.Error(), convertedError.Message())
+	assert.Equal(t, codes.NotFound, convertedError.Code())
+
+	clearGroupServiceMockCalls()
+}
+
+func TestFindByID_HappyPath(t *testing.T) {
+	request := client.GroupFindByIDRequest{
+		GroupId: uuid.NewString(),
+	}
+
+	expectedFoundGroup := business.Group{
+		ID:                 uuid.MustParse(request.GroupId),
+		SpecializationCode: gofakeit.WeekDay(),
+		GroupNumber:        gofakeit.WeekDay(),
+	}
+
+	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(expectedFoundGroup, nil)
+
+	response, err := groupClient.FindByID(context.Background(), &request)
+	require.Nil(t, err)
+
+	assert.Equal(t, expectedFoundGroup.ID.String(), response.GetGroup().GetId())
+	assert.Equal(t, expectedFoundGroup.SpecializationCode, response.GetGroup().GetSpecializationCode())
+	assert.Equal(t, expectedFoundGroup.GroupNumber, response.GetGroup().GetGroupNumber())
 
 	clearGroupServiceMockCalls()
 }

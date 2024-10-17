@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 
 import "validate/validate.proto";
+import "model.proto";
 
 option go_package = "upassed.account.v1;client";
 
@@ -30,20 +31,4 @@ message StudentFindByIDRequest {
 
 message StudentFindByIDResponse {
     StudentDTO student = 1;
-}
-
-message StudentDTO {
-    string id = 1;
-    string first_name = 2;
-    string last_name = 3;
-    string middle_name = 4;
-    string educational_email = 5;
-    string username = 6;
-    GroupDTO group = 7;
-}
-
-message GroupDTO {
-    string id = 1;
-    string specialization_code = 2;
-    string group_number = 3;
 }

@@ -48,6 +48,7 @@ type studentService interface {
 
 type groupService interface {
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]business.Student, error)
+	FindByID(context.Context, uuid.UUID) (business.Group, error)
 }
 
 func New(params AppServerCreateParams) *AppServer {

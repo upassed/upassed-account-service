@@ -296,3 +296,256 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = FindStudentsInGroupResponseValidationError{}
+
+// Validate checks the field values on GroupFindByIDRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GroupFindByIDRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GroupFindByIDRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GroupFindByIDRequestMultiError, or nil if none found.
+func (m *GroupFindByIDRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GroupFindByIDRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if err := m._validateUuid(m.GetGroupId()); err != nil {
+		err = GroupFindByIDRequestValidationError{
+			field:  "GroupId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return GroupFindByIDRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GroupFindByIDRequest) _validateUuid(uuid string) error {
+	if matched := _group_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
+	}
+
+	return nil
+}
+
+// GroupFindByIDRequestMultiError is an error wrapping multiple validation
+// errors returned by GroupFindByIDRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GroupFindByIDRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GroupFindByIDRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GroupFindByIDRequestMultiError) AllErrors() []error { return m }
+
+// GroupFindByIDRequestValidationError is the validation error returned by
+// GroupFindByIDRequest.Validate if the designated constraints aren't met.
+type GroupFindByIDRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GroupFindByIDRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GroupFindByIDRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GroupFindByIDRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GroupFindByIDRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GroupFindByIDRequestValidationError) ErrorName() string {
+	return "GroupFindByIDRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GroupFindByIDRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGroupFindByIDRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GroupFindByIDRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GroupFindByIDRequestValidationError{}
+
+// Validate checks the field values on GroupFindByIDResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GroupFindByIDResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GroupFindByIDResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GroupFindByIDResponseMultiError, or nil if none found.
+func (m *GroupFindByIDResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GroupFindByIDResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetGroup()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, GroupFindByIDResponseValidationError{
+					field:  "Group",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, GroupFindByIDResponseValidationError{
+					field:  "Group",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetGroup()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return GroupFindByIDResponseValidationError{
+				field:  "Group",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return GroupFindByIDResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GroupFindByIDResponseMultiError is an error wrapping multiple validation
+// errors returned by GroupFindByIDResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GroupFindByIDResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GroupFindByIDResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GroupFindByIDResponseMultiError) AllErrors() []error { return m }
+
+// GroupFindByIDResponseValidationError is the validation error returned by
+// GroupFindByIDResponse.Validate if the designated constraints aren't met.
+type GroupFindByIDResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GroupFindByIDResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GroupFindByIDResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GroupFindByIDResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GroupFindByIDResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GroupFindByIDResponseValidationError) ErrorName() string {
+	return "GroupFindByIDResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GroupFindByIDResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGroupFindByIDResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GroupFindByIDResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GroupFindByIDResponseValidationError{}

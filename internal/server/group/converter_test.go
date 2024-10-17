@@ -22,6 +22,21 @@ func TestConvertToFindStudentsInGroupResponse(t *testing.T) {
 	}
 }
 
+func TestConvertToFindByIDResponse(t *testing.T) {
+	groupToConvert := business.Group{
+		ID:                 uuid.New(),
+		SpecializationCode: gofakeit.WeekDay(),
+		GroupNumber:        gofakeit.WeekDay(),
+	}
+
+	response := group.ConvertToFindByIDResponse(groupToConvert)
+	require.NotNil(t, response)
+
+	assert.Equal(t, groupToConvert.ID.String(), response.GetGroup().GetId())
+	assert.Equal(t, groupToConvert.SpecializationCode, response.GetGroup().GetSpecializationCode())
+	assert.Equal(t, groupToConvert.GroupNumber, response.GetGroup().GetGroupNumber())
+}
+
 func assertStudentsEqual(t *testing.T, left business.Student, right *client.StudentDTO) {
 	assert.Equal(t, left.ID.String(), right.GetId())
 	assert.Equal(t, left.FirstName, right.GetFirstName())

@@ -11,6 +11,7 @@ import (
 
 type groupService interface {
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]business.Student, error)
+	FindByID(context.Context, uuid.UUID) (business.Group, error)
 }
 
 type groupServiceImpl struct {

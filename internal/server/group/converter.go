@@ -31,3 +31,13 @@ func convertStudent(studentToConvert business.Student) *client.StudentDTO {
 		},
 	}
 }
+
+func ConvertToFindByIDResponse(group business.Group) *client.GroupFindByIDResponse {
+	return &client.GroupFindByIDResponse{
+		Group: &client.GroupDTO{
+			Id:                 group.ID.String(),
+			SpecializationCode: group.SpecializationCode,
+			GroupNumber:        group.GroupNumber,
+		},
+	}
+}

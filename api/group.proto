@@ -3,12 +3,13 @@ syntax = "proto3";
 package api;
 
 import "validate/validate.proto";
-import "student.proto";
+import "model.proto";
 
 option go_package = "upassed.account.v1;client";
 
 service Group {
     rpc FindStudentsInGroup(FindStudentsInGroupRequest) returns (FindStudentsInGroupResponse);
+    rpc FindByID(GroupFindByIDRequest) returns (GroupFindByIDResponse);
 }
 
 message FindStudentsInGroupRequest {
@@ -17,4 +18,12 @@ message FindStudentsInGroupRequest {
 
 message FindStudentsInGroupResponse {
     repeated StudentDTO students_in_group = 1;
+}
+
+message GroupFindByIDRequest {
+    string group_id = 1 [(validate.rules).string.uuid = true];
+}
+
+message GroupFindByIDResponse {
+    GroupDTO group = 1;
 }
