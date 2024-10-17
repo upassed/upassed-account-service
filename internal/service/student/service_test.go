@@ -14,7 +14,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logger"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
-	service "github.com/upassed/upassed-account-service/internal/service/student"
+	"github.com/upassed/upassed-account-service/internal/service/student"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -65,7 +65,7 @@ func TestCreate_ErrorCheckingDuplicateExists(t *testing.T) {
 		studentToCreate.Username,
 	).Return(false, expectedReposotiryError)
 
-	service := service.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
+	service := student.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
 	require.NotNil(t, err)
 
@@ -86,7 +86,7 @@ func TestCreate_DuplicateExists(t *testing.T) {
 		studentToCreate.Username,
 	).Return(true, nil)
 
-	service := service.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
+	service := student.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
 	require.NotNil(t, err)
 
@@ -110,7 +110,7 @@ func TestCreate_ErrorCheckingGroupExists(t *testing.T) {
 	expectedRepositoryError := errors.New("some repo error")
 	groupRepository.On("Exists", mock.Anything, studentToCreate.Group.ID).Return(false, expectedRepositoryError)
 
-	service := service.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
+	service := student.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
 	require.NotNil(t, err)
 
@@ -133,7 +133,7 @@ func TestCreate_GroupNotExists(t *testing.T) {
 
 	groupRepository.On("Exists", mock.Anything, studentToCreate.Group.ID).Return(false, nil)
 
-	service := service.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
+	service := student.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
 	require.NotNil(t, err)
 
@@ -159,7 +159,7 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 	expectedRepositoryError := errors.New("some repo error")
 	studentRepository.On("Save", mock.Anything, mock.Anything).Return(expectedRepositoryError)
 
-	service := service.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
+	service := student.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
 	require.NotNil(t, err)
 
@@ -183,7 +183,7 @@ func TestCreate_HappyPath(t *testing.T) {
 	groupRepository.On("Exists", mock.Anything, studentToCreate.Group.ID).Return(true, nil)
 	studentRepository.On("Save", mock.Anything, mock.Anything).Return(nil)
 
-	service := service.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
+	service := student.New(logger.New(config.EnvTesting), studentRepository, groupRepository)
 	response, err := service.Create(context.Background(), studentToCreate)
 	require.Nil(t, err)
 
@@ -197,7 +197,7 @@ func TestFindByID_ErrorSearchingStudentInDatabase(t *testing.T) {
 	expectedRepositoryError := errors.New("some repo error")
 	studentRepository.On("FindByID", mock.Anything, studentID).Return(domain.Student{}, expectedRepositoryError)
 
-	service := service.New(logger.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
+	service := student.New(logger.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
 	_, err := service.FindByID(context.Background(), studentID)
 	require.NotNil(t, err)
 
@@ -213,11 +213,11 @@ func TestFindByID_HappyPath(t *testing.T) {
 
 	studentRepository.On("FindByID", mock.Anything, studentID).Return(foundStudent, nil)
 
-	studentService := service.New(logger.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
+	studentService := student.New(logger.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
 	response, err := studentService.FindByID(context.Background(), studentID)
 	require.Nil(t, err)
 
-	assert.Equal(t, foundStudent, service.ConvertToRepositoryStudent(response))
+	assert.Equal(t, foundStudent, student.ConvertToRepositoryStudent(response))
 }
 
 func randomServiceStudent() business.Student {

@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	server "github.com/upassed/upassed-account-service/internal/server/group"
+	"github.com/upassed/upassed-account-service/internal/server/group"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
@@ -15,7 +15,7 @@ import (
 func TestConvertToFindStudentsInGroupResponse(t *testing.T) {
 	studentsInGroup := []business.Student{randomStudent(), randomStudent(), randomStudent()}
 
-	response := server.ConvertToFindStudentsInGroupResponse(studentsInGroup)
+	response := group.ConvertToFindStudentsInGroupResponse(studentsInGroup)
 	require.Equal(t, len(studentsInGroup), len(response.GetStudentsInGroup()))
 	for idx := range studentsInGroup {
 		assertStudentsEqual(t, studentsInGroup[idx], response.GetStudentsInGroup()[idx])
