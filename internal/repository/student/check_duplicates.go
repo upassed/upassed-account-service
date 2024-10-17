@@ -8,6 +8,7 @@ import (
 
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
 )
 
@@ -35,7 +36,7 @@ func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 	go func() {
 		log.Debug("started checking student duplicates")
 		var studentCount int64
-		countResult := repository.db.Model(&Student{}).Where("educational_email = ?", edicationalEmail).Or("username = ?", username).Count(&studentCount)
+		countResult := repository.db.Model(&domain.Student{}).Where("educational_email = ?", edicationalEmail).Or("username = ?", username).Count(&studentCount)
 		if countResult.Error != nil {
 			log.Error("error while counting students with educational_email and username in database")
 			errorChannel <- handling.New(ErrorCountingDuplicatesStudent.Error(), codes.Internal)

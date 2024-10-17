@@ -18,7 +18,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/server"
-	service "github.com/upassed/upassed-account-service/internal/service/teacher"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -30,14 +30,14 @@ type mockTeacherService struct {
 	mock.Mock
 }
 
-func (m *mockTeacherService) Create(ctx context.Context, teacher service.Teacher) (service.TeacherCreateResponse, error) {
+func (m *mockTeacherService) Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error) {
 	args := m.Called(ctx, teacher)
-	return args.Get(0).(service.TeacherCreateResponse), args.Error(1)
+	return args.Get(0).(business.TeacherCreateResponse), args.Error(1)
 }
 
-func (m *mockTeacherService) FindByID(ctx context.Context, teacherID uuid.UUID) (service.Teacher, error) {
+func (m *mockTeacherService) FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error) {
 	args := m.Called(ctx, teacherID)
-	return args.Get(0).(service.Teacher), args.Error(1)
+	return args.Get(0).(business.Teacher), args.Error(1)
 }
 
 var (
@@ -113,7 +113,7 @@ func TestCreate_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.AlreadyExists)
-	teacherSvc.On("Create", mock.Anything, mock.Anything).Return(service.TeacherCreateResponse{}, handling.Process(expectedError))
+	teacherSvc.On("Create", mock.Anything, mock.Anything).Return(business.TeacherCreateResponse{}, handling.Process(expectedError))
 
 	_, err := teacherClient.Create(context.Background(), &request)
 	require.NotNil(t, err)
@@ -135,7 +135,7 @@ func TestCreate_HappyPath(t *testing.T) {
 	}
 
 	createdTeacherID := uuid.New()
-	teacherSvc.On("Create", mock.Anything, mock.Anything).Return(service.TeacherCreateResponse{
+	teacherSvc.On("Create", mock.Anything, mock.Anything).Return(business.TeacherCreateResponse{
 		CreatedTeacherID: createdTeacherID,
 	}, nil)
 
@@ -165,7 +165,7 @@ func TestFindByID_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	teacherSvc.On("FindByID", mock.Anything, uuid.MustParse(request.TeacherId)).Return(service.Teacher{}, handling.Process(expectedError))
+	teacherSvc.On("FindByID", mock.Anything, uuid.MustParse(request.TeacherId)).Return(business.Teacher{}, handling.Process(expectedError))
 
 	_, err := teacherClient.FindByID(context.Background(), &request)
 	require.NotNil(t, err)
@@ -183,7 +183,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 		TeacherId: teacherID.String(),
 	}
 
-	teacherSvc.On("FindByID", mock.Anything, teacherID).Return(service.Teacher{
+	teacherSvc.On("FindByID", mock.Anything, teacherID).Return(business.Teacher{
 		ID:          teacherID,
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),

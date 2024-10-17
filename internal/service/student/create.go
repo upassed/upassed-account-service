@@ -8,6 +8,7 @@ import (
 
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc/codes"
 )
 
@@ -15,7 +16,7 @@ var (
 	ErrorCreateStudentDeadlineExceeded error = errors.New("create student deadline exceeded")
 )
 
-func (service *studentServiceImpl) Create(ctx context.Context, student Student) (StudentCreateResponse, error) {
+func (service *studentServiceImpl) Create(ctx context.Context, student business.Student) (business.StudentCreateResponse, error) {
 	const op = "student.studentServiceImpl.Create()"
 
 	log := service.log.With(
@@ -27,7 +28,7 @@ func (service *studentServiceImpl) Create(ctx context.Context, student Student) 
 	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 
-	resultChannel := make(chan StudentCreateResponse)
+	resultChannel := make(chan business.StudentCreateResponse)
 	errorChannel := make(chan error)
 
 	go func() {
@@ -63,7 +64,7 @@ func (service *studentServiceImpl) Create(ctx context.Context, student Student) 
 		}
 
 		log.Debug("student successfully created", slog.Any("createdStudentID", domainStudent.ID))
-		resultChannel <- StudentCreateResponse{
+		resultChannel <- business.StudentCreateResponse{
 			CreatedStudentID: domainStudent.ID,
 		}
 	}()
@@ -71,11 +72,11 @@ func (service *studentServiceImpl) Create(ctx context.Context, student Student) 
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return StudentCreateResponse{}, ErrorCreateStudentDeadlineExceeded
+			return business.StudentCreateResponse{}, ErrorCreateStudentDeadlineExceeded
 		case createdStudentData := <-resultChannel:
 			return createdStudentData, nil
 		case err := <-errorChannel:
-			return StudentCreateResponse{}, err
+			return business.StudentCreateResponse{}, err
 		}
 	}
 }

@@ -16,14 +16,15 @@ import (
 	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	testcontainer "github.com/upassed/upassed-account-service/internal/repository"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/repository/teacher"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type teacherRepository interface {
-	Save(context.Context, teacher.Teacher) error
-	FindByID(context.Context, uuid.UUID) (teacher.Teacher, error)
+	Save(context.Context, domain.Teacher) error
+	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 
@@ -170,8 +171,8 @@ func getProjectRoot() (string, error) {
 	}
 }
 
-func randomTeacher() teacher.Teacher {
-	return teacher.Teacher{
+func randomTeacher() domain.Teacher {
+	return domain.Teacher{
 		ID:          uuid.New(),
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),

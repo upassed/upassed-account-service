@@ -2,32 +2,31 @@ package student
 
 import (
 	"github.com/google/uuid"
-	"github.com/upassed/upassed-account-service/internal/service/group"
-	"github.com/upassed/upassed-account-service/internal/service/student"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
-func ConvertToStudent(request *client.StudentCreateRequest) student.Student {
-	return student.Student{
+func ConvertToStudent(request *client.StudentCreateRequest) business.Student {
+	return business.Student{
 		ID:               uuid.New(),
 		FirstName:        request.GetFirstName(),
 		LastName:         request.GetLastName(),
 		MiddleName:       request.GetMiddleName(),
 		EducationalEmail: request.GetEducationalEmail(),
 		Username:         request.GetUsername(),
-		Group: group.Group{
+		Group: business.Group{
 			ID: uuid.MustParse(request.GetGroupId()),
 		},
 	}
 }
 
-func ConvertToStudentCreateResponse(response student.StudentCreateResponse) *client.StudentCreateResponse {
+func ConvertToStudentCreateResponse(response business.StudentCreateResponse) *client.StudentCreateResponse {
 	return &client.StudentCreateResponse{
 		CreatedStudentId: response.CreatedStudentID.String(),
 	}
 }
 
-func ConvertToFindByIDResponse(student student.Student) *client.StudentFindByIDResponse {
+func ConvertToFindByIDResponse(student business.Student) *client.StudentFindByIDResponse {
 	return &client.StudentFindByIDResponse{
 		Student: &client.StudentDTO{
 			Id:               student.ID.String(),

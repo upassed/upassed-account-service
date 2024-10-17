@@ -17,7 +17,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/server"
-	"github.com/upassed/upassed-account-service/internal/service/student"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -29,9 +29,9 @@ type mockGroupService struct {
 	mock.Mock
 }
 
-func (m *mockGroupService) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]student.Student, error) {
+func (m *mockGroupService) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]business.Student, error) {
 	args := m.Called(ctx, groupID)
-	return args.Get(0).([]student.Student), args.Error(1)
+	return args.Get(0).([]business.Student), args.Error(1)
 }
 
 var (
@@ -86,7 +86,7 @@ func TestFindStudentsInGroup_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(make([]student.Student, 0), handling.Process(expectedError))
+	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(make([]business.Student, 0), handling.Process(expectedError))
 
 	_, err := groupClient.FindStudentsInGroup(context.Background(), &request)
 	require.NotNil(t, err)
@@ -103,7 +103,7 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 		GroupId: uuid.NewString(),
 	}
 
-	studentsInGroup := []student.Student{randomStudent(), randomStudent(), randomStudent()}
+	studentsInGroup := []business.Student{randomStudent(), randomStudent(), randomStudent()}
 	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(studentsInGroup, nil)
 
 	response, err := groupClient.FindStudentsInGroup(context.Background(), &request)

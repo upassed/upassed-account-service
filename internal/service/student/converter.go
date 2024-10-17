@@ -1,20 +1,19 @@
 package student
 
 import (
-	"github.com/upassed/upassed-account-service/internal/repository/group"
-	repository "github.com/upassed/upassed-account-service/internal/repository/student"
-	serviceGroup "github.com/upassed/upassed-account-service/internal/service/group"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
-func ConvertToRepositoryStudent(serviceStudent Student) repository.Student {
-	return repository.Student{
+func ConvertToRepositoryStudent(serviceStudent business.Student) domain.Student {
+	return domain.Student{
 		ID:               serviceStudent.ID,
 		FirstName:        serviceStudent.FirstName,
 		LastName:         serviceStudent.LastName,
 		MiddleName:       serviceStudent.MiddleName,
 		EducationalEmail: serviceStudent.EducationalEmail,
 		Username:         serviceStudent.Username,
-		Group: group.Group{
+		Group: domain.Group{
 			ID:                 serviceStudent.Group.ID,
 			SpecializationCode: serviceStudent.Group.SpecializationCode,
 			GroupNumber:        serviceStudent.Group.GroupNumber,
@@ -22,15 +21,15 @@ func ConvertToRepositoryStudent(serviceStudent Student) repository.Student {
 	}
 }
 
-func ConvertToServiceStudent(repoStudent repository.Student) Student {
-	return Student{
+func ConvertToServiceStudent(repoStudent domain.Student) business.Student {
+	return business.Student{
 		ID:               repoStudent.ID,
 		FirstName:        repoStudent.FirstName,
 		LastName:         repoStudent.LastName,
 		MiddleName:       repoStudent.MiddleName,
 		EducationalEmail: repoStudent.EducationalEmail,
 		Username:         repoStudent.Username,
-		Group: serviceGroup.Group{
+		Group: business.Group{
 			ID:                 repoStudent.Group.ID,
 			SpecializationCode: repoStudent.Group.SpecializationCode,
 			GroupNumber:        repoStudent.Group.GroupNumber,

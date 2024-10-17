@@ -12,9 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
-	"github.com/upassed/upassed-account-service/internal/repository/group"
-	"github.com/upassed/upassed-account-service/internal/repository/student"
-	groupService "github.com/upassed/upassed-account-service/internal/service/group"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	service "github.com/upassed/upassed-account-service/internal/service/student"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -24,14 +23,14 @@ type mockStudentRepository struct {
 	mock.Mock
 }
 
-func (m *mockStudentRepository) Save(ctx context.Context, student student.Student) error {
+func (m *mockStudentRepository) Save(ctx context.Context, student domain.Student) error {
 	args := m.Called(ctx, student)
 	return args.Error(0)
 }
 
-func (m *mockStudentRepository) FindByID(ctx context.Context, studentID uuid.UUID) (student.Student, error) {
+func (m *mockStudentRepository) FindByID(ctx context.Context, studentID uuid.UUID) (domain.Student, error) {
 	args := m.Called(ctx, studentID)
-	return args.Get(0).(student.Student), args.Error(1)
+	return args.Get(0).(domain.Student), args.Error(1)
 }
 
 func (m *mockStudentRepository) CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error) {
@@ -48,9 +47,9 @@ func (m *mockGroupRepository) Exists(ctx context.Context, groupID uuid.UUID) (bo
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockGroupRepository) FindByID(ctx context.Context, groupID uuid.UUID) (group.Group, error) {
+func (m *mockGroupRepository) FindByID(ctx context.Context, groupID uuid.UUID) (domain.Group, error) {
 	args := m.Called(ctx, groupID)
-	return args.Get(0).(group.Group), args.Error(1)
+	return args.Get(0).(domain.Group), args.Error(1)
 }
 
 func TestCreate_ErrorCheckingDuplicateExists(t *testing.T) {
@@ -196,7 +195,7 @@ func TestFindByID_ErrorSearchingStudentInDatabase(t *testing.T) {
 	studentID := uuid.New()
 
 	expectedRepositoryError := errors.New("some repo error")
-	studentRepository.On("FindByID", mock.Anything, studentID).Return(student.Student{}, expectedRepositoryError)
+	studentRepository.On("FindByID", mock.Anything, studentID).Return(domain.Student{}, expectedRepositoryError)
 
 	service := service.New(logger.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
 	_, err := service.FindByID(context.Background(), studentID)
@@ -221,29 +220,29 @@ func TestFindByID_HappyPath(t *testing.T) {
 	assert.Equal(t, foundStudent, service.ConvertToRepositoryStudent(response))
 }
 
-func randomServiceStudent() service.Student {
-	return service.Student{
+func randomServiceStudent() business.Student {
+	return business.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: groupService.Group{
+		Group: business.Group{
 			ID: uuid.New(),
 		},
 	}
 }
 
-func randomRepositoryStudent() student.Student {
-	return student.Student{
+func randomRepositoryStudent() domain.Student {
+	return domain.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: group.Group{
+		Group: domain.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),

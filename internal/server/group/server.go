@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/upassed/upassed-account-service/internal/service/student"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
 )
@@ -15,7 +15,7 @@ type groupServerAPI struct {
 }
 
 type groupService interface {
-	FindStudentsInGroup(context.Context, uuid.UUID) ([]student.Student, error)
+	FindStudentsInGroup(context.Context, uuid.UUID) ([]business.Student, error)
 }
 
 func Register(gRPC *grpc.Server, service groupService) {

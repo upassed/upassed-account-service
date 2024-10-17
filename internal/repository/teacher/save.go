@@ -9,6 +9,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
 )
 
@@ -17,7 +18,7 @@ var (
 	ErrorSaveTeacherDeadlineExceeded error = errors.New("saving teacher into a database deadline exceeded")
 )
 
-func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher Teacher) error {
+func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domain.Teacher) error {
 	const op = "teacher.teacherRepositoryImpl.Save()"
 
 	log := repository.log.With(

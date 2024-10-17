@@ -18,8 +18,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/server"
-	"github.com/upassed/upassed-account-service/internal/service/group"
-	service "github.com/upassed/upassed-account-service/internal/service/student"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -31,14 +30,14 @@ type mockStudentService struct {
 	mock.Mock
 }
 
-func (m *mockStudentService) Create(ctx context.Context, student service.Student) (service.StudentCreateResponse, error) {
+func (m *mockStudentService) Create(ctx context.Context, student business.Student) (business.StudentCreateResponse, error) {
 	args := m.Called(ctx, student)
-	return args.Get(0).(service.StudentCreateResponse), args.Error(1)
+	return args.Get(0).(business.StudentCreateResponse), args.Error(1)
 }
 
-func (m *mockStudentService) FindByID(ctx context.Context, studentID uuid.UUID) (service.Student, error) {
+func (m *mockStudentService) FindByID(ctx context.Context, studentID uuid.UUID) (business.Student, error) {
 	args := m.Called(ctx, studentID)
-	return args.Get(0).(service.Student), args.Error(1)
+	return args.Get(0).(business.Student), args.Error(1)
 }
 
 var (
@@ -115,7 +114,7 @@ func TestCreate_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.AlreadyExists)
-	studentSvc.On("Create", mock.Anything, mock.Anything).Return(service.StudentCreateResponse{}, handling.Process(expectedError))
+	studentSvc.On("Create", mock.Anything, mock.Anything).Return(business.StudentCreateResponse{}, handling.Process(expectedError))
 
 	_, err := studentClient.Create(context.Background(), &request)
 	require.NotNil(t, err)
@@ -138,7 +137,7 @@ func TestCreate_HappyPath(t *testing.T) {
 	}
 
 	createdStudentID := uuid.New()
-	studentSvc.On("Create", mock.Anything, mock.Anything).Return(service.StudentCreateResponse{
+	studentSvc.On("Create", mock.Anything, mock.Anything).Return(business.StudentCreateResponse{
 		CreatedStudentID: createdStudentID,
 	}, nil)
 
@@ -168,7 +167,7 @@ func TestFindByID_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	studentSvc.On("FindByID", mock.Anything, uuid.MustParse(request.StudentId)).Return(service.Student{}, handling.Process(expectedError))
+	studentSvc.On("FindByID", mock.Anything, uuid.MustParse(request.StudentId)).Return(business.Student{}, handling.Process(expectedError))
 
 	_, err := studentClient.FindByID(context.Background(), &request)
 	require.NotNil(t, err)
@@ -186,14 +185,14 @@ func TestFindByID_HappyPath(t *testing.T) {
 		StudentId: studentID.String(),
 	}
 
-	studentSvc.On("FindByID", mock.Anything, studentID).Return(service.Student{
+	studentSvc.On("FindByID", mock.Anything, studentID).Return(business.Student{
 		ID:               studentID,
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: group.Group{
+		Group: business.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),

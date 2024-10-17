@@ -7,21 +7,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	groupRepository "github.com/upassed/upassed-account-service/internal/repository/group"
-	repository "github.com/upassed/upassed-account-service/internal/repository/student"
-	"github.com/upassed/upassed-account-service/internal/service/group"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/internal/service/student"
 )
 
 func TestConvertToRepositoryStudent(t *testing.T) {
-	serviceStudent := student.Student{
+	serviceStudent := business.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: group.Group{
+		Group: business.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),
@@ -43,14 +42,14 @@ func TestConvertToRepositoryStudent(t *testing.T) {
 }
 
 func TestConvertToServiceStudent(t *testing.T) {
-	repositoryrStudent := repository.Student{
+	repositoryrStudent := domain.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: groupRepository.Group{
+		Group: domain.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),

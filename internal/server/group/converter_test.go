@@ -8,13 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	server "github.com/upassed/upassed-account-service/internal/server/group"
-	"github.com/upassed/upassed-account-service/internal/service/group"
-	"github.com/upassed/upassed-account-service/internal/service/student"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
 func TestConvertToFindStudentsInGroupResponse(t *testing.T) {
-	studentsInGroup := []student.Student{randomStudent(), randomStudent(), randomStudent()}
+	studentsInGroup := []business.Student{randomStudent(), randomStudent(), randomStudent()}
 
 	response := server.ConvertToFindStudentsInGroupResponse(studentsInGroup)
 	require.Equal(t, len(studentsInGroup), len(response.GetStudentsInGroup()))
@@ -23,7 +22,7 @@ func TestConvertToFindStudentsInGroupResponse(t *testing.T) {
 	}
 }
 
-func assertStudentsEqual(t *testing.T, left student.Student, right *client.StudentDTO) {
+func assertStudentsEqual(t *testing.T, left business.Student, right *client.StudentDTO) {
 	assert.Equal(t, left.ID.String(), right.GetId())
 	assert.Equal(t, left.FirstName, right.GetFirstName())
 	assert.Equal(t, left.LastName, right.GetLastName())
@@ -35,15 +34,15 @@ func assertStudentsEqual(t *testing.T, left student.Student, right *client.Stude
 	assert.Equal(t, left.Group.GroupNumber, right.GetGroup().GetGroupNumber())
 }
 
-func randomStudent() student.Student {
-	return student.Student{
+func randomStudent() business.Student {
+	return business.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: group.Group{
+		Group: business.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),

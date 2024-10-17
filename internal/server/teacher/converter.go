@@ -2,12 +2,12 @@ package teacher
 
 import (
 	"github.com/google/uuid"
-	"github.com/upassed/upassed-account-service/internal/service/teacher"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
-func ConvertToTeacher(request *client.TeacherCreateRequest) teacher.Teacher {
-	return teacher.Teacher{
+func ConvertToTeacher(request *client.TeacherCreateRequest) business.Teacher {
+	return business.Teacher{
 		ID:          uuid.New(),
 		FirstName:   request.GetFirstName(),
 		LastName:    request.GetLastName(),
@@ -17,13 +17,13 @@ func ConvertToTeacher(request *client.TeacherCreateRequest) teacher.Teacher {
 	}
 }
 
-func ConvertToTeacherCreateResponse(response teacher.TeacherCreateResponse) *client.TeacherCreateResponse {
+func ConvertToTeacherCreateResponse(response business.TeacherCreateResponse) *client.TeacherCreateResponse {
 	return &client.TeacherCreateResponse{
 		CreatedTeacherId: response.CreatedTeacherID.String(),
 	}
 }
 
-func ConvertToFindByIDResponse(teacher teacher.Teacher) *client.TeacherFindByIDResponse {
+func ConvertToFindByIDResponse(teacher business.Teacher) *client.TeacherFindByIDResponse {
 	return &client.TeacherFindByIDResponse{
 		Teacher: &client.TeacherDTO{
 			Id:          teacher.ID.String(),

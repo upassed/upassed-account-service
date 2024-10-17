@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
 )
 
@@ -35,7 +36,7 @@ func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.
 	go func() {
 		log.Debug("started checking group exists")
 		var groupCount int64
-		countResult := repository.db.Model(&Group{}).Where("id = ?", groupID).Count(&groupCount)
+		countResult := repository.db.Model(&domain.Group{}).Where("id = ?", groupID).Count(&groupCount)
 		if countResult.Error != nil {
 			log.Error("error while counting groups with id in database")
 			errorChannel <- handling.New(ErrorCheckGroupExists.Error(), codes.Internal)

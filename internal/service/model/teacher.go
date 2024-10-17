@@ -1,4 +1,4 @@
-package teacher
+package business
 
 import "github.com/google/uuid"
 

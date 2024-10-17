@@ -6,12 +6,13 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	repository "github.com/upassed/upassed-account-service/internal/repository/teacher"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
 )
 
 func TestConvertToRepositoryTeacher(t *testing.T) {
-	teacherToConvert := teacher.Teacher{
+	teacherToConvert := business.Teacher{
 		ID:          uuid.New(),
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),
@@ -31,7 +32,7 @@ func TestConvertToRepositoryTeacher(t *testing.T) {
 }
 
 func TestConvertToServiceTeacher(t *testing.T) {
-	teacherToConvert := repository.Teacher{
+	teacherToConvert := domain.Teacher{
 		ID:          uuid.New(),
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),

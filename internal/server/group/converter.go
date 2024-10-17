@@ -1,11 +1,11 @@
 package group
 
 import (
-	"github.com/upassed/upassed-account-service/internal/service/student"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
-func ConvertToFindStudentsInGroupResponse(studentsInGroup []student.Student) *client.FindStudentsInGroupResponse {
+func ConvertToFindStudentsInGroupResponse(studentsInGroup []business.Student) *client.FindStudentsInGroupResponse {
 	response := client.FindStudentsInGroupResponse{}
 	convertedStudents := make([]*client.StudentDTO, 0, len(studentsInGroup))
 	for _, studentToConvert := range studentsInGroup {
@@ -16,7 +16,7 @@ func ConvertToFindStudentsInGroupResponse(studentsInGroup []student.Student) *cl
 	return &response
 }
 
-func convertStudent(studentToConvert student.Student) *client.StudentDTO {
+func convertStudent(studentToConvert business.Student) *client.StudentDTO {
 	return &client.StudentDTO{
 		Id:               studentToConvert.ID.String(),
 		FirstName:        studentToConvert.FirstName,

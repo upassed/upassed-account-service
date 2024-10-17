@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	service "github.com/upassed/upassed-account-service/internal/service/teacher"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
 )
@@ -15,8 +15,8 @@ type teacherServerAPI struct {
 }
 
 type teacherService interface {
-	Create(context.Context, service.Teacher) (service.TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID uuid.UUID) (service.Teacher, error)
+	Create(context.Context, business.Teacher) (business.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error)
 }
 
 func Register(gRPC *grpc.Server, service teacherService) {

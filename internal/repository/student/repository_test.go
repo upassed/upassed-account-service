@@ -16,15 +16,15 @@ import (
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	testcontainer "github.com/upassed/upassed-account-service/internal/repository"
-	"github.com/upassed/upassed-account-service/internal/repository/group"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/repository/student"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type studentRepository interface {
-	Save(context.Context, student.Student) error
-	FindByID(context.Context, uuid.UUID) (student.Student, error)
+	Save(context.Context, domain.Student) error
+	FindByID(context.Context, uuid.UUID) (domain.Student, error)
 	CheckDuplicateExists(ctx context.Context, edicationalEmail, username string) (bool, error)
 }
 
@@ -185,15 +185,15 @@ func getProjectRoot() (string, error) {
 	}
 }
 
-func randomStudent() student.Student {
-	return student.Student{
+func randomStudent() domain.Student {
+	return domain.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: group.Group{
+		Group: domain.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),

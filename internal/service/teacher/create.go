@@ -8,6 +8,7 @@ import (
 
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc/codes"
 )
 
@@ -15,7 +16,7 @@ var (
 	ErrorCreateTeacherDeadlineExceeded error = errors.New("create teacher deadline exceeded")
 )
 
-func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate Teacher) (TeacherCreateResponse, error) {
+func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate business.Teacher) (business.TeacherCreateResponse, error) {
 	const op = "teacher.teacherServiceImpl.Create()"
 
 	log := service.log.With(
@@ -27,7 +28,7 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate T
 	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 
-	resultChannel := make(chan TeacherCreateResponse)
+	resultChannel := make(chan business.TeacherCreateResponse)
 	errorChannel := make(chan error)
 
 	go func() {
@@ -51,7 +52,7 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate T
 		}
 
 		log.Debug("teacher successfully created", slog.Any("createdTeacherID", domainTeacher.ID))
-		resultChannel <- TeacherCreateResponse{
+		resultChannel <- business.TeacherCreateResponse{
 			CreatedTeacherID: domainTeacher.ID,
 		}
 	}()
@@ -59,11 +60,11 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate T
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return TeacherCreateResponse{}, ErrorCreateTeacherDeadlineExceeded
+			return business.TeacherCreateResponse{}, ErrorCreateTeacherDeadlineExceeded
 		case createdTeacherData := <-resultChannel:
 			return createdTeacherData, nil
 		case err := <-errorChannel:
-			return TeacherCreateResponse{}, err
+			return business.TeacherCreateResponse{}, err
 		}
 	}
 }

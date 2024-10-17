@@ -8,8 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/server/student"
-	"github.com/upassed/upassed-account-service/internal/service/group"
-	service "github.com/upassed/upassed-account-service/internal/service/student"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
@@ -35,7 +34,7 @@ func TestConvertToStudent(t *testing.T) {
 }
 
 func TestConvertToStudentCreateResponse(t *testing.T) {
-	responsFromService := service.StudentCreateResponse{
+	responsFromService := business.StudentCreateResponse{
 		CreatedStudentID: uuid.New(),
 	}
 
@@ -46,14 +45,14 @@ func TestConvertToStudentCreateResponse(t *testing.T) {
 }
 
 func TestConvertToFindByIDResponse(t *testing.T) {
-	studentToConvert := service.Student{
+	studentToConvert := business.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
 		EducationalEmail: gofakeit.Email(),
 		Username:         gofakeit.Username(),
-		Group: group.Group{
+		Group: business.Group{
 			ID:                 uuid.New(),
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),

@@ -12,7 +12,8 @@ import (
 	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
-	repository "github.com/upassed/upassed-account-service/internal/repository/teacher"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,14 +23,14 @@ type mockTeacherRepository struct {
 	mock.Mock
 }
 
-func (m *mockTeacherRepository) Save(ctx context.Context, teacher repository.Teacher) error {
+func (m *mockTeacherRepository) Save(ctx context.Context, teacher domain.Teacher) error {
 	args := m.Called(ctx, teacher)
 	return args.Error(0)
 }
 
-func (m *mockTeacherRepository) FindByID(ctx context.Context, teacherID uuid.UUID) (repository.Teacher, error) {
+func (m *mockTeacherRepository) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
 	args := m.Called(ctx, teacherID)
-	return args.Get(0).(repository.Teacher), args.Error(1)
+	return args.Get(0).(domain.Teacher), args.Error(1)
 }
 
 func (m *mockTeacherRepository) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
@@ -113,7 +114,7 @@ func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	teacherID := uuid.New()
 
 	expectedRepoError := handling.New("repo layer error message", codes.NotFound)
-	teacherRepository.On("FindByID", mock.Anything, teacherID).Return(repository.Teacher{}, expectedRepoError)
+	teacherRepository.On("FindByID", mock.Anything, teacherID).Return(domain.Teacher{}, expectedRepoError)
 	service := teacher.New(log, teacherRepository)
 
 	_, err := service.FindByID(context.Background(), teacherID)
@@ -139,8 +140,8 @@ func TestFindByID_HappyPath(t *testing.T) {
 	assert.Equal(t, teacher.ConvertToServiceTeacher(expectedFoundTeacher), foundTeacher)
 }
 
-func randomTeacher() teacher.Teacher {
-	return teacher.Teacher{
+func randomTeacher() business.Teacher {
+	return business.Teacher{
 		ID:          uuid.New(),
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),

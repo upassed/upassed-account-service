@@ -13,8 +13,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/server/group"
 	"github.com/upassed/upassed-account-service/internal/server/student"
 	"github.com/upassed/upassed-account-service/internal/server/teacher"
-	studentSvc "github.com/upassed/upassed-account-service/internal/service/student"
-	teacherSvc "github.com/upassed/upassed-account-service/internal/service/teacher"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc"
 )
 
@@ -38,17 +37,17 @@ type AppServerCreateParams struct {
 }
 
 type teacherService interface {
-	Create(ctx context.Context, teacher teacherSvc.Teacher) (teacherSvc.TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID uuid.UUID) (teacherSvc.Teacher, error)
+	Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error)
 }
 
 type studentService interface {
-	Create(context.Context, studentSvc.Student) (studentSvc.StudentCreateResponse, error)
-	FindByID(ctx context.Context, studentID uuid.UUID) (studentSvc.Student, error)
+	Create(context.Context, business.Student) (business.StudentCreateResponse, error)
+	FindByID(ctx context.Context, studentID uuid.UUID) (business.Student, error)
 }
 
 type groupService interface {
-	FindStudentsInGroup(context.Context, uuid.UUID) ([]studentSvc.Student, error)
+	FindStudentsInGroup(context.Context, uuid.UUID) ([]business.Student, error)
 }
 
 func New(params AppServerCreateParams) *AppServer {

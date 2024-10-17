@@ -1,11 +1,12 @@
 package teacher
 
 import (
-	repository "github.com/upassed/upassed-account-service/internal/repository/teacher"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
-func ConvertToRepositoryTeacher(teacher Teacher) repository.Teacher {
-	return repository.Teacher{
+func ConvertToRepositoryTeacher(teacher business.Teacher) domain.Teacher {
+	return domain.Teacher{
 		ID:          teacher.ID,
 		FirstName:   teacher.FirstName,
 		LastName:    teacher.LastName,
@@ -15,8 +16,8 @@ func ConvertToRepositoryTeacher(teacher Teacher) repository.Teacher {
 	}
 }
 
-func ConvertToServiceTeacher(teacher repository.Teacher) Teacher {
-	return Teacher{
+func ConvertToServiceTeacher(teacher domain.Teacher) business.Teacher {
+	return business.Teacher{
 		ID:          teacher.ID,
 		FirstName:   teacher.FirstName,
 		LastName:    teacher.LastName,

@@ -10,6 +10,7 @@ import (
 	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/migration"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
@@ -22,8 +23,8 @@ var (
 )
 
 type teacherRepository interface {
-	Save(context.Context, Teacher) error
-	FindByID(context.Context, uuid.UUID) (Teacher, error)
+	Save(context.Context, domain.Teacher) error
+	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logger"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 )
@@ -20,7 +21,7 @@ var (
 	ErrorFindStudentByIDDeadlineExceeded error = errors.New("finding student by id in a database deadline exceeded")
 )
 
-func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID uuid.UUID) (Student, error) {
+func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID uuid.UUID) (domain.Student, error) {
 	const op = "student.studentRepositoryImpl.FindByID()"
 
 	log := repository.log.With(
@@ -32,12 +33,12 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 
-	resultChannel := make(chan Student)
+	resultChannel := make(chan domain.Student)
 	errorChannel := make(chan error)
 
 	go func() {
 		log.Debug("started searching student in a database")
-		foundStudent := Student{}
+		foundStudent := domain.Student{}
 		searchResult := repository.db.Preload("Group").First(&foundStudent, studentID)
 		if searchResult.Error != nil {
 			if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
@@ -58,11 +59,11 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return Student{}, ErrorFindStudentByIDDeadlineExceeded
+			return domain.Student{}, ErrorFindStudentByIDDeadlineExceeded
 		case foundStudent := <-resultChannel:
 			return foundStudent, nil
 		case err := <-errorChannel:
-			return Student{}, err
+			return domain.Student{}, err
 		}
 	}
 }

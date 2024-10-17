@@ -1,8 +1,7 @@
-package student
+package domain
 
 import (
 	"github.com/google/uuid"
-	"github.com/upassed/upassed-account-service/internal/service/group"
 )
 
 type Student struct {
@@ -12,9 +11,10 @@ type Student struct {
 	MiddleName       string
 	EducationalEmail string
 	Username         string
-	Group            group.Group
+	GroupID          uuid.UUID
+	Group            Group `gorm:"foreignKey:GroupID;references:ID"`
 }
 
-type StudentCreateResponse struct {
-	CreatedStudentID uuid.UUID
+func (Student) TableName() string {
+	return "student"
 }

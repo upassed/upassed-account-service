@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/server/teacher"
-	service "github.com/upassed/upassed-account-service/internal/service/teacher"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
@@ -32,7 +32,7 @@ func TestConvertToTeacher(t *testing.T) {
 }
 
 func TestConvertToTeacherCreateResponse(t *testing.T) {
-	response := service.TeacherCreateResponse{
+	response := business.TeacherCreateResponse{
 		CreatedTeacherID: uuid.New(),
 	}
 
@@ -41,7 +41,7 @@ func TestConvertToTeacherCreateResponse(t *testing.T) {
 }
 
 func TestConvertToFindByIDResponse(t *testing.T) {
-	teacherToConvert := service.Teacher{
+	teacherToConvert := business.Teacher{
 		ID:          uuid.New(),
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),

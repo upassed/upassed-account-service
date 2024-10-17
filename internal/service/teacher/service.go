@@ -5,12 +5,13 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	repository "github.com/upassed/upassed-account-service/internal/repository/teacher"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
 type teacherService interface {
-	Create(ctx context.Context, teacher Teacher) (TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID uuid.UUID) (Teacher, error)
+	Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error)
 }
 
 type teacherServiceImpl struct {
@@ -19,8 +20,8 @@ type teacherServiceImpl struct {
 }
 
 type teacherRepository interface {
-	Save(context.Context, repository.Teacher) error
-	FindByID(context.Context, uuid.UUID) (repository.Teacher, error)
+	Save(context.Context, domain.Teacher) error
+	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 

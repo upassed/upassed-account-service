@@ -9,13 +9,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
 var (
 	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("find teacher by id deadline exceeded")
 )
 
-func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (Teacher, error) {
+func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error) {
 	const op = "teacher.teacherServiceImpl.FindByID()"
 
 	log := service.log.With(
@@ -27,7 +28,7 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.
 	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 
-	resultChannel := make(chan Teacher)
+	resultChannel := make(chan business.Teacher)
 	errorChannel := make(chan error)
 
 	go func() {
@@ -45,11 +46,11 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return Teacher{}, ErrorFindTeacherByIDDeadlineExceeded
+			return business.Teacher{}, ErrorFindTeacherByIDDeadlineExceeded
 		case foundTeacher := <-resultChannel:
 			return foundTeacher, nil
 		case err := <-errorChannel:
-			return Teacher{}, err
+			return business.Teacher{}, err
 		}
 	}
 }
