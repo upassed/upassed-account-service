@@ -7,6 +7,7 @@ tasks:
             - rm -rf ./pkg/client/*
             - protoc -I ./api ./api/teacher.proto --go_out=./pkg/client --validate_out="lang=go,paths=source_relative:./pkg/client" --go_opt=paths=source_relative --go-grpc_out=./pkg/client --go-grpc_opt=paths=source_relative
             - protoc -I ./api ./api/student.proto --go_out=./pkg/client --validate_out="lang=go,paths=source_relative:./pkg/client" --go_opt=paths=source_relative --go-grpc_out=./pkg/client --go-grpc_opt=paths=source_relative
+            - protoc -I ./api ./api/group.proto --go_out=./pkg/client --validate_out="lang=go,paths=source_relative:./pkg/client" --go_opt=paths=source_relative --go-grpc_out=./pkg/client --go-grpc_opt=paths=source_relative
     run-local:
         desc: "Run service on a local machine"
         cmds:

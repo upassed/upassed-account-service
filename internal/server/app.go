@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	config "github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	"github.com/upassed/upassed-account-service/internal/server/group"
 	"github.com/upassed/upassed-account-service/internal/server/student"
 	"github.com/upassed/upassed-account-service/internal/server/teacher"
 	studentSvc "github.com/upassed/upassed-account-service/internal/service/student"
@@ -33,6 +34,7 @@ type AppServerCreateParams struct {
 	Log            *slog.Logger
 	TeacherService teacherService
 	StudentService studentService
+	GroupService   groupService
 }
 
 type teacherService interface {
@@ -43,6 +45,10 @@ type teacherService interface {
 type studentService interface {
 	Create(context.Context, studentSvc.Student) (studentSvc.StudentCreateResponse, error)
 	FindByID(ctx context.Context, studentID uuid.UUID) (studentSvc.Student, error)
+}
+
+type groupService interface {
+	FindStudentsInGroup(context.Context, uuid.UUID) ([]studentSvc.Student, error)
 }
 
 func New(params AppServerCreateParams) *AppServer {
@@ -56,6 +62,7 @@ func New(params AppServerCreateParams) *AppServer {
 
 	teacher.Register(server, params.TeacherService)
 	student.Register(server, params.StudentService)
+	group.Register(server, params.GroupService)
 	return &AppServer{
 		config: params.Config,
 		log:    params.Log,
