@@ -11,7 +11,6 @@ type Teacher struct {
 	Username    string
 }
 
-// TableName overrides the table name used by Teacher to `teacher`
 func (Teacher) TableName() string {
 	return "teacher"
 }

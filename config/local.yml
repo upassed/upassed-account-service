@@ -1,0 +1,13 @@
+env: "local"
+storage:
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
+    database_name: ${POSTGRES_DATABASE_NAME}
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+grpc_server:
+    port: ${GRPC_SERVER_PORT}
+    timeout: ${GRPC_SERVER_TIMEOUT}
+migrations:
+    migrations_path: ${MIGRATIONS_PATH}
+    migrations_table_name: ${MIGRATIONS_TABLE_NAME}
