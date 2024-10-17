@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
@@ -18,6 +19,7 @@ type groupServiceImpl struct {
 }
 
 type groupRepository interface {
+	FindStudentsInGroup(context.Context, uuid.UUID) ([]domain.Student, error)
 }
 
 func New(log *slog.Logger, repository groupRepository) groupService {
