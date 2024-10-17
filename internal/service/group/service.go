@@ -21,6 +21,7 @@ type groupServiceImpl struct {
 
 type groupRepository interface {
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]domain.Student, error)
+	FindByID(context.Context, uuid.UUID) (domain.Group, error)
 }
 
 func New(log *slog.Logger, repository groupRepository) groupService {

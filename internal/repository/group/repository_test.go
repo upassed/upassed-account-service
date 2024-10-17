@@ -17,11 +17,14 @@ import (
 	testcontainer "github.com/upassed/upassed-account-service/internal/repository"
 	"github.com/upassed/upassed-account-service/internal/repository/group"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type groupRepository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]domain.Student, error)
+	FindByID(context.Context, uuid.UUID) (domain.Group, error)
 }
 
 var (
@@ -126,4 +129,24 @@ func TestFindStudentsInGroup_StudentsNotFound(t *testing.T) {
 
 func TestFindStudentsInGroup_StudentsExistsInGroup(t *testing.T) {
 	// TODO - need to run test migration script with students creation
+}
+
+func TestFindByID_GroupNotFound(t *testing.T) {
+	groupID := uuid.New()
+	_, err := repository.FindByID(context.Background(), groupID)
+	require.NotNil(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, codes.NotFound, convertedError.Code())
+	assert.Equal(t, group.ErrorGroupNotFound.Error(), convertedError.Message())
+}
+
+func TestFindByID_GroupFound(t *testing.T) {
+	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
+	group, err := repository.FindByID(context.Background(), groupID)
+	require.Nil(t, err)
+
+	assert.Equal(t, groupID, group.ID)
+	assert.Equal(t, "5130904", group.SpecializationCode)
+	assert.Equal(t, "10101", group.GroupNumber)
 }

@@ -14,3 +14,11 @@ func ConvertToServiceStudents(studentsToConvert []domain.Student) []business.Stu
 
 	return result
 }
+
+func ConvertToServiceGroup(groupToConvert domain.Group) business.Group {
+	return business.Group{
+		ID:                 groupToConvert.ID,
+		SpecializationCode: groupToConvert.SpecializationCode,
+		GroupNumber:        groupToConvert.GroupNumber,
+	}
+}

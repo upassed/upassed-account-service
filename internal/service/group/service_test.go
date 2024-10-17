@@ -27,6 +27,11 @@ func (m *mockGroupRepository) FindStudentsInGroup(ctx context.Context, groupID u
 	return args.Get(0).([]domain.Student), args.Error(1)
 }
 
+func (m *mockGroupRepository) FindByID(ctx context.Context, groupID uuid.UUID) (domain.Group, error) {
+	args := m.Called(ctx, groupID)
+	return args.Get(0).(domain.Group), args.Error(1)
+}
+
 func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
@@ -55,6 +60,43 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	require.Nil(t, err)
 
 	assert.Equal(t, len(expectedStudentsInGroup), len(actualFoundStudentsInGroup))
+}
+
+func TestFindByID_RepositoryError(t *testing.T) {
+	groupRepository := new(mockGroupRepository)
+
+	groupID := uuid.New()
+	expectedReposotiryError := errors.New("some repo error")
+	groupRepository.On("FindByID", mock.Anything, groupID).Return(domain.Group{}, expectedReposotiryError)
+
+	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	_, err := service.FindByID(context.Background(), groupID)
+	require.NotNil(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, expectedReposotiryError.Error(), convertedError.Message())
+	assert.Equal(t, codes.Internal, convertedError.Code())
+}
+
+func TestFindByID_HappyPath(t *testing.T) {
+	groupRepository := new(mockGroupRepository)
+
+	groupID := uuid.New()
+	expectedFoundGroup := domain.Group{
+		ID:                 groupID,
+		SpecializationCode: gofakeit.WeekDay(),
+		GroupNumber:        gofakeit.WeekDay(),
+	}
+
+	groupRepository.On("FindByID", mock.Anything, groupID).Return(expectedFoundGroup, nil)
+
+	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	foundGroup, err := service.FindByID(context.Background(), groupID)
+	require.Nil(t, err)
+
+	assert.Equal(t, expectedFoundGroup.ID, foundGroup.ID)
+	assert.Equal(t, expectedFoundGroup.SpecializationCode, foundGroup.SpecializationCode)
+	assert.Equal(t, expectedFoundGroup.GroupNumber, foundGroup.GroupNumber)
 }
 
 func randomStudent() domain.Student {
