@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package api;
+
+import "validate/validate.proto";
+import "model.proto";
+
+option go_package = "upassed.account.v1;client";
+
+service Group {
+    rpc FindStudentsInGroup(FindStudentsInGroupRequest) returns (FindStudentsInGroupResponse);
+    rpc FindByID(GroupFindByIDRequest) returns (GroupFindByIDResponse);
+    rpc SearchByFilter(GroupSearchByFilterRequest) returns (GroupSearchByFilterResponse);
+}
+
+message FindStudentsInGroupRequest {
+    string group_id = 1 [(validate.rules).string.uuid = true];
+}
+
+message FindStudentsInGroupResponse {
+    repeated StudentDTO students_in_group = 1;
+}
+
+message GroupFindByIDRequest {
+    string group_id = 1 [(validate.rules).string.uuid = true];
+}
+
+message GroupFindByIDResponse {
+    GroupDTO group = 1;
+}
+
+message GroupSearchByFilterRequest {
+    string specialization_code = 1 [(validate.rules).string = {max_len: 10}];
+    string group_number = 2 [(validate.rules).string = {max_len: 10}];
+}
+
+message GroupSearchByFilterResponse {
+    repeated GroupDTO matchedGroups = 1;
+}

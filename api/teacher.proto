@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 
 import "validate/validate.proto";
+import "model.proto";
 
 option go_package = "upassed.account.v1;client";
 
@@ -13,7 +14,7 @@ service Teacher {
 
 message TeacherCreateRequest {
     string first_name = 1 [(validate.rules).string = {min_len: 2, max_len: 20}];
-    string last_name = 2 [(validate.rules).string = {min_len: 5, max_len: 20}];
+    string last_name = 2 [(validate.rules).string = {min_len: 3, max_len: 30}];
     string middle_name = 3 [(validate.rules).string = {max_len: 20}];
     string report_email = 4 [(validate.rules).string.email = true];
     string username = 5 [(validate.rules).string = {min_len: 5, max_len: 20}];
@@ -29,13 +30,4 @@ message TeacherFindByIDRequest {
 
 message TeacherFindByIDResponse {
     TeacherDTO teacher = 1;
-}
-
-message TeacherDTO {
-    string id = 1;
-    string first_name = 2;
-    string last_name = 3;
-    string middle_name = 4;
-    string report_email = 5;
-    string username = 6;
 }
