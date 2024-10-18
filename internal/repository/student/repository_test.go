@@ -116,7 +116,7 @@ func TestFindByID_StudentNotFound(t *testing.T) {
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-	assert.Equal(t, student.ErrorStudentNotFound.Error(), convertedError.Message())
+	assert.Equal(t, student.ErrorStudentNotFoundByID.Error(), convertedError.Message())
 }
 
 func TestFindByID_HappyPath(t *testing.T) {

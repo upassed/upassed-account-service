@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	ErrorSearchingTeacher                error = errors.New("error while searching teacher")
-	ErrorTeacherNotFound                 error = errors.New("teacher not found in database")
+	ErrorSearchingTeacherByID            error = errors.New("error while searching teacher by id")
+	ErrorTeacherNotFoundByID             error = errors.New("teacher by id  not found in database")
 	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("finding teacher by id in a database deadline exceeded")
 )
 
@@ -43,12 +43,12 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 		if searchResult.Error != nil {
 			if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
 				log.Error("teacher was not found in the database", logger.Error(searchResult.Error))
-				errorChannel <- handling.New(ErrorTeacherNotFound.Error(), codes.NotFound)
+				errorChannel <- handling.New(ErrorTeacherNotFoundByID.Error(), codes.NotFound)
 				return
 			}
 
 			log.Error("error while searching teacher in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.New(ErrorSearchingTeacher.Error(), codes.Internal)
+			errorChannel <- handling.New(ErrorSearchingTeacherByID.Error(), codes.Internal)
 			return
 		}
 

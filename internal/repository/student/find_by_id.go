@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	ErrorSearchingStudent                error = errors.New("error while searching student")
-	ErrorStudentNotFound                 error = errors.New("student not found in database")
+	ErrorSearchingStudentByID            error = errors.New("error while searching student by id")
+	ErrorStudentNotFoundByID             error = errors.New("student by id not found in database")
 	ErrorFindStudentByIDDeadlineExceeded error = errors.New("finding student by id in a database deadline exceeded")
 )
 
@@ -43,12 +43,12 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 		if searchResult.Error != nil {
 			if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
 				log.Error("student was not found in the database", logger.Error(searchResult.Error))
-				errorChannel <- handling.New(ErrorStudentNotFound.Error(), codes.NotFound)
+				errorChannel <- handling.New(ErrorStudentNotFoundByID.Error(), codes.NotFound)
 				return
 			}
 
 			log.Error("error while searching student in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.New(ErrorSearchingStudent.Error(), codes.Internal)
+			errorChannel <- handling.New(ErrorSearchingStudentByID.Error(), codes.Internal)
 			return
 		}
 

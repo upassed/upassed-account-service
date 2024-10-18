@@ -25,6 +25,7 @@ type groupRepository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]domain.Student, error)
 	FindByID(context.Context, uuid.UUID) (domain.Group, error)
+	FindByFilter(context.Context, domain.GroupFilter) ([]domain.Group, error)
 }
 
 var (
@@ -138,7 +139,7 @@ func TestFindByID_GroupNotFound(t *testing.T) {
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-	assert.Equal(t, group.ErrorGroupNotFound.Error(), convertedError.Message())
+	assert.Equal(t, group.ErrorGroupNotFoundByID.Error(), convertedError.Message())
 }
 
 func TestFindByID_GroupFound(t *testing.T) {
@@ -149,4 +150,29 @@ func TestFindByID_GroupFound(t *testing.T) {
 	assert.Equal(t, groupID, group.ID)
 	assert.Equal(t, "5130904", group.SpecializationCode)
 	assert.Equal(t, "10101", group.GroupNumber)
+}
+
+func TestFindByFilter_NothingMatched(t *testing.T) {
+	filter := domain.GroupFilter{
+		SpecializationCode: "----",
+		GroupNumber:        "----",
+	}
+
+	matchedGroups, err := repository.FindByFilter(context.Background(), filter)
+	require.Nil(t, err)
+
+	assert.Equal(t, 0, len(matchedGroups))
+}
+
+func TestFindByFilter_HasMatchedGroups(t *testing.T) {
+	filter := domain.GroupFilter{
+		SpecializationCode: "513",
+		GroupNumber:        "10101",
+	}
+
+	matchedGroups, err := repository.FindByFilter(context.Background(), filter)
+	require.Nil(t, err)
+
+	assert.Equal(t, 1, len(matchedGroups))
+	assert.Equal(t, uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233"), matchedGroups[0].ID)
 }

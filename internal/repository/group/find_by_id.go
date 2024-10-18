@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	ErrorSearchingGroup                error = errors.New("error while searching group")
-	ErrorGroupNotFound                 error = errors.New("group not found in database")
+	ErrorSearchingGroupByID            error = errors.New("error while searching group by id")
+	ErrorGroupNotFoundByID             error = errors.New("group by id not found in database")
 	ErrorFindGroupByIDDeadlineExceeded error = errors.New("finding group by id in a database deadline exceeded")
 )
 
@@ -43,12 +43,12 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 		if searchResult.Error != nil {
 			if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
 				log.Error("group was not found in the database", logger.Error(searchResult.Error))
-				errorChannel <- handling.New(ErrorGroupNotFound.Error(), codes.NotFound)
+				errorChannel <- handling.New(ErrorGroupNotFoundByID.Error(), codes.NotFound)
 				return
 			}
 
 			log.Error("error while searching group in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.New(ErrorSearchingGroup.Error(), codes.Internal)
+			errorChannel <- handling.New(ErrorSearchingGroupByID.Error(), codes.Internal)
 			return
 		}
 
