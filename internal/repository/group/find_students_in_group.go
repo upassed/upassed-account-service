@@ -51,11 +51,11 @@ func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, 
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return nil, ErrorFindStudentsInGroupDeadlineExceeded
+			return []domain.Student{}, ErrorFindStudentsInGroupDeadlineExceeded
 		case foundStudentsInGroup := <-resultChannel:
 			return foundStudentsInGroup, nil
 		case err := <-errorChannel:
-			return nil, err
+			return []domain.Student{}, err
 		}
 	}
 }

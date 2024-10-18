@@ -11,3 +11,8 @@ type Group struct {
 func (Group) TableName() string {
 	return "group"
 }
+
+type GroupFilter struct {
+	SpecializationCode string
+	GroupNumber        string
+}

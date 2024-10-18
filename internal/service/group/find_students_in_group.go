@@ -46,11 +46,11 @@ func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupI
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return nil, ErrorFindStudentsInGroupDeadlineExceeded
+			return []business.Student{}, ErrorFindStudentsInGroupDeadlineExceeded
 		case foundStudentsInGroup := <-resultChannel:
 			return foundStudentsInGroup, nil
 		case err := <-errorChannel:
-			return nil, err
+			return []business.Student{}, err
 		}
 	}
 }

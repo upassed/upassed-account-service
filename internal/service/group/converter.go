@@ -22,3 +22,19 @@ func ConvertToServiceGroup(groupToConvert domain.Group) business.Group {
 		GroupNumber:        groupToConvert.GroupNumber,
 	}
 }
+
+func ConvertToGroupFilter(filterToConvert business.GroupFilter) domain.GroupFilter {
+	return domain.GroupFilter{
+		SpecializationCode: filterToConvert.SpecializationCode,
+		GroupNumber:        filterToConvert.GroupNumber,
+	}
+}
+
+func ConvertToServiceGroups(groupsToConvert []domain.Group) []business.Group {
+	convertedGroups := make([]business.Group, 0, len(groupsToConvert))
+	for idx := range groupsToConvert {
+		convertedGroups = append(convertedGroups, ConvertToServiceGroup(groupsToConvert[idx]))
+	}
+
+	return convertedGroups
+}

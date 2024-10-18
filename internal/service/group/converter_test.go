@@ -36,6 +36,18 @@ func TestConvertToServiceGroup(t *testing.T) {
 	assert.Equal(t, groupToConvert.GroupNumber, convertedGroup.GroupNumber)
 }
 
+func TestConvertToGroupFilter(t *testing.T) {
+	filterToConvert := business.GroupFilter{
+		SpecializationCode: gofakeit.WeekDay(),
+		GroupNumber:        gofakeit.WeekDay(),
+	}
+
+	convertedFilter := group.ConvertToGroupFilter(filterToConvert)
+
+	assert.Equal(t, filterToConvert.SpecializationCode, convertedFilter.SpecializationCode)
+	assert.Equal(t, filterToConvert.GroupNumber, convertedFilter.GroupNumber)
+}
+
 func assertStudentsEqual(t *testing.T, left domain.Student, right business.Student) {
 	assert.Equal(t, left.ID, right.ID)
 	assert.Equal(t, left.FirstName, right.FirstName)
