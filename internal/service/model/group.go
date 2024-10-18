@@ -7,3 +7,8 @@ type Group struct {
 	SpecializationCode string
 	GroupNumber        string
 }
+
+type GroupFilter struct {
+	SpecializationCode string
+	GroupNumber        string
+}

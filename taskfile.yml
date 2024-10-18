@@ -17,4 +17,4 @@ tasks:
         desc: "Run all rests"
         cmds:
             - go clean -testcache
-            - go test -cover ./...
+            - gotestsum --format-icons hivis

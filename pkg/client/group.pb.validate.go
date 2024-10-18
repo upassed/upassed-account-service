@@ -549,3 +549,264 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GroupFindByIDResponseValidationError{}
+
+// Validate checks the field values on GroupSearchByFilterRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GroupSearchByFilterRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GroupSearchByFilterRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GroupSearchByFilterRequestMultiError, or nil if none found.
+func (m *GroupSearchByFilterRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GroupSearchByFilterRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetSpecializationCode()) > 10 {
+		err := GroupSearchByFilterRequestValidationError{
+			field:  "SpecializationCode",
+			reason: "value length must be at most 10 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetGroupNumber()) > 10 {
+		err := GroupSearchByFilterRequestValidationError{
+			field:  "GroupNumber",
+			reason: "value length must be at most 10 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return GroupSearchByFilterRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GroupSearchByFilterRequestMultiError is an error wrapping multiple
+// validation errors returned by GroupSearchByFilterRequest.ValidateAll() if
+// the designated constraints aren't met.
+type GroupSearchByFilterRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GroupSearchByFilterRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GroupSearchByFilterRequestMultiError) AllErrors() []error { return m }
+
+// GroupSearchByFilterRequestValidationError is the validation error returned
+// by GroupSearchByFilterRequest.Validate if the designated constraints aren't met.
+type GroupSearchByFilterRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GroupSearchByFilterRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GroupSearchByFilterRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GroupSearchByFilterRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GroupSearchByFilterRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GroupSearchByFilterRequestValidationError) ErrorName() string {
+	return "GroupSearchByFilterRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GroupSearchByFilterRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGroupSearchByFilterRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GroupSearchByFilterRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GroupSearchByFilterRequestValidationError{}
+
+// Validate checks the field values on GroupSearchByFilterResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GroupSearchByFilterResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GroupSearchByFilterResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GroupSearchByFilterResponseMultiError, or nil if none found.
+func (m *GroupSearchByFilterResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GroupSearchByFilterResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetMatchedGroups() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GroupSearchByFilterResponseValidationError{
+						field:  fmt.Sprintf("MatchedGroups[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GroupSearchByFilterResponseValidationError{
+						field:  fmt.Sprintf("MatchedGroups[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GroupSearchByFilterResponseValidationError{
+					field:  fmt.Sprintf("MatchedGroups[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GroupSearchByFilterResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GroupSearchByFilterResponseMultiError is an error wrapping multiple
+// validation errors returned by GroupSearchByFilterResponse.ValidateAll() if
+// the designated constraints aren't met.
+type GroupSearchByFilterResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GroupSearchByFilterResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GroupSearchByFilterResponseMultiError) AllErrors() []error { return m }
+
+// GroupSearchByFilterResponseValidationError is the validation error returned
+// by GroupSearchByFilterResponse.Validate if the designated constraints
+// aren't met.
+type GroupSearchByFilterResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GroupSearchByFilterResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GroupSearchByFilterResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GroupSearchByFilterResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GroupSearchByFilterResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GroupSearchByFilterResponseValidationError) ErrorName() string {
+	return "GroupSearchByFilterResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GroupSearchByFilterResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGroupSearchByFilterResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GroupSearchByFilterResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GroupSearchByFilterResponseValidationError{}

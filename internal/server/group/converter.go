@@ -41,3 +41,29 @@ func ConvertToFindByIDResponse(group business.Group) *client.GroupFindByIDRespon
 		},
 	}
 }
+
+func ConvertToGroupFilter(request *client.GroupSearchByFilterRequest) business.GroupFilter {
+	return business.GroupFilter{
+		SpecializationCode: request.GetSpecializationCode(),
+		GroupNumber:        request.GetGroupNumber(),
+	}
+}
+
+func ConvertToSearchByFilterResponse(matchedGroups []business.Group) *client.GroupSearchByFilterResponse {
+	convertedGroups := make([]*client.GroupDTO, 0, len(matchedGroups))
+	for idx := range matchedGroups {
+		convertedGroups = append(convertedGroups, convertToGroup(matchedGroups[idx]))
+	}
+
+	return &client.GroupSearchByFilterResponse{
+		MatchedGroups: convertedGroups,
+	}
+}
+
+func convertToGroup(groupToConvert business.Group) *client.GroupDTO {
+	return &client.GroupDTO{
+		Id:                 groupToConvert.ID.String(),
+		SpecializationCode: groupToConvert.SpecializationCode,
+		GroupNumber:        groupToConvert.GroupNumber,
+	}
+}

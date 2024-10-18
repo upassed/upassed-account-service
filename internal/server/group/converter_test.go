@@ -37,6 +37,28 @@ func TestConvertToFindByIDResponse(t *testing.T) {
 	assert.Equal(t, groupToConvert.GroupNumber, response.GetGroup().GetGroupNumber())
 }
 
+func TestConvertToGroupFilter(t *testing.T) {
+	request := client.GroupSearchByFilterRequest{
+		SpecializationCode: gofakeit.WeekDay(),
+		GroupNumber:        gofakeit.WeekDay(),
+	}
+
+	groupFilter := group.ConvertToGroupFilter(&request)
+
+	assert.Equal(t, request.GetSpecializationCode(), groupFilter.SpecializationCode)
+	assert.Equal(t, request.GetGroupNumber(), groupFilter.GroupNumber)
+}
+
+func TestConvertToSearchByFilterResponse(t *testing.T) {
+	matchedGroups := []business.Group{randomGroup(), randomGroup(), randomGroup()}
+	response := group.ConvertToSearchByFilterResponse(matchedGroups)
+
+	require.Equal(t, len(matchedGroups), len(response.GetMatchedGroups()))
+	for idx := range matchedGroups {
+		assertGroupsEqual(t, matchedGroups[idx], response.GetMatchedGroups()[idx])
+	}
+}
+
 func assertStudentsEqual(t *testing.T, left business.Student, right *client.StudentDTO) {
 	assert.Equal(t, left.ID.String(), right.GetId())
 	assert.Equal(t, left.FirstName, right.GetFirstName())
@@ -47,6 +69,12 @@ func assertStudentsEqual(t *testing.T, left business.Student, right *client.Stud
 	assert.Equal(t, left.Group.ID.String(), right.GetGroup().GetId())
 	assert.Equal(t, left.Group.SpecializationCode, right.GetGroup().GetSpecializationCode())
 	assert.Equal(t, left.Group.GroupNumber, right.GetGroup().GetGroupNumber())
+}
+
+func assertGroupsEqual(t *testing.T, left business.Group, right *client.GroupDTO) {
+	assert.Equal(t, left.ID.String(), right.GetId())
+	assert.Equal(t, left.SpecializationCode, right.GetSpecializationCode())
+	assert.Equal(t, left.GroupNumber, right.GetGroupNumber())
 }
 
 func randomStudent() business.Student {
@@ -62,5 +90,13 @@ func randomStudent() business.Student {
 			SpecializationCode: gofakeit.WeekDay(),
 			GroupNumber:        gofakeit.WeekDay(),
 		},
+	}
+}
+
+func randomGroup() business.Group {
+	return business.Group{
+		ID:                 uuid.New(),
+		SpecializationCode: gofakeit.WeekDay(),
+		GroupNumber:        gofakeit.WeekDay(),
 	}
 }

@@ -12,6 +12,7 @@ import (
 type groupService interface {
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]business.Student, error)
 	FindByID(context.Context, uuid.UUID) (business.Group, error)
+	FindByFilter(context.Context, business.GroupFilter) ([]business.Group, error)
 }
 
 type groupServiceImpl struct {

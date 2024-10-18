@@ -40,6 +40,11 @@ func (m *mockGroupService) FindByID(ctx context.Context, groupID uuid.UUID) (bus
 	return args.Get(0).(business.Group), args.Error(1)
 }
 
+func (m *mockGroupService) FindByFilter(ctx context.Context, filter business.GroupFilter) ([]business.Group, error) {
+	args := m.Called(ctx, filter)
+	return args.Get(0).([]business.Group), args.Error(1)
+}
+
 var (
 	groupClient client.GroupClient
 	groupSvc    *mockGroupService
@@ -160,6 +165,60 @@ func TestFindByID_HappyPath(t *testing.T) {
 	assert.Equal(t, expectedFoundGroup.ID.String(), response.GetGroup().GetId())
 	assert.Equal(t, expectedFoundGroup.SpecializationCode, response.GetGroup().GetSpecializationCode())
 	assert.Equal(t, expectedFoundGroup.GroupNumber, response.GetGroup().GetGroupNumber())
+
+	clearGroupServiceMockCalls()
+}
+
+func TestFindByFilter_InvalidRequest(t *testing.T) {
+	request := client.GroupSearchByFilterRequest{
+		SpecializationCode: gofakeit.LoremIpsumSentence(50),
+		GroupNumber:        gofakeit.LoremIpsumSentence(50),
+	}
+
+	_, err := groupClient.SearchByFilter(context.Background(), &request)
+	require.NotNil(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, codes.InvalidArgument, convertedError.Code())
+
+	clearGroupServiceMockCalls()
+}
+
+func TestFindByFilter_ServiceError(t *testing.T) {
+	request := client.GroupSearchByFilterRequest{
+		SpecializationCode: "5130904",
+		GroupNumber:        "10101",
+	}
+
+	expectedServiceError := handling.New("some service error", codes.DeadlineExceeded)
+	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return([]business.Group{}, expectedServiceError)
+
+	_, err := groupClient.SearchByFilter(context.Background(), &request)
+	require.NotNil(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, codes.DeadlineExceeded, convertedError.Code())
+	assert.Equal(t, expectedServiceError.Error(), convertedError.Message())
+
+	clearGroupServiceMockCalls()
+}
+
+func TestFindByFilter_HappyPath(t *testing.T) {
+	request := client.GroupSearchByFilterRequest{
+		SpecializationCode: "5130904",
+		GroupNumber:        "10101",
+	}
+
+	expectedMatchedGroups := []business.Group{randomGroup(), randomGroup(), randomGroup()}
+	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return(expectedMatchedGroups, nil)
+
+	response, err := groupClient.SearchByFilter(context.Background(), &request)
+	require.Nil(t, err)
+
+	assert.Equal(t, len(expectedMatchedGroups), len(response.MatchedGroups))
+	for idx := range expectedMatchedGroups {
+		assertGroupsEqual(t, expectedMatchedGroups[idx], response.GetMatchedGroups()[idx])
+	}
 
 	clearGroupServiceMockCalls()
 }

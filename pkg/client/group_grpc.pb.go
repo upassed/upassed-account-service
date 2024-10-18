@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Group_FindStudentsInGroup_FullMethodName = "/api.Group/FindStudentsInGroup"
 	Group_FindByID_FullMethodName            = "/api.Group/FindByID"
+	Group_SearchByFilter_FullMethodName      = "/api.Group/SearchByFilter"
 )
 
 // GroupClient is the client API for Group service.
@@ -29,6 +30,7 @@ const (
 type GroupClient interface {
 	FindStudentsInGroup(ctx context.Context, in *FindStudentsInGroupRequest, opts ...grpc.CallOption) (*FindStudentsInGroupResponse, error)
 	FindByID(ctx context.Context, in *GroupFindByIDRequest, opts ...grpc.CallOption) (*GroupFindByIDResponse, error)
+	SearchByFilter(ctx context.Context, in *GroupSearchByFilterRequest, opts ...grpc.CallOption) (*GroupSearchByFilterResponse, error)
 }
 
 type groupClient struct {
@@ -59,12 +61,23 @@ func (c *groupClient) FindByID(ctx context.Context, in *GroupFindByIDRequest, op
 	return out, nil
 }
 
+func (c *groupClient) SearchByFilter(ctx context.Context, in *GroupSearchByFilterRequest, opts ...grpc.CallOption) (*GroupSearchByFilterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GroupSearchByFilterResponse)
+	err := c.cc.Invoke(ctx, Group_SearchByFilter_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GroupServer is the server API for Group service.
 // All implementations must embed UnimplementedGroupServer
 // for forward compatibility.
 type GroupServer interface {
 	FindStudentsInGroup(context.Context, *FindStudentsInGroupRequest) (*FindStudentsInGroupResponse, error)
 	FindByID(context.Context, *GroupFindByIDRequest) (*GroupFindByIDResponse, error)
+	SearchByFilter(context.Context, *GroupSearchByFilterRequest) (*GroupSearchByFilterResponse, error)
 	mustEmbedUnimplementedGroupServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedGroupServer) FindStudentsInGroup(context.Context, *FindStuden
 }
 func (UnimplementedGroupServer) FindByID(context.Context, *GroupFindByIDRequest) (*GroupFindByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindByID not implemented")
+}
+func (UnimplementedGroupServer) SearchByFilter(context.Context, *GroupSearchByFilterRequest) (*GroupSearchByFilterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchByFilter not implemented")
 }
 func (UnimplementedGroupServer) mustEmbedUnimplementedGroupServer() {}
 func (UnimplementedGroupServer) testEmbeddedByValue()               {}
@@ -138,6 +154,24 @@ func _Group_FindByID_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Group_SearchByFilter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GroupSearchByFilterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GroupServer).SearchByFilter(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Group_SearchByFilter_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GroupServer).SearchByFilter(ctx, req.(*GroupSearchByFilterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Group_ServiceDesc is the grpc.ServiceDesc for Group service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var Group_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindByID",
 			Handler:    _Group_FindByID_Handler,
+		},
+		{
+			MethodName: "SearchByFilter",
+			Handler:    _Group_SearchByFilter_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
