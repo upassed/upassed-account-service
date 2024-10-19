@@ -22,14 +22,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type studentRepository interface {
-	Save(context.Context, domain.Student) error
-	FindByID(context.Context, uuid.UUID) (domain.Student, error)
-	CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error)
-}
-
 var (
-	repository studentRepository
+	repository student.Repository
 )
 
 func TestMain(m *testing.M) {

@@ -1,25 +1,25 @@
 package server
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	groupSvc "github.com/upassed/upassed-account-service/internal/service/group"
+	studentSvc "github.com/upassed/upassed-account-service/internal/service/student"
+	teacherSvc "github.com/upassed/upassed-account-service/internal/service/teacher"
 	"log/slog"
 	"net"
 
-	"github.com/google/uuid"
-	config "github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	"github.com/upassed/upassed-account-service/internal/server/group"
 	"github.com/upassed/upassed-account-service/internal/server/student"
 	"github.com/upassed/upassed-account-service/internal/server/teacher"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc"
 )
 
 var (
-	ErroStartingTcpConnection error = errors.New("unable to start tcp connection")
-	ErrStartingServer         error = errors.New("unable to start gRPC server")
+	errStartingTcpConnection = errors.New("unable to start tcp connection")
+	errStartingServer        = errors.New("unable to start gRPC server")
 )
 
 type AppServer struct {
@@ -31,25 +31,9 @@ type AppServer struct {
 type AppServerCreateParams struct {
 	Config         *config.Config
 	Log            *slog.Logger
-	TeacherService teacherService
-	StudentService studentService
-	GroupService   groupService
-}
-
-type teacherService interface {
-	Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error)
-}
-
-type studentService interface {
-	Create(context.Context, business.Student) (business.StudentCreateResponse, error)
-	FindByID(ctx context.Context, studentID uuid.UUID) (business.Student, error)
-}
-
-type groupService interface {
-	FindStudentsInGroup(context.Context, uuid.UUID) ([]business.Student, error)
-	FindByID(context.Context, uuid.UUID) (business.Group, error)
-	FindByFilter(context.Context, business.GroupFilter) ([]business.Group, error)
+	TeacherService teacherSvc.Service
+	StudentService studentSvc.Service
+	GroupService   groupSvc.Service
 }
 
 func New(params AppServerCreateParams) *AppServer {
@@ -81,12 +65,12 @@ func (server *AppServer) Run() error {
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", server.config.GrpcServer.Port))
 	if err != nil {
-		return fmt.Errorf("%s -> %w; %w", op, ErroStartingTcpConnection, err)
+		return fmt.Errorf("%s -> %w; %w", op, errStartingTcpConnection, err)
 	}
 
 	log.Info("gRPC server is running", slog.String("address", listener.Addr().String()))
 	if err := server.server.Serve(listener); err != nil {
-		return fmt.Errorf("%s -> %w; %w", op, ErrStartingServer, err)
+		return fmt.Errorf("%s -> %w; %w", op, errStartingServer, err)
 	}
 
 	return nil

@@ -21,15 +21,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type groupRepository interface {
-	Exists(context.Context, uuid.UUID) (bool, error)
-	FindStudentsInGroup(context.Context, uuid.UUID) ([]domain.Student, error)
-	FindByID(context.Context, uuid.UUID) (domain.Group, error)
-	FindByFilter(context.Context, domain.GroupFilter) ([]domain.Group, error)
-}
-
 var (
-	repository groupRepository
+	repository group.Repository
 )
 
 func TestMain(m *testing.M) {
