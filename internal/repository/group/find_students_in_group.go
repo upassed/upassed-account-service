@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,7 +22,7 @@ var (
 )
 
 func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]domain.Student, error) {
-	const op = "group.groupRepositoryImpl.FindStudentsInGroup()"
+	op := runtime.FuncForPC(reflect.ValueOf(repository.FindStudentsInGroup).Pointer()).Name()
 
 	log := repository.log.With(
 		slog.String("op", op),

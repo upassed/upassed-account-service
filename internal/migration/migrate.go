@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
+	"runtime"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/upassed/upassed-account-service/internal/config"
@@ -14,7 +16,7 @@ import (
 )
 
 func RunMigrations(config *config.Config, log *slog.Logger) error {
-	const op = "migration.RunMigrations()"
+	op := runtime.FuncForPC(reflect.ValueOf(RunMigrations).Pointer()).Name()
 
 	migrator, err := migrate.New(
 		fmt.Sprintf("file://%s", config.Migration.MigrationsPath),

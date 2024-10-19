@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,7 +24,7 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
-	const op = "teacher.teacherRepositoryImpl.FindByID()"
+	op := runtime.FuncForPC(reflect.ValueOf(repository.FindByID).Pointer()).Name()
 
 	log := repository.log.With(
 		slog.String("op", op),

@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"syscall"
 
 	"github.com/joho/godotenv"
@@ -28,7 +30,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	logger := logging.New(cfg.Env)
+	logger := logging.New(cfg.Env).With(
+		slog.String("op", runtime.FuncForPC(reflect.ValueOf(main).Pointer()).Name()),
+	)
+
 	logger.Info("logger successfully initialized", slog.Any("env", cfg.Env))
 
 	application, err := app.New(cfg, logger)

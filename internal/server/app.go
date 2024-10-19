@@ -8,6 +8,8 @@ import (
 	teacherSvc "github.com/upassed/upassed-account-service/internal/service/teacher"
 	"log/slog"
 	"net"
+	"reflect"
+	"runtime"
 
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/middleware"
@@ -57,7 +59,7 @@ func New(params AppServerCreateParams) *AppServer {
 }
 
 func (server *AppServer) Run() error {
-	const op = "server.Run()"
+	op := runtime.FuncForPC(reflect.ValueOf(server.Run).Pointer()).Name()
 
 	log := server.log.With(
 		slog.String("op", op),
@@ -77,7 +79,7 @@ func (server *AppServer) Run() error {
 }
 
 func (server *AppServer) GracefulStop() {
-	const op = "server.GracefulStop()"
+	op := runtime.FuncForPC(reflect.ValueOf(server.GracefulStop).Pointer()).Name()
 
 	log := server.log.With(
 		slog.String("op", op),

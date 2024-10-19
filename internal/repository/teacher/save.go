@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
@@ -19,7 +21,7 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domain.Teacher) error {
-	const op = "teacher.teacherRepositoryImpl.Save()"
+	op := runtime.FuncForPC(reflect.ValueOf(repository.Save).Pointer()).Name()
 
 	log := repository.log.With(
 		slog.String("op", op),

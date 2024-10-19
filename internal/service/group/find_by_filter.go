@@ -3,6 +3,8 @@ package group
 import (
 	"context"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
@@ -11,7 +13,7 @@ import (
 )
 
 func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter business.GroupFilter) ([]business.Group, error) {
-	const op = "group.groupServiceImpl.FindByFilter()"
+	op := runtime.FuncForPC(reflect.ValueOf(service.FindByFilter).Pointer()).Name()
 
 	log := service.log.With(
 		slog.String("op", op),

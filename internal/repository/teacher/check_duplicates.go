@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
@@ -18,7 +20,7 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
-	const op = "teacher.teacherRepositoryImpl.CheckDuplicateExists()"
+	op := runtime.FuncForPC(reflect.ValueOf(repository.CheckDuplicateExists).Pointer()).Name()
 
 	log := repository.log.With(
 		slog.String("op", op),

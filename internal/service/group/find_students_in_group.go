@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,7 +19,7 @@ var (
 )
 
 func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]business.Student, error) {
-	const op = "group.groupServiceImpl.FindStudentsInGroup()"
+	op := runtime.FuncForPC(reflect.ValueOf(service.FindStudentsInGroup).Pointer()).Name()
 
 	log := service.log.With(
 		slog.String("op", op),

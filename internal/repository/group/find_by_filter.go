@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
@@ -20,7 +22,7 @@ var (
 )
 
 func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter domain.GroupFilter) ([]domain.Group, error) {
-	const op = "group.groupRepositoryImpl.FindByFilter()"
+	op := runtime.FuncForPC(reflect.ValueOf(repository.FindByFilter).Pointer()).Name()
 
 	log := repository.log.With(
 		slog.String("op", op),

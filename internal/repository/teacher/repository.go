@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
+	"runtime"
 
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/config"
@@ -34,7 +36,7 @@ type teacherRepositoryImpl struct {
 }
 
 func New(config *config.Config, log *slog.Logger) (Repository, error) {
-	const op = "teacher.New()"
+	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
 
 	log = log.With(
 		slog.String("op", op),

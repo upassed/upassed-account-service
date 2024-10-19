@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,7 +21,7 @@ var (
 )
 
 func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.UUID) (bool, error) {
-	const op = "group.groupRepositoryImpl.Exists()"
+	op := runtime.FuncForPC(reflect.ValueOf(repository.Exists).Pointer()).Name()
 
 	log := repository.log.With(
 		slog.String("op", op),

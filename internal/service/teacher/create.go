@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
@@ -17,7 +19,7 @@ var (
 )
 
 func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate business.Teacher) (business.TeacherCreateResponse, error) {
-	const op = "teacher.teacherServiceImpl.Create()"
+	op := runtime.FuncForPC(reflect.ValueOf(service.Create).Pointer()).Name()
 
 	log := service.log.With(
 		slog.String("op", op),

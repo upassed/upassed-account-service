@@ -62,7 +62,7 @@ func Load() (*Config, error) {
 }
 
 func loadByPath(pathToConfig string) (*Config, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(Load).Pointer()).Name()
+	op := runtime.FuncForPC(reflect.ValueOf(loadByPath).Pointer()).Name()
 
 	var config Config
 	if err := cleanenv.ReadConfig(pathToConfig, &config); err != nil {

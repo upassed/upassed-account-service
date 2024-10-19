@@ -2,6 +2,8 @@ package app
 
 import (
 	"log/slog"
+	"reflect"
+	"runtime"
 
 	"github.com/upassed/upassed-account-service/internal/config"
 	groupRepo "github.com/upassed/upassed-account-service/internal/repository/group"
@@ -18,7 +20,8 @@ type App struct {
 }
 
 func New(config *config.Config, log *slog.Logger) (*App, error) {
-	const op = "app.New()"
+	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
+
 	log = log.With(
 		slog.String("op", op),
 	)
