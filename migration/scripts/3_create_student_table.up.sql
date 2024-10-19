@@ -7,5 +7,6 @@ create table if not exists student (
     group_id uuid not null,
     username varchar not null unique,
 
+    check(length(username) >= 5 and length(username) <= 20),
     CONSTRAINT fk_student_group_id FOREIGN KEY (group_id) REFERENCES "group" (id)
 );

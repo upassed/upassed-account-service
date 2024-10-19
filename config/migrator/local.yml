@@ -1,8 +1,0 @@
-migrations_path: "./migration/scripts"
-migrations_table_name: "migrations"
-storage:
-  host: "localhost"
-  port: "5432"
-  database_name: "upassed-account-service-db"
-  user: "user"
-  password: "password"

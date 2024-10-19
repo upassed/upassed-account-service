@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"sync"
 
-	config "github.com/upassed/upassed-account-service/internal/config/app"
+	config "github.com/upassed/upassed-account-service/internal/config"
 )
 
 const (
