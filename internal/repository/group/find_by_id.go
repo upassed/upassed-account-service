@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	ErrorSearchingGroupByID            error = errors.New("error while searching group by id")
-	ErrorGroupNotFoundByID             error = errors.New("group by id not found in database")
-	ErrorFindGroupByIDDeadlineExceeded error = errors.New("finding group by id in a database deadline exceeded")
+	errSearchingGroupByID            = errors.New("error while searching group by id")
+	ErrGroupNotFoundByID             = errors.New("group by id not found in database")
+	errFindGroupByIDDeadlineExceeded = errors.New("finding group by id in a database deadline exceeded")
 )
 
 func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uuid.UUID) (domain.Group, error) {
@@ -42,13 +42,13 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 		searchResult := repository.db.First(&foundGroup, groupID)
 		if searchResult.Error != nil {
 			if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
-				log.Error("group was not found in the database", logger.Error(searchResult.Error))
-				errorChannel <- handling.New(ErrorGroupNotFoundByID.Error(), codes.NotFound)
+				log.Error("group was not found in the database", logging.Error(searchResult.Error))
+				errorChannel <- handling.New(ErrGroupNotFoundByID.Error(), codes.NotFound)
 				return
 			}
 
-			log.Error("error while searching group in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.New(ErrorSearchingGroupByID.Error(), codes.Internal)
+			log.Error("error while searching group in the database", logging.Error(searchResult.Error))
+			errorChannel <- handling.New(errSearchingGroupByID.Error(), codes.Internal)
 			return
 		}
 
@@ -59,7 +59,7 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return domain.Group{}, ErrorFindGroupByIDDeadlineExceeded
+			return domain.Group{}, errFindGroupByIDDeadlineExceeded
 		case foundGroup := <-resultChannel:
 			return foundGroup, nil
 		case err := <-errorChannel:

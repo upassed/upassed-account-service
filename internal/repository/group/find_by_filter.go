@@ -8,15 +8,15 @@ import (
 	"time"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
 )
 
 var (
-	ErrorSearchingGroupByFilter            error = errors.New("error while searching groups by filter")
-	ErrorFindGroupByFilterDeadlineExceeded error = errors.New("finding groups by filter in a database deadline exceeded")
+	errSearchingGroupByFilter            = errors.New("error while searching groups by filter")
+	errFindGroupByFilterDeadlineExceeded = errors.New("finding groups by filter in a database deadline exceeded")
 )
 
 func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter domain.GroupFilter) ([]domain.Group, error) {
@@ -42,8 +42,8 @@ func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter 
 		searchResult := repository.db.Where("specialization_code LIKE ? AND group_number LIKE ?", specializationCode, groupNumber).Find(&foundGroups)
 
 		if searchResult.Error != nil {
-			log.Error("error while searching groups by filter in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.New(ErrorSearchingGroupByFilter.Error(), codes.Internal)
+			log.Error("error while searching groups by filter in the database", logging.Error(searchResult.Error))
+			errorChannel <- handling.New(errSearchingGroupByFilter.Error(), codes.Internal)
 			return
 		}
 
@@ -54,7 +54,7 @@ func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter 
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return []domain.Group{}, ErrorFindGroupByFilterDeadlineExceeded
+			return []domain.Group{}, errFindGroupByFilterDeadlineExceeded
 		case foundGroups := <-resultChannel:
 			return foundGroups, nil
 		case err := <-errorChannel:

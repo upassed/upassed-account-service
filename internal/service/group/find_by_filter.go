@@ -39,7 +39,7 @@ func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter busine
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return []business.Group{}, ErrorFindGroupByIDDeadlineExceeded
+			return []business.Group{}, errFindGroupByIDDeadlineExceeded
 		case foundGroups := <-resultChannel:
 			return foundGroups, nil
 		case err := <-errorChannel:

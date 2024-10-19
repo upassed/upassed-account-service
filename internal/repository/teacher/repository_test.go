@@ -13,8 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	config "github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	testcontainer "github.com/upassed/upassed-account-service/internal/repository"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/repository/teacher"
@@ -42,13 +42,13 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	config, err := config.Load()
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("unable to parse config: ", err)
+		log.Fatal("unable to parse cfg: ", err)
 	}
 
 	ctx := context.Background()
-	container, err := testcontainer.NewPostgresTestontainer(ctx)
+	container, err := testcontainer.NewPostgresTestcontainer(ctx)
 	if err != nil {
 		log.Fatal("unable to create a testcontainer: ", err)
 	}
@@ -58,13 +58,13 @@ func TestMain(m *testing.M) {
 		log.Fatal("unable to get a postgres testcontainer real port: ", err)
 	}
 
-	config.Storage.Port = strconv.Itoa(port)
-	logger := logger.New(config.Env)
-	if err := container.Migrate(config, logger); err != nil {
+	cfg.Storage.Port = strconv.Itoa(port)
+	logger := logging.New(cfg.Env)
+	if err := container.Migrate(cfg, logger); err != nil {
 		log.Fatal("unable to run migrations: ", err)
 	}
 
-	repository, err = teacher.New(config, logger)
+	repository, err = teacher.New(cfg, logger)
 	if err != nil {
 		log.Fatal("unable to create repository: ", err)
 	}
@@ -78,13 +78,13 @@ func TestMain(m *testing.M) {
 }
 
 func TestConnectToDatabase_InvalidCredentials(t *testing.T) {
-	config, err := config.Load()
+	cfg, err := config.Load()
 	require.Nil(t, err)
 
-	config.Storage.DatabaseName = "invalid-db-name"
-	_, err = teacher.New(config, logger.New(config.Env))
+	cfg.Storage.DatabaseName = "invalid-db-name"
+	_, err = teacher.New(cfg, logging.New(cfg.Env))
 	require.NotNil(t, err)
-	assert.ErrorIs(t, err, teacher.ErrorOpeningDbConnection)
+	assert.ErrorIs(t, err, teacher.ErrOpeningDbConnection)
 }
 
 func TestSave_InvalidUsernameLength(t *testing.T) {
@@ -96,7 +96,7 @@ func TestSave_InvalidUsernameLength(t *testing.T) {
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.Internal, convertedError.Code())
-	assert.Equal(t, teacher.ErrorSavingTeacher.Error(), convertedError.Message())
+	assert.Equal(t, teacher.ErrSavingTeacher.Error(), convertedError.Message())
 }
 
 func TestSave_HappyPath(t *testing.T) {
@@ -114,38 +114,38 @@ func TestFindByID_TeacherNotFound(t *testing.T) {
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-	assert.Equal(t, teacher.ErrorTeacherNotFoundByID.Error(), convertedError.Message())
+	assert.Equal(t, teacher.ErrTeacherNotFoundByID.Error(), convertedError.Message())
 }
 
 func TestFindByID_HappyPath(t *testing.T) {
-	teacher := randomTeacher()
-	err := repository.Save(context.Background(), teacher)
+	existingTeacher := randomTeacher()
+	err := repository.Save(context.Background(), existingTeacher)
 	require.Nil(t, err)
 
-	foundTeacher, err := repository.FindByID(context.Background(), teacher.ID)
+	foundTeacher, err := repository.FindByID(context.Background(), existingTeacher.ID)
 	require.Nil(t, err)
 
-	assert.Equal(t, teacher.ID, foundTeacher.ID)
-	assert.Equal(t, teacher.FirstName, foundTeacher.FirstName)
-	assert.Equal(t, teacher.LastName, foundTeacher.LastName)
-	assert.Equal(t, teacher.MiddleName, foundTeacher.MiddleName)
-	assert.Equal(t, teacher.ReportEmail, foundTeacher.ReportEmail)
-	assert.Equal(t, teacher.Username, foundTeacher.Username)
+	assert.Equal(t, existingTeacher.ID, foundTeacher.ID)
+	assert.Equal(t, existingTeacher.FirstName, foundTeacher.FirstName)
+	assert.Equal(t, existingTeacher.LastName, foundTeacher.LastName)
+	assert.Equal(t, existingTeacher.MiddleName, foundTeacher.MiddleName)
+	assert.Equal(t, existingTeacher.ReportEmail, foundTeacher.ReportEmail)
+	assert.Equal(t, existingTeacher.Username, foundTeacher.Username)
 }
 
 func TestCheckDuplicates_DuplicatesNotExists(t *testing.T) {
-	teacher := randomTeacher()
-	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), teacher.ReportEmail, teacher.Username)
+	uniqueTeacher := randomTeacher()
+	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), uniqueTeacher.ReportEmail, uniqueTeacher.Username)
 	require.Nil(t, err)
 	assert.False(t, duplicatesExists)
 }
 
 func TestCheckDuplicates_DuplicatesExists(t *testing.T) {
-	teacher := randomTeacher()
-	err := repository.Save(context.Background(), teacher)
+	duplicateTeacher := randomTeacher()
+	err := repository.Save(context.Background(), duplicateTeacher)
 	require.Nil(t, err)
 
-	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), teacher.ReportEmail, teacher.Username)
+	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), duplicateTeacher.ReportEmail, duplicateTeacher.Username)
 	require.Nil(t, err)
 
 	assert.True(t, duplicatesExists)

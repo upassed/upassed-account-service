@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ErrorCheckGroupExists                error = errors.New("error while checking if group exists in database")
-	ErrorCheckGroupExistsTimeoutExceeded error = errors.New("echecking if group exists in database timeout exceeded")
+	errCheckGroupExists                = errors.New("error while checking if group exists in database")
+	errCheckGroupExistsTimeoutExceeded = errors.New("checking if group exists in database timeout exceeded")
 )
 
 func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.UUID) (bool, error) {
@@ -39,7 +39,7 @@ func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.
 		countResult := repository.db.Model(&domain.Group{}).Where("id = ?", groupID).Count(&groupCount)
 		if countResult.Error != nil {
 			log.Error("error while counting groups with id in database")
-			errorChannel <- handling.New(ErrorCheckGroupExists.Error(), codes.Internal)
+			errorChannel <- handling.New(errCheckGroupExists.Error(), codes.Internal)
 			return
 		}
 
@@ -56,7 +56,7 @@ func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return false, ErrorCheckGroupExistsTimeoutExceeded
+			return false, errCheckGroupExistsTimeoutExceeded
 		case duplicatesFound := <-resultChannel:
 			return duplicatesFound, nil
 		case err := <-errorChannel:

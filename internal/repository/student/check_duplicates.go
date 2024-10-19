@@ -13,17 +13,17 @@ import (
 )
 
 var (
-	ErrorCountingDuplicatesStudent              error = errors.New("error while counting duplicate students")
-	ErrorCheckStudentDuplicatesDeadlineExceeded error = errors.New("checking student duplicates in a database deadline exceeded")
+	errCountingDuplicatesStudent              = errors.New("error while counting duplicate students")
+	errCheckStudentDuplicatesDeadlineExceeded = errors.New("checking student duplicates in a database deadline exceeded")
 )
 
-func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Context, edicationalEmail, username string) (bool, error) {
+func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error) {
 	const op = "student.studentRepositoryImpl.CheckDuplicateExists()"
 
 	log := repository.log.With(
 		slog.String("op", op),
 		slog.String("studentUsername", username),
-		slog.String("studentEducationalEmail", edicationalEmail),
+		slog.String("studentEducationalEmail", educationalEmail),
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
@@ -36,15 +36,15 @@ func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 	go func() {
 		log.Debug("started checking student duplicates")
 		var studentCount int64
-		countResult := repository.db.Model(&domain.Student{}).Where("educational_email = ?", edicationalEmail).Or("username = ?", username).Count(&studentCount)
+		countResult := repository.db.Model(&domain.Student{}).Where("educational_email = ?", educationalEmail).Or("username = ?", username).Count(&studentCount)
 		if countResult.Error != nil {
 			log.Error("error while counting students with educational_email and username in database")
-			errorChannel <- handling.New(ErrorCountingDuplicatesStudent.Error(), codes.Internal)
+			errorChannel <- handling.New(errCountingDuplicatesStudent.Error(), codes.Internal)
 			return
 		}
 
 		if studentCount > 0 {
-			log.Debug("found student duplicates in database", slog.Int64("studentDuplicatesCouint", studentCount))
+			log.Debug("found student duplicates in database", slog.Int64("studentDuplicatesCount", studentCount))
 			resultChannel <- true
 			return
 		}
@@ -56,7 +56,7 @@ func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return false, ErrorCheckStudentDuplicatesDeadlineExceeded
+			return false, errCheckStudentDuplicatesDeadlineExceeded
 		case duplicatesFound := <-resultChannel:
 			return duplicatesFound, nil
 		case err := <-errorChannel:

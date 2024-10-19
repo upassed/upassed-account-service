@@ -19,34 +19,38 @@ type wrapOptions struct {
 	time time.Time
 }
 
-type applicationError struct {
-	Message string
-	Code    codes.Code
-	Time    time.Time
+type ApplicationError struct {
+	message string
+	code    codes.Code
+	time    time.Time
 }
 
-func New(message string, code codes.Code) *applicationError {
-	return &applicationError{
-		Message: message,
-		Code:    code,
-		Time:    time.Now(),
+func New(message string, code codes.Code) *ApplicationError {
+	return &ApplicationError{
+		message: message,
+		code:    code,
+		time:    time.Now(),
 	}
 }
 
-func (err *applicationError) Error() string {
-	return err.Message
+func (err *ApplicationError) Error() string {
+	return err.message
 }
 
-func (err *applicationError) GRPCStatus() *status.Status {
-	return status.New(err.Code, err.Message)
+func (err *ApplicationError) Code() codes.Code {
+	return err.code
+}
+
+func (err *ApplicationError) GRPCStatus() *status.Status {
+	return status.New(err.code, err.message)
 }
 
 func Process(err error, options ...Option) error {
-	var applicationErr *applicationError
+	var applicationErr *ApplicationError
 	if errors.As(err, &applicationErr) {
-		convertedErr := status.New(applicationErr.Code, applicationErr.Message)
+		convertedErr := status.New(applicationErr.code, applicationErr.message)
 		timeInfo := errdetails.DebugInfo{
-			Detail: fmt.Sprintf("Time: %s", applicationErr.Time.Format(timeFormat)),
+			Detail: fmt.Sprintf("time: %s", applicationErr.time.Format(timeFormat)),
 		}
 
 		convertedErrWithDetails, err := convertedErr.WithDetails(&timeInfo)
@@ -68,7 +72,7 @@ func Wrap(err error, options ...Option) error {
 
 	convertedErr := status.New(opts.code, err.Error())
 	timeInfo := errdetails.DebugInfo{
-		Detail: fmt.Sprintf("Time: %s", opts.time.Format(timeFormat)),
+		Detail: fmt.Sprintf("time: %s", opts.time.Format(timeFormat)),
 	}
 
 	convertedErrWithDetails, err := convertedErr.WithDetails(&timeInfo)

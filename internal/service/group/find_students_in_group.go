@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrorFindStudentsInGroupDeadlineExceeded error = errors.New("find students in group deadline exceeded")
+	errFindStudentsInGroupDeadlineExceeded = errors.New("find students in group deadline exceeded")
 )
 
 func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]business.Student, error) {
@@ -46,7 +46,7 @@ func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupI
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return []business.Student{}, ErrorFindStudentsInGroupDeadlineExceeded
+			return []business.Student{}, errFindStudentsInGroupDeadlineExceeded
 		case foundStudentsInGroup := <-resultChannel:
 			return foundStudentsInGroup, nil
 		case err := <-errorChannel:

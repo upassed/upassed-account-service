@@ -3,7 +3,7 @@ package app
 import (
 	"log/slog"
 
-	config "github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/config"
 	groupRepo "github.com/upassed/upassed-account-service/internal/repository/group"
 	studentRepo "github.com/upassed/upassed-account-service/internal/repository/student"
 	teacherRepo "github.com/upassed/upassed-account-service/internal/repository/teacher"
@@ -38,7 +38,7 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	server := server.New(server.AppServerCreateParams{
+	appServer := server.New(server.AppServerCreateParams{
 		Config:         config,
 		Log:            log,
 		TeacherService: teacher.New(log, teacherRepository),
@@ -48,6 +48,6 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 
 	log.Info("app successfully created")
 	return &App{
-		Server: server,
+		Server: appServer,
 	}, nil
 }

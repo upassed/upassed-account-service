@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/service/group"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
@@ -42,15 +42,15 @@ func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
 	groupID := uuid.New()
-	expectedReposotiryError := errors.New("some repo error")
-	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return([]domain.Student{}, expectedReposotiryError)
+	expectedRepositoryError := errors.New("some repo error")
+	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return([]domain.Student{}, expectedRepositoryError)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindStudentsInGroup(context.Background(), groupID)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
-	assert.Equal(t, expectedReposotiryError.Error(), convertedError.Message())
+	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
 	assert.Equal(t, codes.Internal, convertedError.Code())
 }
 
@@ -61,7 +61,7 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	expectedStudentsInGroup := []domain.Student{randomStudent(), randomStudent(), randomStudent()}
 	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return(expectedStudentsInGroup, nil)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(logging.New(config.EnvTesting), groupRepository)
 	actualFoundStudentsInGroup, err := service.FindStudentsInGroup(context.Background(), groupID)
 	require.Nil(t, err)
 
@@ -72,15 +72,15 @@ func TestFindByID_RepositoryError(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
 	groupID := uuid.New()
-	expectedReposotiryError := errors.New("some repo error")
-	groupRepository.On("FindByID", mock.Anything, groupID).Return(domain.Group{}, expectedReposotiryError)
+	expectedRepositoryError := errors.New("some repo error")
+	groupRepository.On("FindByID", mock.Anything, groupID).Return(domain.Group{}, expectedRepositoryError)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByID(context.Background(), groupID)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
-	assert.Equal(t, expectedReposotiryError.Error(), convertedError.Message())
+	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
 	assert.Equal(t, codes.Internal, convertedError.Code())
 }
 
@@ -96,7 +96,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 
 	groupRepository.On("FindByID", mock.Anything, groupID).Return(expectedFoundGroup, nil)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(logging.New(config.EnvTesting), groupRepository)
 	foundGroup, err := service.FindByID(context.Background(), groupID)
 	require.Nil(t, err)
 
@@ -113,15 +113,15 @@ func TestFindByFilter_RepositoryError(t *testing.T) {
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
-	expectedReposotiryError := errors.New("some repo error")
-	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return([]domain.Group{}, expectedReposotiryError)
+	expectedRepositoryError := errors.New("some repo error")
+	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return([]domain.Group{}, expectedRepositoryError)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByFilter(context.Background(), groupFilter)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
-	assert.Equal(t, expectedReposotiryError.Error(), convertedError.Message())
+	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
 	assert.Equal(t, codes.Internal, convertedError.Code())
 }
 
@@ -136,7 +136,7 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 	foundMatchedGroups := []domain.Group{randomGroup(), randomGroup(), randomGroup()}
 	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return(foundMatchedGroups, nil)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(logging.New(config.EnvTesting), groupRepository)
 	response, err := service.FindByFilter(context.Background(), groupFilter)
 	require.Nil(t, err)
 

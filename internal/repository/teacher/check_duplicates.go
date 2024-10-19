@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	ErrorCountingDuplicatesTeacher              error = errors.New("error while counting duplicate teachers")
-	ErrorCheckTeacherDuplicatesDeadlineExceeded error = errors.New("checking teacher duplicates in a database deadline exceeded")
+	errCountingDuplicatesTeacher              = errors.New("error while counting duplicate teachers")
+	errCheckTeacherDuplicatesDeadlineExceeded = errors.New("checking teacher duplicates in a database deadline exceeded")
 )
 
 func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
@@ -39,12 +39,12 @@ func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 		countResult := repository.db.Model(&domain.Teacher{}).Where("report_email = ?", reportEmail).Or("username = ?", username).Count(&teacherCount)
 		if countResult.Error != nil {
 			log.Error("error while counting teachers with report_email and username in database")
-			errorChannel <- handling.New(ErrorCountingDuplicatesTeacher.Error(), codes.Internal)
+			errorChannel <- handling.New(errCountingDuplicatesTeacher.Error(), codes.Internal)
 			return
 		}
 
 		if teacherCount > 0 {
-			log.Debug("found teacher duplicates in database", slog.Int64("teacherDuplicatesCouint", teacherCount))
+			log.Debug("found teacher duplicates in database", slog.Int64("teacherDuplicatesCount", teacherCount))
 			resultChannel <- true
 			return
 		}
@@ -56,7 +56,7 @@ func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return false, ErrorCheckTeacherDuplicatesDeadlineExceeded
+			return false, errCheckTeacherDuplicatesDeadlineExceeded
 		case duplicatesFound := <-resultChannel:
 			return duplicatesFound, nil
 		case err := <-errorChannel:

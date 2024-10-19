@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrorCreateTeacherDeadlineExceeded error = errors.New("create teacher deadline exceeded")
+	errCreateTeacherDeadlineExceeded = errors.New("create teacher deadline exceeded")
 )
 
 func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate business.Teacher) (business.TeacherCreateResponse, error) {
@@ -60,7 +60,7 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate b
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return business.TeacherCreateResponse{}, ErrorCreateTeacherDeadlineExceeded
+			return business.TeacherCreateResponse{}, errCreateTeacherDeadlineExceeded
 		case createdTeacherData := <-resultChannel:
 			return createdTeacherData, nil
 		case err := <-errorChannel:

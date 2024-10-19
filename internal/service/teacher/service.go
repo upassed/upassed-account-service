@@ -9,7 +9,7 @@ import (
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
-type teacherService interface {
+type Service interface {
 	Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error)
 	FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error)
 }
@@ -25,7 +25,7 @@ type teacherRepository interface {
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 
-func New(log *slog.Logger, repository teacherRepository) teacherService {
+func New(log *slog.Logger, repository teacherRepository) Service {
 	return &teacherServiceImpl{
 		log:        log,
 		repository: repository,

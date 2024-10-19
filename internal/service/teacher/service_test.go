@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	config "github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
@@ -38,8 +38,8 @@ func (m *mockTeacherRepository) CheckDuplicateExists(ctx context.Context, report
 	return args.Bool(0), args.Error(1)
 }
 
-func TestCreate_ErrorCheckingDuplicateExistsOccured(t *testing.T) {
-	log := logger.New(config.EnvTesting)
+func TestCreate_ErrorCheckingDuplicateExistsOccurred(t *testing.T) {
+	log := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	duplicateTeacher := randomTeacher()
 
@@ -55,8 +55,8 @@ func TestCreate_ErrorCheckingDuplicateExistsOccured(t *testing.T) {
 	assert.Equal(t, expectedRepoError.Error(), convertedError.Message())
 }
 
-func TestCreate_DiplicateExists(t *testing.T) {
-	log := logger.New(config.EnvTesting)
+func TestCreate_DuplicateExists(t *testing.T) {
+	log := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	duplicateTeacher := randomTeacher()
 
@@ -73,7 +73,7 @@ func TestCreate_DiplicateExists(t *testing.T) {
 }
 
 func TestCreate_ErrorSavingToDatabase(t *testing.T) {
-	log := logger.New(config.EnvTesting)
+	log := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	teacherToSave := randomTeacher()
 
@@ -89,11 +89,11 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepoError.Error(), convertedError.Message())
-	assert.Equal(t, expectedRepoError.Code, convertedError.Code())
+	assert.Equal(t, expectedRepoError.Code(), convertedError.Code())
 }
 
 func TestCreate_HappyPath(t *testing.T) {
-	log := logger.New(config.EnvTesting)
+	log := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	teacherToSave := randomTeacher()
 
@@ -109,7 +109,7 @@ func TestCreate_HappyPath(t *testing.T) {
 }
 
 func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
-	log := logger.New(config.EnvTesting)
+	log := logging.New(config.EnvTesting)
 	teacherRepository := new(mockTeacherRepository)
 	teacherID := uuid.New()
 
@@ -121,12 +121,12 @@ func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
-	assert.Equal(t, expectedRepoError.Code, convertedError.Code())
-	assert.Equal(t, expectedRepoError.Message, convertedError.Message())
+	assert.Equal(t, expectedRepoError.Code(), convertedError.Code())
+	assert.Equal(t, expectedRepoError.Error(), convertedError.Message())
 }
 
 func TestFindByID_HappyPath(t *testing.T) {
-	log := logger.New(config.EnvTesting)
+	log := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	teacherID := uuid.New()
 	expectedFoundTeacher := teacher.ConvertToRepositoryTeacher(randomTeacher())

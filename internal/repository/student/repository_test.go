@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	testcontainer "github.com/upassed/upassed-account-service/internal/repository"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/repository/student"
@@ -25,7 +25,7 @@ import (
 type studentRepository interface {
 	Save(context.Context, domain.Student) error
 	FindByID(context.Context, uuid.UUID) (domain.Student, error)
-	CheckDuplicateExists(ctx context.Context, edicationalEmail, username string) (bool, error)
+	CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error)
 }
 
 var (
@@ -42,13 +42,13 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	config, err := config.Load()
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("unable to parse config: ", err)
+		log.Fatal("unable to parse cfg: ", err)
 	}
 
 	ctx := context.Background()
-	container, err := testcontainer.NewPostgresTestontainer(ctx)
+	container, err := testcontainer.NewPostgresTestcontainer(ctx)
 	if err != nil {
 		log.Fatal("unable to create a testcontainer: ", err)
 	}
@@ -58,13 +58,13 @@ func TestMain(m *testing.M) {
 		log.Fatal("unable to get a postgres testcontainer real port: ", err)
 	}
 
-	config.Storage.Port = strconv.Itoa(port)
-	logger := logger.New(config.Env)
-	if err := container.Migrate(config, logger); err != nil {
+	cfg.Storage.Port = strconv.Itoa(port)
+	logger := logging.New(cfg.Env)
+	if err := container.Migrate(cfg, logger); err != nil {
 		log.Fatal("unable to run migrations: ", err)
 	}
 
-	repository, err = student.New(config, logger)
+	repository, err = student.New(cfg, logger)
 	if err != nil {
 		log.Fatal("unable to create repository: ", err)
 	}
@@ -78,13 +78,13 @@ func TestMain(m *testing.M) {
 }
 
 func TestConnectToDatabase_InvalidCredentials(t *testing.T) {
-	config, err := config.Load()
+	cfg, err := config.Load()
 	require.Nil(t, err)
 
-	config.Storage.DatabaseName = "invalid-db-name"
-	_, err = student.New(config, logger.New(config.Env))
+	cfg.Storage.DatabaseName = "invalid-db-name"
+	_, err = student.New(cfg, logging.New(cfg.Env))
 	require.NotNil(t, err)
-	assert.ErrorIs(t, err, student.ErrorOpeningDbConnection)
+	assert.ErrorIs(t, err, student.ErrOpeningDbConnection)
 }
 
 func TestSave_InvalidUsernameLength(t *testing.T) {
@@ -96,7 +96,7 @@ func TestSave_InvalidUsernameLength(t *testing.T) {
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.Internal, convertedError.Code())
-	assert.Equal(t, student.ErrorSavingStudent.Error(), convertedError.Message())
+	assert.Equal(t, student.ErrSavingStudent.Error(), convertedError.Message())
 }
 
 func TestSave_HappyPath(t *testing.T) {
@@ -116,50 +116,50 @@ func TestFindByID_StudentNotFound(t *testing.T) {
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-	assert.Equal(t, student.ErrorStudentNotFoundByID.Error(), convertedError.Message())
+	assert.Equal(t, student.ErrStudentNotFoundByID.Error(), convertedError.Message())
 }
 
 func TestFindByID_HappyPath(t *testing.T) {
-	student := randomStudent()
+	existingStudent := randomStudent()
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
-	student.GroupID = groupID
-	student.Group.ID = groupID
+	existingStudent.GroupID = groupID
+	existingStudent.Group.ID = groupID
 
-	err := repository.Save(context.Background(), student)
+	err := repository.Save(context.Background(), existingStudent)
 	require.Nil(t, err)
 
-	foundStudent, err := repository.FindByID(context.Background(), student.ID)
+	foundStudent, err := repository.FindByID(context.Background(), existingStudent.ID)
 	require.Nil(t, err)
 
-	assert.Equal(t, student.ID, foundStudent.ID)
-	assert.Equal(t, student.FirstName, foundStudent.FirstName)
-	assert.Equal(t, student.LastName, foundStudent.LastName)
-	assert.Equal(t, student.MiddleName, foundStudent.MiddleName)
-	assert.Equal(t, student.EducationalEmail, foundStudent.EducationalEmail)
-	assert.Equal(t, student.Username, foundStudent.Username)
-	assert.Equal(t, student.GroupID, foundStudent.GroupID)
-	assert.Equal(t, student.Group.ID, foundStudent.Group.ID)
+	assert.Equal(t, existingStudent.ID, foundStudent.ID)
+	assert.Equal(t, existingStudent.FirstName, foundStudent.FirstName)
+	assert.Equal(t, existingStudent.LastName, foundStudent.LastName)
+	assert.Equal(t, existingStudent.MiddleName, foundStudent.MiddleName)
+	assert.Equal(t, existingStudent.EducationalEmail, foundStudent.EducationalEmail)
+	assert.Equal(t, existingStudent.Username, foundStudent.Username)
+	assert.Equal(t, existingStudent.GroupID, foundStudent.GroupID)
+	assert.Equal(t, existingStudent.Group.ID, foundStudent.Group.ID)
 	assert.Equal(t, "5130904", foundStudent.Group.SpecializationCode)
 	assert.Equal(t, "10101", foundStudent.Group.GroupNumber)
 }
 
 func TestCheckDuplicates_DuplicatesNotExists(t *testing.T) {
-	student := randomStudent()
-	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), student.EducationalEmail, student.Username)
+	uniqueStudent := randomStudent()
+	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), uniqueStudent.EducationalEmail, uniqueStudent.Username)
 	require.Nil(t, err)
 	assert.False(t, duplicatesExists)
 }
 
 func TestCheckDuplicates_DuplicatesExists(t *testing.T) {
-	student := randomStudent()
+	duplicateStudent := randomStudent()
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
-	student.GroupID = groupID
-	student.Group.ID = groupID
+	duplicateStudent.GroupID = groupID
+	duplicateStudent.Group.ID = groupID
 
-	err := repository.Save(context.Background(), student)
+	err := repository.Save(context.Background(), duplicateStudent)
 	require.Nil(t, err)
 
-	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), student.EducationalEmail, student.Username)
+	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), duplicateStudent.EducationalEmail, duplicateStudent.Username)
 	require.Nil(t, err)
 
 	assert.True(t, duplicatesExists)

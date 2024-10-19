@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
-	config "github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/logging"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -34,7 +34,7 @@ func RunMigrations(config *config.Config, log *slog.Logger) error {
 	)
 
 	if err != nil {
-		log.Error("error while creating migrator", logger.Error(err))
+		log.Error("error while creating migrator", logging.Error(err))
 		return err
 	}
 
@@ -45,7 +45,7 @@ func RunMigrations(config *config.Config, log *slog.Logger) error {
 			return nil
 		}
 
-		log.Error("error while applying migrations", logger.Error(err))
+		log.Error("error while applying migrations", logging.Error(err))
 		return err
 	}
 

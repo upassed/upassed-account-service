@@ -8,15 +8,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
 )
 
 var (
-	ErrorSearchingStudentsInGroup            error = errors.New("error while searching students in group")
-	ErrorFindStudentsInGroupDeadlineExceeded error = errors.New("finding students in group in a database deadline exceeded")
+	errSearchingStudentsInGroup            = errors.New("error while searching students in group")
+	errFindStudentsInGroupDeadlineExceeded = errors.New("finding students in group in a database deadline exceeded")
 )
 
 func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]domain.Student, error) {
@@ -36,11 +36,11 @@ func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, 
 
 	go func() {
 		log.Debug("started searching students in group in a database")
-		foundStudents := []domain.Student{}
+		foundStudents := make([]domain.Student, 0)
 		searchResult := repository.db.Preload("Group").Where("group_id = ?", groupID).Find(&foundStudents)
 		if searchResult.Error != nil {
-			log.Error("error while searching students in group in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.New(ErrorSearchingStudentsInGroup.Error(), codes.Internal)
+			log.Error("error while searching students in group in the database", logging.Error(searchResult.Error))
+			errorChannel <- handling.New(errSearchingStudentsInGroup.Error(), codes.Internal)
 			return
 		}
 
@@ -51,7 +51,7 @@ func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, 
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return []domain.Student{}, ErrorFindStudentsInGroupDeadlineExceeded
+			return []domain.Student{}, errFindStudentsInGroupDeadlineExceeded
 		case foundStudentsInGroup := <-resultChannel:
 			return foundStudentsInGroup, nil
 		case err := <-errorChannel:

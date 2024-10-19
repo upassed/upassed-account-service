@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/migration"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"gorm.io/driver/postgres"
@@ -17,15 +17,15 @@ import (
 )
 
 var (
-	ErrorOpeningDbConnection     error = errors.New("failed to open connection to a database")
-	ErrorPingingDatabase         error = errors.New("failed to ping database")
-	ErrorRunningMigrationScripts error = errors.New("error while running migration scripts")
+	ErrOpeningDbConnection     = errors.New("failed to open connection to a database")
+	errPingingDatabase         = errors.New("failed to ping database")
+	errRunningMigrationScripts = errors.New("error while running migration scripts")
 )
 
-type studentRepository interface {
+type Repository interface {
 	Save(context.Context, domain.Student) error
 	FindByID(context.Context, uuid.UUID) (domain.Student, error)
-	CheckDuplicateExists(ctx context.Context, edicationalEmail, username string) (bool, error)
+	CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error)
 }
 
 type studentRepositoryImpl struct {
@@ -33,7 +33,7 @@ type studentRepositoryImpl struct {
 	db  *gorm.DB
 }
 
-func New(config *config.Config, log *slog.Logger) (studentRepository, error) {
+func New(config *config.Config, log *slog.Logger) (Repository, error) {
 	const op = "student.New()"
 
 	log = log.With(
@@ -57,18 +57,18 @@ func New(config *config.Config, log *slog.Logger) (studentRepository, error) {
 	})
 
 	if err != nil {
-		log.Error("error while opening connection to a database", logger.Error(err))
-		return nil, fmt.Errorf("%s - %w", op, ErrorOpeningDbConnection)
+		log.Error("error while opening connection to a database", logging.Error(err))
+		return nil, fmt.Errorf("%s - %w", op, ErrOpeningDbConnection)
 	}
 
 	if postgresDB, err := db.DB(); err != nil || postgresDB.Ping() != nil {
 		log.Error("error while pinging a database")
-		return nil, fmt.Errorf("%s - %w", op, ErrorPingingDatabase)
+		return nil, fmt.Errorf("%s - %w", op, errPingingDatabase)
 	}
 
 	log.Debug("database connection established successfully")
 	if err := migration.RunMigrations(config, log); err != nil {
-		return nil, ErrorRunningMigrationScripts
+		return nil, errRunningMigrationScripts
 	}
 
 	return &studentRepositoryImpl{

@@ -9,7 +9,7 @@ import (
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
-type studentService interface {
+type Service interface {
 	Create(ctx context.Context, student business.Student) (business.StudentCreateResponse, error)
 	FindByID(ctx context.Context, studentID uuid.UUID) (business.Student, error)
 }
@@ -30,10 +30,10 @@ type groupRepository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
 }
 
-func New(log *slog.Logger, studentRepository studentRepository, groupgroupRepository groupRepository) studentService {
+func New(log *slog.Logger, studentRepository studentRepository, groupRepository groupRepository) Service {
 	return &studentServiceImpl{
 		log:               log,
 		studentRepository: studentRepository,
-		groupRepository:   groupgroupRepository,
+		groupRepository:   groupRepository,
 	}
 }

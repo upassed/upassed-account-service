@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
 )
 
 var (
-	ErrorSavingStudent               error = errors.New("error while saving student")
-	ErrorSaveStudentDeadlineExceeded error = errors.New("saving student into a database deadline exceeded")
+	ErrSavingStudent               = errors.New("error while saving student")
+	errSaveStudentDeadlineExceeded = errors.New("saving student into a database deadline exceeded")
 )
 
 func (repository *studentRepositoryImpl) Save(ctx context.Context, student domain.Student) error {
@@ -37,8 +37,8 @@ func (repository *studentRepositoryImpl) Save(ctx context.Context, student domai
 		log.Debug("started saving student to a database")
 		saveResult := repository.db.Create(&student)
 		if saveResult.Error != nil || saveResult.RowsAffected != 1 {
-			log.Error("error while saving student data to a database", logger.Error(saveResult.Error))
-			errorChannel <- handling.New(ErrorSavingStudent.Error(), codes.Internal)
+			log.Error("error while saving student data to a database", logging.Error(saveResult.Error))
+			errorChannel <- handling.New(ErrSavingStudent.Error(), codes.Internal)
 			return
 		}
 
@@ -49,7 +49,7 @@ func (repository *studentRepositoryImpl) Save(ctx context.Context, student domai
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return ErrorSaveStudentDeadlineExceeded
+			return errSaveStudentDeadlineExceeded
 		case <-resultChannel:
 			return nil
 		case err := <-errorChannel:

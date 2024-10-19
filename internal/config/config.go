@@ -4,14 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
+	"runtime"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 var (
-	ErrorConfigFlagEmpty   error = errors.New("config flag is not passed")
-	ErrorConfigEnvEmpty    error = errors.New("config path env is not set")
-	ErrorConfigFileInvalid error = errors.New("config file has invalid format")
+	errConfigEnvEmpty    = errors.New("config path env is not set")
+	errConfigFileInvalid = errors.New("config file has invalid format")
 )
 
 type EnvType string
@@ -50,23 +51,22 @@ type MigrationConfig struct {
 }
 
 func Load() (*Config, error) {
-	const op = "config.Load()"
+	op := runtime.FuncForPC(reflect.ValueOf(Load).Pointer()).Name()
 
 	pathToConfig := os.Getenv(EnvConfigPath)
 	if pathToConfig == "" {
-		return nil, fmt.Errorf("%s -> %w", op, ErrorConfigEnvEmpty)
+		return nil, fmt.Errorf("%s -> %w", op, errConfigEnvEmpty)
 	}
 
 	return loadByPath(pathToConfig)
 }
 
 func loadByPath(pathToConfig string) (*Config, error) {
-	const op = "config.loadByPath()"
+	op := runtime.FuncForPC(reflect.ValueOf(Load).Pointer()).Name()
 
 	var config Config
-
 	if err := cleanenv.ReadConfig(pathToConfig, &config); err != nil {
-		return nil, fmt.Errorf("%s -> %w; %w", op, ErrorConfigFileInvalid, err)
+		return nil, fmt.Errorf("%s -> %w; %w", op, errConfigFileInvalid, err)
 	}
 
 	return &config, nil

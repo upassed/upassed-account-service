@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	ErrorSearchingTeacherByID            error = errors.New("error while searching teacher by id")
-	ErrorTeacherNotFoundByID             error = errors.New("teacher by id  not found in database")
-	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("finding teacher by id in a database deadline exceeded")
+	errSearchingTeacherByID            = errors.New("error while searching teacher by id")
+	ErrTeacherNotFoundByID             = errors.New("teacher by id  not found in database")
+	errFindTeacherByIDDeadlineExceeded = errors.New("finding teacher by id in a database deadline exceeded")
 )
 
 func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
@@ -42,13 +42,13 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 		searchResult := repository.db.First(&foundTeacher, teacherID)
 		if searchResult.Error != nil {
 			if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
-				log.Error("teacher was not found in the database", logger.Error(searchResult.Error))
-				errorChannel <- handling.New(ErrorTeacherNotFoundByID.Error(), codes.NotFound)
+				log.Error("teacher was not found in the database", logging.Error(searchResult.Error))
+				errorChannel <- handling.New(ErrTeacherNotFoundByID.Error(), codes.NotFound)
 				return
 			}
 
-			log.Error("error while searching teacher in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.New(ErrorSearchingTeacherByID.Error(), codes.Internal)
+			log.Error("error while searching teacher in the database", logging.Error(searchResult.Error))
+			errorChannel <- handling.New(errSearchingTeacherByID.Error(), codes.Internal)
 			return
 		}
 
@@ -59,7 +59,7 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return domain.Teacher{}, ErrorFindTeacherByIDDeadlineExceeded
+			return domain.Teacher{}, errFindTeacherByIDDeadlineExceeded
 		case foundTeacher := <-resultChannel:
 			return foundTeacher, nil
 		case err := <-errorChannel:

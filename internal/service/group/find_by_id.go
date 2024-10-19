@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrorFindGroupByIDDeadlineExceeded error = errors.New("find group by id timeout exceeded")
+	errFindGroupByIDDeadlineExceeded = errors.New("find group by id timeout exceeded")
 )
 
 func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID) (business.Group, error) {
@@ -46,7 +46,7 @@ func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return business.Group{}, ErrorFindGroupByIDDeadlineExceeded
+			return business.Group{}, errFindGroupByIDDeadlineExceeded
 		case foundGroup := <-resultChannel:
 			return foundGroup, nil
 		case err := <-errorChannel:

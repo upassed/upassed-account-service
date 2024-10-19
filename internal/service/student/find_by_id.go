@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrorFindStudentByIDDeadlineExceeded error = errors.New("find student by id deadline exceeded")
+	errFindStudentByIDDeadlineExceeded = errors.New("find student by id deadline exceeded")
 )
 
 func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.UUID) (business.Student, error) {
@@ -46,7 +46,7 @@ func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.
 	for {
 		select {
 		case <-contextWithTimeout.Done():
-			return business.Student{}, ErrorFindStudentByIDDeadlineExceeded
+			return business.Student{}, errFindStudentByIDDeadlineExceeded
 		case foundStudent := <-resultChannel:
 			return foundStudent, nil
 		case err := <-errorChannel:

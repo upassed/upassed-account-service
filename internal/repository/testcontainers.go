@@ -2,6 +2,7 @@ package testcontainer
 
 import (
 	"context"
+	"github.com/docker/docker/api/types/container"
 	"log/slog"
 	"time"
 
@@ -21,7 +22,7 @@ type postgresTestcontainerImpl struct {
 	container testcontainers.Container
 }
 
-func NewPostgresTestontainer(ctx context.Context) (PostgresTestcontainer, error) {
+func NewPostgresTestcontainer(ctx context.Context) (PostgresTestcontainer, error) {
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, err
@@ -33,7 +34,9 @@ func NewPostgresTestontainer(ctx context.Context) (PostgresTestcontainer, error)
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:16.4",
 		ExposedPorts: []string{"5432/tcp"},
-		AutoRemove:   true,
+		HostConfigModifier: func(cfg *container.HostConfig) {
+			cfg.AutoRemove = true
+		},
 		Env: map[string]string{
 			"POSTGRES_USER":     cfg.Storage.User,
 			"POSTGRES_PASSWORD": cfg.Storage.Password,
