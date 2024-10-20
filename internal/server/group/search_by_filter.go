@@ -2,6 +2,9 @@ package group
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/middleware"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/pkg/client"
@@ -13,7 +16,11 @@ func (server *groupServerAPI) SearchByFilter(ctx context.Context, request *clien
 		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
-	matchedGroups, err := server.service.FindByFilter(ctx, ConvertToGroupFilter(request))
+	spanContext, span := otel.Tracer(server.cfg.Tracing.GroupTracerName).Start(ctx, "group#SearchByFilter")
+	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
+	defer span.End()
+
+	matchedGroups, err := server.service.FindByFilter(spanContext, ConvertToGroupFilter(request))
 	if err != nil {
 		return nil, err
 	}

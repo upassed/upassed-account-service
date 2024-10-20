@@ -31,11 +31,12 @@ type Repository interface {
 }
 
 type teacherRepositoryImpl struct {
-	log *slog.Logger
 	db  *gorm.DB
+	cfg *config.Config
+	log *slog.Logger
 }
 
-func New(config *config.Config, log *slog.Logger) (Repository, error) {
+func New(cfg *config.Config, log *slog.Logger) (Repository, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
 
 	log = log.With(
@@ -44,11 +45,11 @@ func New(config *config.Config, log *slog.Logger) (Repository, error) {
 
 	log.Info("started connecting to postgres database")
 	postgresInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		config.Storage.Host,
-		config.Storage.Port,
-		config.Storage.User,
-		config.Storage.Password,
-		config.Storage.DatabaseName,
+		cfg.Storage.Host,
+		cfg.Storage.Port,
+		cfg.Storage.User,
+		cfg.Storage.Password,
+		cfg.Storage.DatabaseName,
 	)
 
 	db, err := gorm.Open(postgres.New(postgres.Config{
@@ -69,12 +70,13 @@ func New(config *config.Config, log *slog.Logger) (Repository, error) {
 	}
 
 	log.Info("database connection established successfully")
-	if err := migration.RunMigrations(config, log); err != nil {
+	if err := migration.RunMigrations(cfg, log); err != nil {
 		return nil, errRunningMigrationScripts
 	}
 
 	return &teacherRepositoryImpl{
 		db:  db,
+		cfg: cfg,
 		log: log,
 	}, nil
 }

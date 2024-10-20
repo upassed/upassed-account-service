@@ -10,6 +10,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -29,9 +30,12 @@ func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
+	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByID")
+	defer span.End()
+
 	log.Info("started searching group by id")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
-	foundGroup, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) (domain.Group, error) {
+	foundGroup, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (domain.Group, error) {
 		return service.repository.FindByID(ctx, groupID)
 	})
 

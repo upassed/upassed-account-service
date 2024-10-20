@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"log"
 	"log/slog"
 	"os"
@@ -35,6 +36,15 @@ func main() {
 	)
 
 	logger.Info("logger successfully initialized", slog.Any("env", cfg.Env))
+
+	traceProviderShutdownFunc, err := tracing.InitTracer(cfg, logger)
+	if err != nil {
+		logger.Error("unable to initialize traceProvider", logging.Error(err))
+		os.Exit(1)
+	}
+
+	defer traceProviderShutdownFunc()
+	logger.Info("trace provider successfully initialized")
 
 	application, err := app.New(cfg, logger)
 	if err != nil {

@@ -7,3 +7,8 @@ services:
       POSTGRES_PASSWORD: "password"
     ports:
         - "5432:5432"
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    ports:
+      - "16686:16686"
+      - "4317:4317"

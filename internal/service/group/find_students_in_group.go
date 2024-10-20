@@ -10,6 +10,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -29,9 +30,12 @@ func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupI
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
+	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindStudentsInGroup")
+	defer span.End()
+
 	log.Info("started searching students in group")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
-	foundStudents, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) ([]domain.Student, error) {
+	foundStudents, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) ([]domain.Student, error) {
 		return service.repository.FindStudentsInGroup(ctx, groupID)
 	})
 

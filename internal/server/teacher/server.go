@@ -2,6 +2,7 @@ package teacher
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/config"
 
 	"github.com/google/uuid"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
@@ -11,6 +12,7 @@ import (
 
 type teacherServerAPI struct {
 	client.UnimplementedTeacherServer
+	cfg     *config.Config
 	service teacherService
 }
 
@@ -19,8 +21,9 @@ type teacherService interface {
 	FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error)
 }
 
-func Register(gRPC *grpc.Server, service teacherService) {
+func Register(gRPC *grpc.Server, cfg *config.Config, service teacherService) {
 	client.RegisterTeacherServer(gRPC, &teacherServerAPI{
+		cfg:     cfg,
 		service: service,
 	})
 }

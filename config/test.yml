@@ -1,4 +1,5 @@
 env: "testing"
+application_name: upassed-account-service
 storage:
     host: "localhost"
     port: "5432"
@@ -13,3 +14,9 @@ migrations:
     migrations_table_name: "migrations"
 timeouts:
     endpoint_execution_timeout_ms: 40000
+tracing:
+    host: localhost
+    port: 14268
+    group_tracer_name: group-tracer
+    student_tracer_name: student-tracer
+    teacher_tracer_name: teacher-tracer

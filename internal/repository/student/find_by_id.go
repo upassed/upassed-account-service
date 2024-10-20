@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 	"log/slog"
@@ -28,6 +29,9 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 		slog.Any("studentID", studentID),
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
+
+	_, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#FindByID")
+	defer span.End()
 
 	log.Info("started searching student in a database")
 	foundStudent := domain.Student{}

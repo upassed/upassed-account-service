@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -19,6 +20,9 @@ var (
 
 func (repository *studentRepositoryImpl) Save(ctx context.Context, student domain.Student) error {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.Save).Pointer()).Name()
+
+	_, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#Save")
+	defer span.End()
 
 	log := repository.log.With(
 		slog.String("op", op),

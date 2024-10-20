@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -27,9 +28,12 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate b
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
+	spanContext, span := otel.Tracer(service.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherService#Create")
+	defer span.End()
+
 	log.Info("started creating teacher")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
-	teacherCreateResponse, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) (business.TeacherCreateResponse, error) {
+	teacherCreateResponse, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (business.TeacherCreateResponse, error) {
 		duplicateExists, err := service.repository.CheckDuplicateExists(ctx, teacherToCreate.ReportEmail, teacherToCreate.Username)
 		if err != nil {
 			return business.TeacherCreateResponse{}, handling.Process(err)

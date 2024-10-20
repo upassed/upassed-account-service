@@ -9,6 +9,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -27,9 +28,12 @@ func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter busine
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
+	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByFilter")
+	defer span.End()
+
 	log.Info("started searching groups by filter")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
-	foundGroups, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) ([]domain.Group, error) {
+	foundGroups, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) ([]domain.Group, error) {
 		return service.repository.FindByFilter(ctx, ConvertToGroupFilter(filter))
 	})
 

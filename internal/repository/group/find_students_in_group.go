@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -26,6 +27,9 @@ func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, 
 		slog.Any("groupID", groupID),
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
+
+	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindStudentsInGroup")
+	defer span.End()
 
 	log.Info("started searching students in group in a database")
 	foundStudents := make([]domain.Student, 0)

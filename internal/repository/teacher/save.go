@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -25,6 +26,9 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domai
 		slog.String("teacherUsername", teacher.Username),
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
+
+	_, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#Save")
+	defer span.End()
 
 	log.Info("started saving teacher to a database")
 	saveResult := repository.db.WithContext(ctx).Create(&teacher)

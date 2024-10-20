@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -19,6 +20,9 @@ var (
 
 func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.UUID) (bool, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.Exists).Pointer()).Name()
+
+	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#Exists")
+	defer span.End()
 
 	log := repository.log.With(
 		slog.String("op", op),

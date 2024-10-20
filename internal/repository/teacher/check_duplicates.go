@@ -6,6 +6,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -25,6 +26,9 @@ func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 		slog.String("teacherReportEmail", reportEmail),
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
+
+	_, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#CheckDuplicateExists")
+	defer span.End()
 
 	log.Info("started checking teacher duplicates")
 	var teacherCount int64

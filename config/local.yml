@@ -1,4 +1,5 @@
 env: "local"
+application_name: upassed-account-service
 storage:
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
@@ -13,3 +14,9 @@ migrations:
     migrations_table_name: ${MIGRATIONS_TABLE_NAME}
 timeouts:
     endpoint_execution_timeout_ms: ${ENDPOINT_EXECUTION_TIMEOUT_MS}
+tracing:
+    host: ${JAEGER_HOST}
+    port: ${JAEGER_PORT}
+    group_tracer_name: ${GROUP_TRACER_NAME}
+    student_tracer_name: ${STUDENT_TRACER_NAME}
+    teacher_tracer_name: ${TEACHER_TRACER_NAME}

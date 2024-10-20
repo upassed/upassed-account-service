@@ -29,11 +29,13 @@ const (
 )
 
 type Config struct {
-	Env        EnvType         `yaml:"env" env-required:"true"`
-	Storage    Storage         `yaml:"storage" env-required:"true"`
-	GrpcServer GrpcServer      `yaml:"grpc_server" env-required:"true"`
-	Migration  MigrationConfig `yaml:"migrations" env-required:"true"`
-	Timeouts   Timeouts        `yaml:"timeouts" env-required:"true"`
+	Env             EnvType         `yaml:"env" env-required:"true"`
+	ApplicationName string          `yaml:"application_name" env-required:"true"`
+	Storage         Storage         `yaml:"storage" env-required:"true"`
+	GrpcServer      GrpcServer      `yaml:"grpc_server" env-required:"true"`
+	Migration       MigrationConfig `yaml:"migrations" env-required:"true"`
+	Timeouts        Timeouts        `yaml:"timeouts" env-required:"true"`
+	Tracing         Tracing         `yaml:"tracing" env-required:"true"`
 }
 
 type Storage struct {
@@ -56,6 +58,14 @@ type MigrationConfig struct {
 
 type Timeouts struct {
 	EndpointExecutionTimeoutMS string `yaml:"endpoint_execution_timeout_ms" env:"ENDPOINT_EXECUTION_TIMEOUT_MS" env-required:"true"`
+}
+
+type Tracing struct {
+	Host              string `yaml:"host" env:"JAEGER_HOST" env-required:"true"`
+	Port              string `yaml:"port" env:"JAEGER_PORT" env-required:"true"`
+	GroupTracerName   string `yaml:"group_tracer_name" env:"GROUP_TRACER_NAME" env-required:"true"`
+	StudentTracerName string `yaml:"student_tracer_name" env:"STUDENT_TRACER_NAME" env-required:"true"`
+	TeacherTracerName string `yaml:"teacher_tracer_name" env:"TEACHER_TRACER_NAME" env-required:"true"`
 }
 
 func Load() (*Config, error) {

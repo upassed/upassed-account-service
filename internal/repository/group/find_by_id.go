@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 	"log/slog"
@@ -22,6 +23,9 @@ var (
 
 func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uuid.UUID) (domain.Group, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.FindByID).Pointer()).Name()
+
+	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindByID")
+	defer span.End()
 
 	log := repository.log.With(
 		slog.String("op", op),

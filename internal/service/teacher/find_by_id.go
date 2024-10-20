@@ -9,6 +9,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
@@ -28,9 +29,12 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
+	spanContext, span := otel.Tracer(service.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherService#FindByID")
+	defer span.End()
+
 	log.Info("started finding teacher by id")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
-	foundTeacher, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) (business.Teacher, error) {
+	foundTeacher, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (business.Teacher, error) {
 		foundTeacher, err := service.repository.FindByID(ctx, teacherID)
 		if err != nil {
 			return business.Teacher{}, handling.Process(err)
