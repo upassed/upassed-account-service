@@ -3,9 +3,12 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"runtime"
+	"strconv"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -30,6 +33,7 @@ type Config struct {
 	Storage    Storage         `yaml:"storage" env-required:"true"`
 	GrpcServer GrpcServer      `yaml:"grpc_server" env-required:"true"`
 	Migration  MigrationConfig `yaml:"migrations" env-required:"true"`
+	Timeouts   Timeouts        `yaml:"timeouts" env-required:"true"`
 }
 
 type Storage struct {
@@ -48,6 +52,10 @@ type GrpcServer struct {
 type MigrationConfig struct {
 	MigrationsPath      string `yaml:"migrations_path" env:"MIGRATIONS_PATH" env-required:"true"`
 	MigrationsTableName string `yaml:"migrations_table_name" env:"MIGRATIONS_TABLE_NAME" env-default:"migrations"`
+}
+
+type Timeouts struct {
+	EndpointExecutionTimeoutMS string `yaml:"endpoint_execution_timeout_ms" env:"ENDPOINT_EXECUTION_TIMEOUT_MS" env-required:"true"`
 }
 
 func Load() (*Config, error) {
@@ -70,4 +78,15 @@ func loadByPath(pathToConfig string) (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+func (cfg *Config) GetEndpointExecutionTimeout() time.Duration {
+	op := runtime.FuncForPC(reflect.ValueOf(cfg.GetEndpointExecutionTimeout).Pointer()).Name()
+
+	milliseconds, err := strconv.Atoi(cfg.Timeouts.EndpointExecutionTimeoutMS)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("%s, op=%s, err=%s", "unable to convert endpoint timeout duration", op, err.Error()))
+	}
+
+	return time.Duration(milliseconds) * time.Millisecond
 }

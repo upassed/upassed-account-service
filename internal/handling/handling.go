@@ -65,6 +65,10 @@ func Process(err error, options ...Option) error {
 }
 
 func Wrap(err error, options ...Option) error {
+	if isAlreadyWrapped(err) {
+		return err
+	}
+
 	opts := defaultOptions()
 	for _, opt := range options {
 		opt(opts)
@@ -81,6 +85,11 @@ func Wrap(err error, options ...Option) error {
 	}
 
 	return convertedErrWithDetails.Err()
+}
+
+func isAlreadyWrapped(err error) bool {
+	st, ok := status.FromError(err)
+	return ok && st.Code() != codes.OK
 }
 
 func defaultOptions() *wrapOptions {

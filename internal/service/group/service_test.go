@@ -3,6 +3,9 @@ package group_test
 import (
 	"context"
 	"errors"
+	"log"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -38,6 +41,29 @@ func (m *mockGroupRepository) FindByFilter(ctx context.Context, filter domain.Gr
 	return args.Get(0).([]domain.Group), args.Error(1)
 }
 
+var (
+	cfg *config.Config
+)
+
+func TestMain(m *testing.M) {
+	projectRoot, err := getProjectRoot()
+	if err != nil {
+		log.Fatal("error to get project root folder: ", err)
+	}
+
+	if err := os.Setenv(config.EnvConfigPath, filepath.Join(projectRoot, "config", "test.yml")); err != nil {
+		log.Fatal(err)
+	}
+
+	cfg, err = config.Load()
+	if err != nil {
+		log.Fatal("unable to parse config: ", err)
+	}
+
+	exitCode := m.Run()
+	os.Exit(exitCode)
+}
+
 func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
@@ -45,7 +71,7 @@ func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
 	expectedRepositoryError := errors.New("some repo error")
 	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return([]domain.Student{}, expectedRepositoryError)
 
-	service := group.New(logging.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindStudentsInGroup(context.Background(), groupID)
 	require.NotNil(t, err)
 
@@ -61,7 +87,7 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	expectedStudentsInGroup := []domain.Student{randomStudent(), randomStudent(), randomStudent()}
 	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return(expectedStudentsInGroup, nil)
 
-	service := group.New(logging.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	actualFoundStudentsInGroup, err := service.FindStudentsInGroup(context.Background(), groupID)
 	require.Nil(t, err)
 
@@ -75,7 +101,7 @@ func TestFindByID_RepositoryError(t *testing.T) {
 	expectedRepositoryError := errors.New("some repo error")
 	groupRepository.On("FindByID", mock.Anything, groupID).Return(domain.Group{}, expectedRepositoryError)
 
-	service := group.New(logging.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByID(context.Background(), groupID)
 	require.NotNil(t, err)
 
@@ -96,7 +122,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 
 	groupRepository.On("FindByID", mock.Anything, groupID).Return(expectedFoundGroup, nil)
 
-	service := group.New(logging.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	foundGroup, err := service.FindByID(context.Background(), groupID)
 	require.Nil(t, err)
 
@@ -116,7 +142,7 @@ func TestFindByFilter_RepositoryError(t *testing.T) {
 	expectedRepositoryError := errors.New("some repo error")
 	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return([]domain.Group{}, expectedRepositoryError)
 
-	service := group.New(logging.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByFilter(context.Background(), groupFilter)
 	require.NotNil(t, err)
 
@@ -136,7 +162,7 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 	foundMatchedGroups := []domain.Group{randomGroup(), randomGroup(), randomGroup()}
 	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return(foundMatchedGroups, nil)
 
-	service := group.New(logging.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	response, err := service.FindByFilter(context.Background(), groupFilter)
 	require.Nil(t, err)
 
@@ -164,5 +190,25 @@ func randomGroup() domain.Group {
 		ID:                 uuid.New(),
 		SpecializationCode: gofakeit.WeekDay(),
 		GroupNumber:        gofakeit.WeekDay(),
+	}
+}
+
+func getProjectRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+
+		parentDir := filepath.Dir(dir)
+		if parentDir == dir {
+			return "", errors.New("project root not found")
+		}
+
+		dir = parentDir
 	}
 }

@@ -44,9 +44,9 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 	appServer := server.New(server.AppServerCreateParams{
 		Config:         config,
 		Log:            log,
-		TeacherService: teacher.New(log, teacherRepository),
-		StudentService: student.New(log, studentRepository, groupRepository),
-		GroupService:   group.New(log, groupRepository),
+		TeacherService: teacher.New(config, log, teacherRepository),
+		StudentService: student.New(config, log, studentRepository, groupRepository),
+		GroupService:   group.New(config, log, groupRepository),
 	})
 
 	log.Info("app successfully created")

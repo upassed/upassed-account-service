@@ -2,6 +2,7 @@ package teacher
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/config"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -15,6 +16,7 @@ type Service interface {
 }
 
 type teacherServiceImpl struct {
+	cfg        *config.Config
 	log        *slog.Logger
 	repository teacherRepository
 }
@@ -25,8 +27,9 @@ type teacherRepository interface {
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 
-func New(log *slog.Logger, repository teacherRepository) Service {
+func New(cfg *config.Config, log *slog.Logger, repository teacherRepository) Service {
 	return &teacherServiceImpl{
+		cfg:        cfg,
 		log:        log,
 		repository: repository,
 	}

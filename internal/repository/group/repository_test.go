@@ -94,26 +94,6 @@ func TestExists_GroupExists(t *testing.T) {
 	assert.True(t, exists)
 }
 
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
-}
-
 func TestFindStudentsInGroup_StudentsNotFound(t *testing.T) {
 	groupID := uuid.New()
 	studentsInGroup, err := repository.FindStudentsInGroup(context.Background(), groupID)
@@ -168,4 +148,24 @@ func TestFindByFilter_HasMatchedGroups(t *testing.T) {
 
 	assert.Equal(t, 1, len(matchedGroups))
 	assert.Equal(t, uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233"), matchedGroups[0].ID)
+}
+
+func getProjectRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+
+		parentDir := filepath.Dir(dir)
+		if parentDir == dir {
+			return "", errors.New("project root not found")
+		}
+
+		dir = parentDir
+	}
 }

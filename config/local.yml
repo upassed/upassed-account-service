@@ -11,3 +11,5 @@ grpc_server:
 migrations:
     migrations_path: ${MIGRATIONS_PATH}
     migrations_table_name: ${MIGRATIONS_TABLE_NAME}
+timeouts:
+    endpoint_execution_timeout_ms: ${ENDPOINT_EXECUTION_TIMEOUT_MS}

@@ -2,14 +2,20 @@ package group
 
 import (
 	"context"
+	"errors"
+	"github.com/upassed/upassed-account-service/internal/async"
+	"github.com/upassed/upassed-account-service/internal/handling"
+	"github.com/upassed/upassed-account-service/internal/middleware"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
 	"runtime"
-	"time"
+)
 
-	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/middleware"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
+var (
+	errFindGroupsByFilterDeadlineExceeded = errors.New("find groups by filter timeout exceeded")
 )
 
 func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter business.GroupFilter) ([]business.Group, error) {
@@ -20,32 +26,19 @@ func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter busine
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	foundGroups, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) ([]domain.Group, error) {
+		return service.repository.FindByFilter(ctx, ConvertToGroupFilter(filter))
+	})
 
-	resultChannel := make(chan []business.Group)
-	errorChannel := make(chan error)
-
-	go func() {
-		log.Debug("started finding groups by filter")
-		foundGroups, err := service.repository.FindByFilter(contextWithTimeout, ConvertToGroupFilter(filter))
-		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return make([]business.Group, 0), handling.Wrap(errFindGroupsByFilterDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
-		log.Debug("groups successfully found by filter")
-		resultChannel <- ConvertToServiceGroups(foundGroups)
-	}()
-
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return []business.Group{}, errFindGroupByIDDeadlineExceeded
-		case foundGroups := <-resultChannel:
-			return foundGroups, nil
-		case err := <-errorChannel:
-			return []business.Group{}, err
-		}
+		return make([]business.Group, 0), handling.Process(err)
 	}
+
+	log.Debug("groups successfully found by filter")
+	return ConvertToServiceGroups(foundGroups), nil
 }

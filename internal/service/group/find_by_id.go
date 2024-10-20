@@ -3,15 +3,16 @@ package group
 import (
 	"context"
 	"errors"
+	"github.com/google/uuid"
+	"github.com/upassed/upassed-account-service/internal/async"
+	"github.com/upassed/upassed-account-service/internal/handling"
+	"github.com/upassed/upassed-account-service/internal/middleware"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"google.golang.org/grpc/codes"
 	"log/slog"
 	"reflect"
 	"runtime"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/middleware"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
 var (
@@ -27,32 +28,19 @@ func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	foundGroup, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) (domain.Group, error) {
+		return service.repository.FindByID(ctx, groupID)
+	})
 
-	resultChannel := make(chan business.Group)
-	errorChannel := make(chan error)
-
-	go func() {
-		log.Debug("started finding group by id")
-		foundGroup, err := service.repository.FindByID(contextWithTimeout, groupID)
-		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return business.Group{}, handling.Wrap(errFindGroupByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
-		log.Debug("group successfully found by id")
-		resultChannel <- ConvertToServiceGroup(foundGroup)
-	}()
-
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return business.Group{}, errFindGroupByIDDeadlineExceeded
-		case foundGroup := <-resultChannel:
-			return foundGroup, nil
-		case err := <-errorChannel:
-			return business.Group{}, err
-		}
+		return business.Group{}, handling.Process(err)
 	}
+
+	log.Debug("group successfully found by id")
+	return ConvertToServiceGroup(foundGroup), nil
 }

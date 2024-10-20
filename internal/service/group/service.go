@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/config"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -16,6 +17,7 @@ type Service interface {
 }
 
 type groupServiceImpl struct {
+	cfg        *config.Config
 	log        *slog.Logger
 	repository groupRepository
 }
@@ -26,8 +28,9 @@ type groupRepository interface {
 	FindByFilter(context.Context, domain.GroupFilter) ([]domain.Group, error)
 }
 
-func New(log *slog.Logger, repository groupRepository) Service {
+func New(cfg *config.Config, log *slog.Logger, repository groupRepository) Service {
 	return &groupServiceImpl{
+		cfg:        cfg,
 		log:        log,
 		repository: repository,
 	}

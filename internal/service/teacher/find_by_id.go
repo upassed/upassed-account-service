@@ -3,15 +3,15 @@ package teacher
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"reflect"
-	"runtime"
-	"time"
-
 	"github.com/google/uuid"
+	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
@@ -27,32 +27,25 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-
-	resultChannel := make(chan business.Teacher)
-	errorChannel := make(chan error)
-
-	go func() {
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	foundTeacher, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) (business.Teacher, error) {
 		log.Debug("started finding teacher by id")
-		foundTeacher, err := service.repository.FindByID(contextWithTimeout, teacherID)
+		foundTeacher, err := service.repository.FindByID(ctx, teacherID)
 		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+			return business.Teacher{}, handling.Process(err)
 		}
 
 		log.Debug("teacher successfully found by id")
-		resultChannel <- ConvertToServiceTeacher(foundTeacher)
-	}()
+		return ConvertToServiceTeacher(foundTeacher), nil
+	})
 
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return business.Teacher{}, errFindTeacherByIDDeadlineExceeded
-		case foundTeacher := <-resultChannel:
-			return foundTeacher, nil
-		case err := <-errorChannel:
-			return business.Teacher{}, err
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return business.Teacher{}, handling.Wrap(errFindTeacherByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
+
+		return business.Teacher{}, handling.Wrap(err)
 	}
+
+	return foundTeacher, nil
 }

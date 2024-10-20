@@ -2,6 +2,7 @@ package student
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/config"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -15,6 +16,7 @@ type Service interface {
 }
 
 type studentServiceImpl struct {
+	cfg               *config.Config
 	log               *slog.Logger
 	studentRepository studentRepository
 	groupRepository   groupRepository
@@ -30,8 +32,9 @@ type groupRepository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
 }
 
-func New(log *slog.Logger, studentRepository studentRepository, groupRepository groupRepository) Service {
+func New(cfg *config.Config, log *slog.Logger, studentRepository studentRepository, groupRepository groupRepository) Service {
 	return &studentServiceImpl{
+		cfg:               cfg,
 		log:               log,
 		studentRepository: studentRepository,
 		groupRepository:   groupRepository,

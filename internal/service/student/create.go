@@ -3,15 +3,14 @@ package student
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"reflect"
-	"runtime"
-	"time"
-
+	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
@@ -27,58 +26,47 @@ func (service *studentServiceImpl) Create(ctx context.Context, student business.
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-
-	resultChannel := make(chan business.StudentCreateResponse)
-	errorChannel := make(chan error)
-
-	go func() {
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	studentCreateResponse, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) (business.StudentCreateResponse, error) {
 		log.Debug("started creating student")
-		duplicateExists, err := service.studentRepository.CheckDuplicateExists(contextWithTimeout, student.EducationalEmail, student.Username)
+		duplicateExists, err := service.studentRepository.CheckDuplicateExists(ctx, student.EducationalEmail, student.Username)
 		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+			return business.StudentCreateResponse{}, err
 		}
 
 		if duplicateExists {
 			log.Error("student with this username or educational email already exists")
-			errorChannel <- handling.Wrap(errors.New("student duplicate found"), handling.WithCode(codes.AlreadyExists))
-			return
+			return business.StudentCreateResponse{}, handling.Wrap(errors.New("student duplicate found"), handling.WithCode(codes.AlreadyExists))
 		}
 
-		groupExists, err := service.groupRepository.Exists(contextWithTimeout, student.Group.ID)
+		groupExists, err := service.groupRepository.Exists(ctx, student.Group.ID)
 		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+			return business.StudentCreateResponse{}, err
 		}
 
 		if !groupExists {
 			log.Error("group with this id was not found in database", slog.Any("groupID", student.Group.ID))
-			errorChannel <- handling.Wrap(errors.New("group does not exists by id"), handling.WithCode(codes.NotFound))
-			return
+			return business.StudentCreateResponse{}, handling.Wrap(errors.New("group does not exists by id"), handling.WithCode(codes.NotFound))
 		}
 
 		domainStudent := ConvertToRepositoryStudent(student)
-		if err := service.studentRepository.Save(contextWithTimeout, domainStudent); err != nil {
-			errorChannel <- handling.Process(err)
-			return
+		if err := service.studentRepository.Save(ctx, domainStudent); err != nil {
+			return business.StudentCreateResponse{}, err
 		}
 
 		log.Debug("student successfully created", slog.Any("createdStudentID", domainStudent.ID))
-		resultChannel <- business.StudentCreateResponse{
+		return business.StudentCreateResponse{
 			CreatedStudentID: domainStudent.ID,
-		}
-	}()
+		}, nil
+	})
 
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return business.StudentCreateResponse{}, errCreateStudentDeadlineExceeded
-		case createdStudentData := <-resultChannel:
-			return createdStudentData, nil
-		case err := <-errorChannel:
-			return business.StudentCreateResponse{}, err
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return business.StudentCreateResponse{}, handling.Wrap(errCreateStudentDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
+
+		return business.StudentCreateResponse{}, handling.Process(err)
 	}
+
+	return studentCreateResponse, nil
 }

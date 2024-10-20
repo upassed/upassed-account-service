@@ -3,15 +3,14 @@ package teacher
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"reflect"
-	"runtime"
-	"time"
-
+	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
@@ -27,46 +26,37 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate b
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-
-	resultChannel := make(chan business.TeacherCreateResponse)
-	errorChannel := make(chan error)
-
-	go func() {
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	teacherCreateResponse, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) (business.TeacherCreateResponse, error) {
 		log.Debug("started creating teacher")
-		duplicateExists, err := service.repository.CheckDuplicateExists(contextWithTimeout, teacherToCreate.ReportEmail, teacherToCreate.Username)
+		duplicateExists, err := service.repository.CheckDuplicateExists(ctx, teacherToCreate.ReportEmail, teacherToCreate.Username)
 		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+			return business.TeacherCreateResponse{}, handling.Process(err)
 		}
 
 		if duplicateExists {
 			log.Error("teacher with this username or report email already exists")
-			errorChannel <- handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
-			return
+			return business.TeacherCreateResponse{}, handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
 		}
 
 		domainTeacher := ConvertToRepositoryTeacher(teacherToCreate)
-		if err := service.repository.Save(contextWithTimeout, domainTeacher); err != nil {
-			errorChannel <- handling.Process(err)
-			return
+		if err := service.repository.Save(ctx, domainTeacher); err != nil {
+			return business.TeacherCreateResponse{}, handling.Process(err)
 		}
 
 		log.Debug("teacher successfully created", slog.Any("createdTeacherID", domainTeacher.ID))
-		resultChannel <- business.TeacherCreateResponse{
+		return business.TeacherCreateResponse{
 			CreatedTeacherID: domainTeacher.ID,
-		}
-	}()
+		}, nil
+	})
 
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return business.TeacherCreateResponse{}, errCreateTeacherDeadlineExceeded
-		case createdTeacherData := <-resultChannel:
-			return createdTeacherData, nil
-		case err := <-errorChannel:
-			return business.TeacherCreateResponse{}, err
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return business.TeacherCreateResponse{}, handling.Wrap(errCreateTeacherDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
+
+		return business.TeacherCreateResponse{}, handling.Wrap(err)
 	}
+
+	return teacherCreateResponse, nil
 }

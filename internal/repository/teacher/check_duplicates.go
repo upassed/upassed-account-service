@@ -3,20 +3,17 @@ package teacher
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"reflect"
-	"runtime"
-	"time"
-
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
-	errCountingDuplicatesTeacher              = errors.New("error while counting duplicate teachers")
-	errCheckTeacherDuplicatesDeadlineExceeded = errors.New("checking teacher duplicates in a database deadline exceeded")
+	errCountingDuplicatesTeacher = errors.New("error while counting duplicate teachers")
 )
 
 func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
@@ -29,40 +26,19 @@ func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-
-	resultChannel := make(chan bool)
-	errorChannel := make(chan error)
-
-	go func() {
-		log.Debug("started checking teacher duplicates")
-		var teacherCount int64
-		countResult := repository.db.Model(&domain.Teacher{}).Where("report_email = ?", reportEmail).Or("username = ?", username).Count(&teacherCount)
-		if countResult.Error != nil {
-			log.Error("error while counting teachers with report_email and username in database")
-			errorChannel <- handling.New(errCountingDuplicatesTeacher.Error(), codes.Internal)
-			return
-		}
-
-		if teacherCount > 0 {
-			log.Debug("found teacher duplicates in database", slog.Int64("teacherDuplicatesCount", teacherCount))
-			resultChannel <- true
-			return
-		}
-
-		log.Debug("teacher duplicates not found in database")
-		resultChannel <- false
-	}()
-
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return false, errCheckTeacherDuplicatesDeadlineExceeded
-		case duplicatesFound := <-resultChannel:
-			return duplicatesFound, nil
-		case err := <-errorChannel:
-			return false, err
-		}
+	log.Debug("started checking teacher duplicates")
+	var teacherCount int64
+	countResult := repository.db.WithContext(ctx).Model(&domain.Teacher{}).Where("report_email = ?", reportEmail).Or("username = ?", username).Count(&teacherCount)
+	if countResult.Error != nil {
+		log.Error("error while counting teachers with report_email and username in database")
+		return false, handling.New(errCountingDuplicatesTeacher.Error(), codes.Internal)
 	}
+
+	if teacherCount > 0 {
+		log.Debug("found teacher duplicates in database", slog.Int64("teacherDuplicatesCount", teacherCount))
+		return true, nil
+	}
+
+	log.Debug("teacher duplicates not found in database")
+	return false, nil
 }
