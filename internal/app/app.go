@@ -2,8 +2,10 @@ package app
 
 import (
 	"log/slog"
+	"reflect"
+	"runtime"
 
-	config "github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/config"
 	groupRepo "github.com/upassed/upassed-account-service/internal/repository/group"
 	studentRepo "github.com/upassed/upassed-account-service/internal/repository/student"
 	teacherRepo "github.com/upassed/upassed-account-service/internal/repository/teacher"
@@ -18,7 +20,8 @@ type App struct {
 }
 
 func New(config *config.Config, log *slog.Logger) (*App, error) {
-	const op = "app.New()"
+	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
+
 	log = log.With(
 		slog.String("op", op),
 	)
@@ -38,16 +41,16 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	server := server.New(server.AppServerCreateParams{
+	appServer := server.New(server.AppServerCreateParams{
 		Config:         config,
 		Log:            log,
-		TeacherService: teacher.New(log, teacherRepository),
-		StudentService: student.New(log, studentRepository, groupRepository),
-		GroupService:   group.New(log, groupRepository),
+		TeacherService: teacher.New(config, log, teacherRepository),
+		StudentService: student.New(config, log, studentRepository, groupRepository),
+		GroupService:   group.New(config, log, groupRepository),
 	})
 
 	log.Info("app successfully created")
 	return &App{
-		Server: server,
+		Server: appServer,
 	}, nil
 }

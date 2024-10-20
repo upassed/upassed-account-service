@@ -2,48 +2,51 @@ package group
 
 import (
 	"context"
-	"log/slog"
-	"time"
-
+	"errors"
+	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
+	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
+)
+
+var (
+	errFindGroupsByFilterDeadlineExceeded = errors.New("find groups by filter timeout exceeded")
 )
 
 func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter business.GroupFilter) ([]business.Group, error) {
-	const op = "group.groupServiceImpl.FindByFilter()"
+	op := runtime.FuncForPC(reflect.ValueOf(service.FindByFilter).Pointer()).Name()
 
 	log := service.log.With(
 		slog.String("op", op),
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
+	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByFilter")
+	defer span.End()
 
-	resultChannel := make(chan []business.Group)
-	errorChannel := make(chan error)
+	log.Info("started searching groups by filter")
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	foundGroups, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) ([]domain.Group, error) {
+		return service.repository.FindByFilter(ctx, ConvertToGroupFilter(filter))
+	})
 
-	go func() {
-		log.Debug("started finding groups by filter")
-		foundGroups, err := service.repository.FindByFilter(contextWithTimeout, ConvertToGroupFilter(filter))
-		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Error("group searching by filter deadline exceeded")
+			return make([]business.Group, 0), handling.Wrap(errFindGroupsByFilterDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
-		log.Debug("groups successfully found by filter")
-		resultChannel <- ConvertToServiceGroups(foundGroups)
-	}()
-
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return []business.Group{}, ErrorFindGroupByIDDeadlineExceeded
-		case foundGroups := <-resultChannel:
-			return foundGroups, nil
-		case err := <-errorChannel:
-			return []business.Group{}, err
-		}
+		log.Error("error while searching groups by filter", logging.Error(err))
+		return make([]business.Group, 0), handling.Process(err)
 	}
+
+	log.Info("groups successfully found by filter")
+	return ConvertToServiceGroups(foundGroups), nil
 }

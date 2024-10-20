@@ -3,21 +3,26 @@ package group
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"time"
-
 	"github.com/google/uuid"
+	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
+	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
+	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
-	ErrorFindStudentsInGroupDeadlineExceeded error = errors.New("find students in group deadline exceeded")
+	errFindStudentsInGroupDeadlineExceeded = errors.New("find students in group deadline exceeded")
 )
 
 func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]business.Student, error) {
-	const op = "group.groupServiceImpl.FindStudentsInGroup()"
+	op := runtime.FuncForPC(reflect.ValueOf(service.FindStudentsInGroup).Pointer()).Name()
 
 	log := service.log.With(
 		slog.String("op", op),
@@ -25,32 +30,25 @@ func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupI
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
+	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindStudentsInGroup")
+	defer span.End()
 
-	resultChannel := make(chan []business.Student)
-	errorChannel := make(chan error)
+	log.Info("started searching students in group")
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	foundStudents, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) ([]domain.Student, error) {
+		return service.repository.FindStudentsInGroup(ctx, groupID)
+	})
 
-	go func() {
-		log.Debug("started finding students in group")
-		foundStudentsInGroup, err := service.repository.FindStudentsInGroup(contextWithTimeout, groupID)
-		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Error("students in group searching deadline exceeded")
+			return make([]business.Student, 0), handling.Wrap(errFindStudentsInGroupDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
-		log.Debug("successfully found students in group", slog.Int("studentsCount", len(foundStudentsInGroup)))
-		resultChannel <- ConvertToServiceStudents(foundStudentsInGroup)
-	}()
-
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return []business.Student{}, ErrorFindStudentsInGroupDeadlineExceeded
-		case foundStudentsInGroup := <-resultChannel:
-			return foundStudentsInGroup, nil
-		case err := <-errorChannel:
-			return []business.Student{}, err
-		}
+		log.Error("error while searching students in group", logging.Error(err))
+		return make([]business.Student, 0), handling.Process(err)
 	}
+
+	log.Info("successfully found students in group", slog.Int("studentsCount", len(foundStudents)))
+	return ConvertToServiceStudents(foundStudents), nil
 }

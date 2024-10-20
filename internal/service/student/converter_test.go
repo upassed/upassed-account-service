@@ -42,7 +42,7 @@ func TestConvertToRepositoryStudent(t *testing.T) {
 }
 
 func TestConvertToServiceStudent(t *testing.T) {
-	repositoryrStudent := domain.Student{
+	repositoryStudent := domain.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
@@ -56,16 +56,16 @@ func TestConvertToServiceStudent(t *testing.T) {
 		},
 	}
 
-	serviceStudent := student.ConvertToServiceStudent(repositoryrStudent)
+	serviceStudent := student.ConvertToServiceStudent(repositoryStudent)
 	require.NotNil(t, serviceStudent)
 
-	assert.Equal(t, repositoryrStudent.ID, serviceStudent.ID)
-	assert.Equal(t, repositoryrStudent.FirstName, serviceStudent.FirstName)
-	assert.Equal(t, repositoryrStudent.LastName, serviceStudent.LastName)
-	assert.Equal(t, repositoryrStudent.MiddleName, serviceStudent.MiddleName)
-	assert.Equal(t, repositoryrStudent.EducationalEmail, serviceStudent.EducationalEmail)
-	assert.Equal(t, repositoryrStudent.Username, serviceStudent.Username)
-	assert.Equal(t, repositoryrStudent.Group.ID, serviceStudent.Group.ID)
-	assert.Equal(t, repositoryrStudent.Group.SpecializationCode, serviceStudent.Group.SpecializationCode)
-	assert.Equal(t, repositoryrStudent.Group.GroupNumber, serviceStudent.Group.GroupNumber)
+	assert.Equal(t, repositoryStudent.ID, serviceStudent.ID)
+	assert.Equal(t, repositoryStudent.FirstName, serviceStudent.FirstName)
+	assert.Equal(t, repositoryStudent.LastName, serviceStudent.LastName)
+	assert.Equal(t, repositoryStudent.MiddleName, serviceStudent.MiddleName)
+	assert.Equal(t, repositoryStudent.EducationalEmail, serviceStudent.EducationalEmail)
+	assert.Equal(t, repositoryStudent.Username, serviceStudent.Username)
+	assert.Equal(t, repositoryStudent.Group.ID, serviceStudent.Group.ID)
+	assert.Equal(t, repositoryStudent.Group.SpecializationCode, serviceStudent.Group.SpecializationCode)
+	assert.Equal(t, repositoryStudent.Group.GroupNumber, serviceStudent.Group.GroupNumber)
 }

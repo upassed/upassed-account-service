@@ -2,6 +2,9 @@ package student
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/middleware"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
@@ -14,7 +17,11 @@ func (server *studentServerAPI) FindByID(ctx context.Context, request *client.St
 		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
-	response, err := server.service.FindByID(ctx, uuid.MustParse(request.GetStudentId()))
+	spanContext, span := otel.Tracer(server.cfg.Tracing.StudentTracerName).Start(ctx, "student#FindByID")
+	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
+	defer span.End()
+
+	response, err := server.service.FindByID(spanContext, uuid.MustParse(request.GetStudentId()))
 	if err != nil {
 		return nil, err
 	}

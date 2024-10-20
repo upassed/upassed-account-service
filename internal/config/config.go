@@ -3,15 +3,19 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
+	"reflect"
+	"runtime"
+	"strconv"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 var (
-	ErrorConfigFlagEmpty   error = errors.New("config flag is not passed")
-	ErrorConfigEnvEmpty    error = errors.New("config path env is not set")
-	ErrorConfigFileInvalid error = errors.New("config file has invalid format")
+	errConfigEnvEmpty    = errors.New("config path env is not set")
+	errConfigFileInvalid = errors.New("config file has invalid format")
 )
 
 type EnvType string
@@ -25,10 +29,13 @@ const (
 )
 
 type Config struct {
-	Env        EnvType         `yaml:"env" env-required:"true"`
-	Storage    Storage         `yaml:"storage" env-required:"true"`
-	GrpcServer GrpcServer      `yaml:"grpc_server" env-required:"true"`
-	Migration  MigrationConfig `yaml:"migrations" env-required:"true"`
+	Env             EnvType         `yaml:"env" env-required:"true"`
+	ApplicationName string          `yaml:"application_name" env-required:"true"`
+	Storage         Storage         `yaml:"storage" env-required:"true"`
+	GrpcServer      GrpcServer      `yaml:"grpc_server" env-required:"true"`
+	Migration       MigrationConfig `yaml:"migrations" env-required:"true"`
+	Timeouts        Timeouts        `yaml:"timeouts" env-required:"true"`
+	Tracing         Tracing         `yaml:"tracing" env-required:"true"`
 }
 
 type Storage struct {
@@ -49,25 +56,47 @@ type MigrationConfig struct {
 	MigrationsTableName string `yaml:"migrations_table_name" env:"MIGRATIONS_TABLE_NAME" env-default:"migrations"`
 }
 
+type Timeouts struct {
+	EndpointExecutionTimeoutMS string `yaml:"endpoint_execution_timeout_ms" env:"ENDPOINT_EXECUTION_TIMEOUT_MS" env-required:"true"`
+}
+
+type Tracing struct {
+	Host              string `yaml:"host" env:"JAEGER_HOST" env-required:"true"`
+	Port              string `yaml:"port" env:"JAEGER_PORT" env-required:"true"`
+	GroupTracerName   string `yaml:"group_tracer_name" env:"GROUP_TRACER_NAME" env-required:"true"`
+	StudentTracerName string `yaml:"student_tracer_name" env:"STUDENT_TRACER_NAME" env-required:"true"`
+	TeacherTracerName string `yaml:"teacher_tracer_name" env:"TEACHER_TRACER_NAME" env-required:"true"`
+}
+
 func Load() (*Config, error) {
-	const op = "config.Load()"
+	op := runtime.FuncForPC(reflect.ValueOf(Load).Pointer()).Name()
 
 	pathToConfig := os.Getenv(EnvConfigPath)
 	if pathToConfig == "" {
-		return nil, fmt.Errorf("%s -> %w", op, ErrorConfigEnvEmpty)
+		return nil, fmt.Errorf("%s -> %w", op, errConfigEnvEmpty)
 	}
 
 	return loadByPath(pathToConfig)
 }
 
 func loadByPath(pathToConfig string) (*Config, error) {
-	const op = "config.loadByPath()"
+	op := runtime.FuncForPC(reflect.ValueOf(loadByPath).Pointer()).Name()
 
 	var config Config
-
 	if err := cleanenv.ReadConfig(pathToConfig, &config); err != nil {
-		return nil, fmt.Errorf("%s -> %w; %w", op, ErrorConfigFileInvalid, err)
+		return nil, fmt.Errorf("%s -> %w; %w", op, errConfigFileInvalid, err)
 	}
 
 	return &config, nil
+}
+
+func (cfg *Config) GetEndpointExecutionTimeout() time.Duration {
+	op := runtime.FuncForPC(reflect.ValueOf(cfg.GetEndpointExecutionTimeout).Pointer()).Name()
+
+	milliseconds, err := strconv.Atoi(cfg.Timeouts.EndpointExecutionTimeoutMS)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("%s, op=%s, err=%s", "unable to convert endpoint timeout duration", op, err.Error()))
+	}
+
+	return time.Duration(milliseconds) * time.Millisecond
 }

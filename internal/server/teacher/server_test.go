@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/server"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
@@ -55,22 +55,22 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	config, err := config.Load()
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("config load error: ", err)
+		log.Fatal("cfg load error: ", err)
 	}
 
-	logger := logger.New(config.Env)
+	logger := logging.New(cfg.Env)
 
 	teacherSvc = new(mockTeacherService)
 	teacherServer := server.New(server.AppServerCreateParams{
-		Config:         config,
+		Config:         cfg,
 		Log:            logger,
 		TeacherService: teacherSvc,
 	})
 
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	cc, err := grpc.NewClient(fmt.Sprintf(":%s", config.GrpcServer.Port), opts...)
+	cc, err := grpc.NewClient(fmt.Sprintf(":%s", cfg.GrpcServer.Port), opts...)
 	if err != nil {
 		log.Fatal("error creating client connection: ", err)
 	}

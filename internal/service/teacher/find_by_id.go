@@ -3,21 +3,25 @@ package teacher
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"time"
-
 	"github.com/google/uuid"
+	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
+	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
-	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("find teacher by id deadline exceeded")
+	errFindTeacherByIDDeadlineExceeded = errors.New("find teacher by id deadline exceeded")
 )
 
 func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error) {
-	const op = "teacher.teacherServiceImpl.FindByID()"
+	op := runtime.FuncForPC(reflect.ValueOf(service.FindByID).Pointer()).Name()
 
 	log := service.log.With(
 		slog.String("op", op),
@@ -25,32 +29,30 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
+	spanContext, span := otel.Tracer(service.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherService#FindByID")
+	defer span.End()
 
-	resultChannel := make(chan business.Teacher)
-	errorChannel := make(chan error)
-
-	go func() {
-		log.Debug("started finding teacher by id")
-		foundTeacher, err := service.repository.FindByID(contextWithTimeout, teacherID)
+	log.Info("started finding teacher by id")
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	foundTeacher, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (business.Teacher, error) {
+		foundTeacher, err := service.repository.FindByID(ctx, teacherID)
 		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+			return business.Teacher{}, handling.Process(err)
 		}
 
-		log.Debug("teacher successfully found by id")
-		resultChannel <- ConvertToServiceTeacher(foundTeacher)
-	}()
+		return ConvertToServiceTeacher(foundTeacher), nil
+	})
 
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return business.Teacher{}, ErrorFindTeacherByIDDeadlineExceeded
-		case foundTeacher := <-resultChannel:
-			return foundTeacher, nil
-		case err := <-errorChannel:
-			return business.Teacher{}, err
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Error("find teacher by id deadline exceeded")
+			return business.Teacher{}, handling.Wrap(errFindTeacherByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
+
+		log.Error("error while finding teacher by id", logging.Error(err))
+		return business.Teacher{}, handling.Wrap(err)
 	}
+
+	log.Info("teacher successfully found by id")
+	return foundTeacher, nil
 }

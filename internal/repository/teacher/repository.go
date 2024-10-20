@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
+	"runtime"
 
 	"github.com/google/uuid"
-	config "github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/migration"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"gorm.io/driver/postgres"
@@ -17,24 +19,25 @@ import (
 )
 
 var (
-	ErrorOpeningDbConnection     error = errors.New("failed to open connection to a database")
-	ErrorPingingDatabase         error = errors.New("failed to ping database")
-	ErrorRunningMigrationScripts error = errors.New("error while running migration scripts")
+	ErrOpeningDbConnection     = errors.New("failed to open connection to a database")
+	errPingingDatabase         = errors.New("failed to ping database")
+	errRunningMigrationScripts = errors.New("error while running migration scripts")
 )
 
-type teacherRepository interface {
+type Repository interface {
 	Save(context.Context, domain.Teacher) error
 	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 }
 
 type teacherRepositoryImpl struct {
-	log *slog.Logger
 	db  *gorm.DB
+	cfg *config.Config
+	log *slog.Logger
 }
 
-func New(config *config.Config, log *slog.Logger) (teacherRepository, error) {
-	const op = "teacher.New()"
+func New(cfg *config.Config, log *slog.Logger) (Repository, error) {
+	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
 
 	log = log.With(
 		slog.String("op", op),
@@ -42,11 +45,11 @@ func New(config *config.Config, log *slog.Logger) (teacherRepository, error) {
 
 	log.Info("started connecting to postgres database")
 	postgresInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		config.Storage.Host,
-		config.Storage.Port,
-		config.Storage.User,
-		config.Storage.Password,
-		config.Storage.DatabaseName,
+		cfg.Storage.Host,
+		cfg.Storage.Port,
+		cfg.Storage.User,
+		cfg.Storage.Password,
+		cfg.Storage.DatabaseName,
 	)
 
 	db, err := gorm.Open(postgres.New(postgres.Config{
@@ -57,22 +60,23 @@ func New(config *config.Config, log *slog.Logger) (teacherRepository, error) {
 	})
 
 	if err != nil {
-		log.Error("error while opening connection to a database", logger.Error(err))
-		return nil, fmt.Errorf("%s - %w", op, ErrorOpeningDbConnection)
+		log.Error("error while opening connection to a database", logging.Error(err))
+		return nil, fmt.Errorf("%s - %w", op, ErrOpeningDbConnection)
 	}
 
 	if postgresDB, err := db.DB(); err != nil || postgresDB.Ping() != nil {
 		log.Error("error while pinging a database")
-		return nil, fmt.Errorf("%s - %w", op, ErrorPingingDatabase)
+		return nil, fmt.Errorf("%s - %w", op, errPingingDatabase)
 	}
 
-	log.Debug("database connection established successfully")
-	if err := migration.RunMigrations(config, log); err != nil {
-		return nil, ErrorRunningMigrationScripts
+	log.Info("database connection established successfully")
+	if err := migration.RunMigrations(cfg, log); err != nil {
+		return nil, errRunningMigrationScripts
 	}
 
 	return &teacherRepositoryImpl{
 		db:  db,
+		cfg: cfg,
 		log: log,
 	}, nil
 }
