@@ -26,7 +26,7 @@ func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started checking group exists")
+	log.Info("started checking group exists")
 	var groupCount int64
 	countResult := repository.db.WithContext(ctx).Model(&domain.Group{}).Where("id = ?", groupID).Count(&groupCount)
 	if countResult.Error != nil {
@@ -35,10 +35,10 @@ func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.
 	}
 
 	if groupCount > 0 {
-		log.Debug("group exists in database")
+		log.Info("group exists in database")
 		return true, nil
 	}
 
-	log.Debug("group does not exists in database")
+	log.Info("group does not exists in database")
 	return false, nil
 }

@@ -26,7 +26,7 @@ func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started checking teacher duplicates")
+	log.Info("started checking teacher duplicates")
 	var teacherCount int64
 	countResult := repository.db.WithContext(ctx).Model(&domain.Teacher{}).Where("report_email = ?", reportEmail).Or("username = ?", username).Count(&teacherCount)
 	if countResult.Error != nil {
@@ -35,10 +35,10 @@ func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 	}
 
 	if teacherCount > 0 {
-		log.Debug("found teacher duplicates in database", slog.Int64("teacherDuplicatesCount", teacherCount))
+		log.Info("found teacher duplicates in database", slog.Int64("teacherDuplicatesCount", teacherCount))
 		return true, nil
 	}
 
-	log.Debug("teacher duplicates not found in database")
+	log.Info("teacher duplicates not found in database")
 	return false, nil
 }

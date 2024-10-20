@@ -29,7 +29,7 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started searching student in a database")
+	log.Info("started searching student in a database")
 	foundStudent := domain.Student{}
 	searchResult := repository.db.WithContext(ctx).Preload("Group").First(&foundStudent, studentID)
 	if searchResult.Error != nil {
@@ -42,6 +42,6 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 		return domain.Student{}, handling.New(errSearchingStudentByID.Error(), codes.Internal)
 	}
 
-	log.Debug("student was successfully found in a database")
+	log.Info("student was successfully found in a database")
 	return foundStudent, nil
 }

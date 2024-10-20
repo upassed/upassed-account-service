@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"google.golang.org/grpc/codes"
@@ -26,9 +27,9 @@ func (service *studentServiceImpl) Create(ctx context.Context, student business.
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
+	log.Info("started creating student")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
 	studentCreateResponse, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) (business.StudentCreateResponse, error) {
-		log.Debug("started creating student")
 		duplicateExists, err := service.studentRepository.CheckDuplicateExists(ctx, student.EducationalEmail, student.Username)
 		if err != nil {
 			return business.StudentCreateResponse{}, err
@@ -54,7 +55,6 @@ func (service *studentServiceImpl) Create(ctx context.Context, student business.
 			return business.StudentCreateResponse{}, err
 		}
 
-		log.Debug("student successfully created", slog.Any("createdStudentID", domainStudent.ID))
 		return business.StudentCreateResponse{
 			CreatedStudentID: domainStudent.ID,
 		}, nil
@@ -62,11 +62,14 @@ func (service *studentServiceImpl) Create(ctx context.Context, student business.
 
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
+			log.Error("student creating deadline exceeded")
 			return business.StudentCreateResponse{}, handling.Wrap(errCreateStudentDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
+		log.Error("error while creating student", logging.Error(err))
 		return business.StudentCreateResponse{}, handling.Process(err)
 	}
 
+	log.Info("student successfully created", slog.Any("createdStudentID", studentCreateResponse.CreatedStudentID))
 	return studentCreateResponse, nil
 }

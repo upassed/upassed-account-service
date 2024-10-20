@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
@@ -26,6 +27,7 @@ func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter busine
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
+	log.Info("started searching groups by filter")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
 	foundGroups, err := async.ExecuteWithTimeout(ctx, timeout, func(ctx context.Context) ([]domain.Group, error) {
 		return service.repository.FindByFilter(ctx, ConvertToGroupFilter(filter))
@@ -33,12 +35,14 @@ func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter busine
 
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
+			log.Error("group searching by filter deadline exceeded")
 			return make([]business.Group, 0), handling.Wrap(errFindGroupsByFilterDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
+		log.Error("error while searching groups by filter", logging.Error(err))
 		return make([]business.Group, 0), handling.Process(err)
 	}
 
-	log.Debug("groups successfully found by filter")
+	log.Info("groups successfully found by filter")
 	return ConvertToServiceGroups(foundGroups), nil
 }

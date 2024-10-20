@@ -26,7 +26,7 @@ func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter 
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started searching groups by filter in a database")
+	log.Info("started searching groups by filter in a database")
 	foundGroups := make([]domain.Group, 0)
 
 	specializationCode := fmt.Sprintf("%%%s%%", filter.SpecializationCode)
@@ -38,6 +38,6 @@ func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter 
 		return make([]domain.Group, 0), handling.New(errSearchingGroupByFilter.Error(), codes.Internal)
 	}
 
-	log.Debug("group was successfully found in a database")
+	log.Info("group was successfully found in a database")
 	return foundGroups, nil
 }

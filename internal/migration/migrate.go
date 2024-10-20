@@ -40,7 +40,7 @@ func RunMigrations(config *config.Config, log *slog.Logger) error {
 		return err
 	}
 
-	log.Debug("starting sql migration scripts running")
+	log.Info("starting sql migration scripts running")
 	if err := migrator.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			log.Info("no migrations to apply, nothing changed")

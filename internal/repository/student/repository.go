@@ -68,7 +68,7 @@ func New(config *config.Config, log *slog.Logger) (Repository, error) {
 		return nil, fmt.Errorf("%s - %w", op, errPingingDatabase)
 	}
 
-	log.Debug("database connection established successfully")
+	log.Info("database connection established successfully")
 	if err := migration.RunMigrations(config, log); err != nil {
 		return nil, errRunningMigrationScripts
 	}

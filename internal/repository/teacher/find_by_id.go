@@ -29,7 +29,7 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started searching teacher in a database")
+	log.Info("started searching teacher by id in a database")
 	foundTeacher := domain.Teacher{}
 	searchResult := repository.db.WithContext(ctx).First(&foundTeacher, teacherID)
 	if searchResult.Error != nil {
@@ -42,6 +42,6 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 		return domain.Teacher{}, handling.New(errSearchingTeacherByID.Error(), codes.Internal)
 	}
 
-	log.Debug("teacher was successfully found in a database")
+	log.Info("teacher was successfully found in a database")
 	return foundTeacher, nil
 }

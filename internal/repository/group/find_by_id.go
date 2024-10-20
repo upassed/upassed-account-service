@@ -29,12 +29,12 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started searching group in a database")
+	log.Info("started searching group by id in a database")
 	foundGroup := domain.Group{}
 	searchResult := repository.db.WithContext(ctx).First(&foundGroup, groupID)
 	if searchResult.Error != nil {
 		if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
-			log.Error("group was not found in the database", logging.Error(searchResult.Error))
+			log.Error("group by id was not found in the database", logging.Error(searchResult.Error))
 			return domain.Group{}, handling.New(ErrGroupNotFoundByID.Error(), codes.NotFound)
 		}
 
@@ -42,6 +42,6 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 		return domain.Group{}, handling.New(errSearchingGroupByID.Error(), codes.Internal)
 	}
 
-	log.Debug("group was successfully found in a database")
+	log.Info("group by id was successfully found in a database")
 	return foundGroup, nil
 }

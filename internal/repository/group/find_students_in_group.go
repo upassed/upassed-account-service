@@ -27,7 +27,7 @@ func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, 
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	log.Debug("started searching students in group in a database")
+	log.Info("started searching students in group in a database")
 	foundStudents := make([]domain.Student, 0)
 	searchResult := repository.db.WithContext(ctx).Preload("Group").Where("group_id = ?", groupID).Find(&foundStudents)
 	if searchResult.Error != nil {
@@ -35,6 +35,6 @@ func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, 
 		return make([]domain.Student, 0), handling.New(errSearchingStudentsInGroup.Error(), codes.Internal)
 	}
 
-	log.Debug("students in group were successfully found in a database", slog.Int("studentInGroup", len(foundStudents)))
+	log.Info("students in group were successfully found in a database", slog.Int("studentInGroup", len(foundStudents)))
 	return foundStudents, nil
 }
