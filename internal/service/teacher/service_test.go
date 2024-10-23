@@ -2,13 +2,12 @@ package teacher_test
 
 import (
 	"context"
-	"errors"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -17,7 +16,6 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,7 +45,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	projectRoot, err := getProjectRoot()
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
 	if err != nil {
 		log.Fatal("error to get project root folder: ", err)
 	}
@@ -68,7 +67,7 @@ func TestMain(m *testing.M) {
 func TestCreate_ErrorCheckingDuplicateExistsOccurred(t *testing.T) {
 	logger := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
-	duplicateTeacher := randomTeacher()
+	duplicateTeacher := util.RandomBusinessTeacher()
 
 	expectedRepoError := handling.New("repo layer error message", codes.Internal)
 	repository.On("CheckDuplicateExists", mock.Anything, duplicateTeacher.ReportEmail, duplicateTeacher.Username).Return(false, expectedRepoError)
@@ -85,7 +84,7 @@ func TestCreate_ErrorCheckingDuplicateExistsOccurred(t *testing.T) {
 func TestCreate_DuplicateExists(t *testing.T) {
 	logger := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
-	duplicateTeacher := randomTeacher()
+	duplicateTeacher := util.RandomBusinessTeacher()
 
 	repository.On("CheckDuplicateExists", mock.Anything, duplicateTeacher.ReportEmail, duplicateTeacher.Username).Return(true, nil)
 
@@ -102,7 +101,7 @@ func TestCreate_DuplicateExists(t *testing.T) {
 func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 	logger := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
-	teacherToSave := randomTeacher()
+	teacherToSave := util.RandomBusinessTeacher()
 
 	repository.On("CheckDuplicateExists", mock.Anything, teacherToSave.ReportEmail, teacherToSave.Username).Return(false, nil)
 
@@ -122,7 +121,7 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 func TestCreate_HappyPath(t *testing.T) {
 	logger := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
-	teacherToSave := randomTeacher()
+	teacherToSave := util.RandomBusinessTeacher()
 
 	repository.On("CheckDuplicateExists", mock.Anything, teacherToSave.ReportEmail, teacherToSave.Username).Return(false, nil)
 	repository.On("Save", mock.Anything, mock.Anything).Return(nil)
@@ -156,7 +155,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 	logger := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
 	teacherID := uuid.New()
-	expectedFoundTeacher := teacher.ConvertToRepositoryTeacher(randomTeacher())
+	expectedFoundTeacher := teacher.ConvertToRepositoryTeacher(util.RandomBusinessTeacher())
 
 	repository.On("FindByID", mock.Anything, teacherID).Return(expectedFoundTeacher, nil)
 	service := teacher.New(cfg, logger, repository)
@@ -165,35 +164,4 @@ func TestFindByID_HappyPath(t *testing.T) {
 	require.Nil(t, err)
 
 	assert.Equal(t, teacher.ConvertToServiceTeacher(expectedFoundTeacher), foundTeacher)
-}
-
-func randomTeacher() business.Teacher {
-	return business.Teacher{
-		ID:          uuid.New(),
-		FirstName:   gofakeit.FirstName(),
-		LastName:    gofakeit.LastName(),
-		MiddleName:  gofakeit.MiddleName(),
-		ReportEmail: gofakeit.Email(),
-		Username:    gofakeit.Username(),
-	}
-}
-
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
 }

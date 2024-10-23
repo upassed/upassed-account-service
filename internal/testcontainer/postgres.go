@@ -85,5 +85,4 @@ func (p *postgresTestcontainerImpl) Stop(ctx context.Context) error {
 	}
 
 	return nil
-
 }

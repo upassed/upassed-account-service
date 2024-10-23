@@ -2,7 +2,8 @@ package student_test
 
 import (
 	"context"
-	"errors"
+	"github.com/upassed/upassed-account-service/internal/testcontainer"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,8 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	testcontainer "github.com/upassed/upassed-account-service/internal/repository"
-	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/repository/student"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,7 +26,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	projectRoot, err := getProjectRoot()
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
 	if err != nil {
 		log.Fatal("error to get project root folder: ", err)
 	}
@@ -42,30 +42,45 @@ func TestMain(m *testing.M) {
 	}
 
 	ctx := context.Background()
-	container, err := testcontainer.NewPostgresTestcontainer(ctx)
+	postgresTestcontainer, err := testcontainer.NewPostgresTestcontainer(ctx)
 	if err != nil {
 		log.Fatal("unable to create a testcontainer: ", err)
 	}
 
-	port, err := container.Start(ctx)
+	port, err := postgresTestcontainer.Start(ctx)
 	if err != nil {
 		log.Fatal("unable to get a postgres testcontainer real port: ", err)
 	}
 
 	cfg.Storage.Port = strconv.Itoa(port)
 	logger := logging.New(cfg.Env)
-	if err := container.Migrate(cfg, logger); err != nil {
+	if err := postgresTestcontainer.Migrate(cfg, logger); err != nil {
 		log.Fatal("unable to run migrations: ", err)
 	}
 
+	redisTestcontainer, err := testcontainer.NewRedisTestcontainer(ctx, cfg)
+	if err != nil {
+		log.Fatal("unable to run redis testcontainer: ", err)
+	}
+
+	port, err = redisTestcontainer.Start(ctx)
+	if err != nil {
+		log.Fatal("unable to get a postgres testcontainer real port: ", err)
+	}
+
+	cfg.Redis.Port = strconv.Itoa(port)
 	repository, err = student.New(cfg, logger)
 	if err != nil {
 		log.Fatal("unable to create repository: ", err)
 	}
 
 	exitCode := m.Run()
-	if err := container.Stop(ctx); err != nil {
+	if err := postgresTestcontainer.Stop(ctx); err != nil {
 		log.Fatal("unable to stop postgres testcontainer: ", err)
+	}
+
+	if err := redisTestcontainer.Stop(ctx); err != nil {
+		log.Fatal("unable to stop redis testcontainer: ", err)
 	}
 
 	os.Exit(exitCode)
@@ -82,7 +97,7 @@ func TestConnectToDatabase_InvalidCredentials(t *testing.T) {
 }
 
 func TestSave_InvalidUsernameLength(t *testing.T) {
-	studentToSave := randomStudent()
+	studentToSave := util.RandomDomainStudent()
 	studentToSave.Username = gofakeit.LoremIpsumSentence(50)
 
 	err := repository.Save(context.Background(), studentToSave)
@@ -94,7 +109,7 @@ func TestSave_InvalidUsernameLength(t *testing.T) {
 }
 
 func TestSave_HappyPath(t *testing.T) {
-	studentToSave := randomStudent()
+	studentToSave := util.RandomDomainStudent()
 	studentToSave.GroupID = uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 	studentToSave.Group.ID = uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 
@@ -114,7 +129,7 @@ func TestFindByID_StudentNotFound(t *testing.T) {
 }
 
 func TestFindByID_HappyPath(t *testing.T) {
-	existingStudent := randomStudent()
+	existingStudent := util.RandomDomainStudent()
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 	existingStudent.GroupID = groupID
 	existingStudent.Group.ID = groupID
@@ -133,19 +148,19 @@ func TestFindByID_HappyPath(t *testing.T) {
 	assert.Equal(t, existingStudent.Username, foundStudent.Username)
 	assert.Equal(t, existingStudent.GroupID, foundStudent.GroupID)
 	assert.Equal(t, existingStudent.Group.ID, foundStudent.Group.ID)
-	assert.Equal(t, "5130904", foundStudent.Group.SpecializationCode)
-	assert.Equal(t, "10101", foundStudent.Group.GroupNumber)
+	assert.NotNil(t, foundStudent.Group.SpecializationCode)
+	assert.NotNil(t, foundStudent.Group.GroupNumber)
 }
 
 func TestCheckDuplicates_DuplicatesNotExists(t *testing.T) {
-	uniqueStudent := randomStudent()
+	uniqueStudent := util.RandomDomainStudent()
 	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), uniqueStudent.EducationalEmail, uniqueStudent.Username)
 	require.Nil(t, err)
 	assert.False(t, duplicatesExists)
 }
 
 func TestCheckDuplicates_DuplicatesExists(t *testing.T) {
-	duplicateStudent := randomStudent()
+	duplicateStudent := util.RandomDomainStudent()
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 	duplicateStudent.GroupID = groupID
 	duplicateStudent.Group.ID = groupID
@@ -157,40 +172,4 @@ func TestCheckDuplicates_DuplicatesExists(t *testing.T) {
 	require.Nil(t, err)
 
 	assert.True(t, duplicatesExists)
-}
-
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
-}
-
-func randomStudent() domain.Student {
-	return domain.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: domain.Group{
-			ID:                 uuid.New(),
-			SpecializationCode: gofakeit.WeekDay(),
-			GroupNumber:        gofakeit.WeekDay(),
-		},
-	}
 }

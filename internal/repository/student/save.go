@@ -21,7 +21,7 @@ var (
 func (repository *studentRepositoryImpl) Save(ctx context.Context, student domain.Student) error {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.Save).Pointer()).Name()
 
-	_, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#Save")
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#Save")
 	defer span.End()
 
 	log := repository.log.With(
@@ -38,5 +38,11 @@ func (repository *studentRepositoryImpl) Save(ctx context.Context, student domai
 	}
 
 	log.Info("student was successfully inserted into a database")
+	log.Info("saving student data into the cache")
+
+	if err := repository.cache.SaveStudent(spanContext, student); err != nil {
+		log.Error("unable to insert student in cache", logging.Error(err))
+	}
+
 	return nil
 }

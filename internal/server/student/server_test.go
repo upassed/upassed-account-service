@@ -2,8 +2,8 @@ package student_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
@@ -46,7 +46,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	projectRoot, err := getProjectRoot()
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
 	if err != nil {
 		log.Fatal("error to get project root folder: ", err)
 	}
@@ -210,24 +211,4 @@ func TestFindByID_HappyPath(t *testing.T) {
 func clearStudentServiceMockCalls() {
 	studentSvc.ExpectedCalls = nil
 	studentSvc.Calls = nil
-}
-
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
 }

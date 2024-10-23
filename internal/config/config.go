@@ -36,6 +36,7 @@ type Config struct {
 	Migration       MigrationConfig `yaml:"migrations" env-required:"true"`
 	Timeouts        Timeouts        `yaml:"timeouts" env-required:"true"`
 	Tracing         Tracing         `yaml:"tracing" env-required:"true"`
+	Redis           Redis           `yaml:"redis" env-required:"true"`
 }
 
 type Storage struct {
@@ -66,6 +67,15 @@ type Tracing struct {
 	GroupTracerName   string `yaml:"group_tracer_name" env:"GROUP_TRACER_NAME" env-required:"true"`
 	StudentTracerName string `yaml:"student_tracer_name" env:"STUDENT_TRACER_NAME" env-required:"true"`
 	TeacherTracerName string `yaml:"teacher_tracer_name" env:"TEACHER_TRACER_NAME" env-required:"true"`
+}
+
+type Redis struct {
+	User           string `yaml:"user" env:"REDIS_USER" env-required:"true"`
+	Password       string `yaml:"password" env:"REDIS_PASSWORD" env-required:"true"`
+	Host           string `yaml:"host" env:"REDIS_HOST" env-required:"true"`
+	Port           string `yaml:"port" env:"REDIS_PORT" env-required:"true"`
+	DatabaseNumber string `yaml:"database_number" env:"REDIS_DATABASE_NUMBER" env-required:"true"`
+	EntityTTL      string `yaml:"entity_ttl" env:"REDIS_ENTITY_TTL" env-required:"true"`
 }
 
 func Load() (*Config, error) {
@@ -99,4 +109,25 @@ func (cfg *Config) GetEndpointExecutionTimeout() time.Duration {
 	}
 
 	return time.Duration(milliseconds) * time.Millisecond
+}
+
+func (cfg *Config) GetPostgresConnectionString() string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Storage.Host,
+		cfg.Storage.Port,
+		cfg.Storage.User,
+		cfg.Storage.Password,
+		cfg.Storage.DatabaseName,
+	)
+}
+
+func (cfg *Config) GetRedisEntityTTL() time.Duration {
+	op := runtime.FuncForPC(reflect.ValueOf(cfg.GetRedisEntityTTL).Pointer()).Name()
+
+	parsedTTL, err := time.ParseDuration(cfg.Redis.EntityTTL)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("%s, op=%s, err=%s", "unable to parse entity ttl into time.Duration", op, err.Error()))
+	}
+
+	return parsedTTL
 }

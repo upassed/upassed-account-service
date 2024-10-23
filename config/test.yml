@@ -20,3 +20,10 @@ tracing:
     group_tracer_name: group-tracer
     student_tracer_name: student-tracer
     teacher_tracer_name: teacher-tracer
+redis:
+    user: default
+    password: password
+    host: localhost
+    port: 6379
+    database_number: 0
+    entity_ttl: 5m

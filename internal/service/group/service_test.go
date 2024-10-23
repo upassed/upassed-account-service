@@ -3,6 +3,7 @@ package group_test
 import (
 	"context"
 	"errors"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
@@ -46,7 +47,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	projectRoot, err := getProjectRoot()
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
 	if err != nil {
 		log.Fatal("error to get project root folder: ", err)
 	}
@@ -84,7 +86,12 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
 	groupID := uuid.New()
-	expectedStudentsInGroup := []domain.Student{randomStudent(), randomStudent(), randomStudent()}
+	expectedStudentsInGroup := []domain.Student{
+		util.RandomDomainStudent(),
+		util.RandomDomainStudent(),
+		util.RandomDomainStudent(),
+	}
+
 	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return(expectedStudentsInGroup, nil)
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
@@ -159,7 +166,7 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
-	foundMatchedGroups := []domain.Group{randomGroup(), randomGroup(), randomGroup()}
+	foundMatchedGroups := []domain.Group{util.RandomDomainGroup(), util.RandomDomainGroup(), util.RandomDomainGroup()}
 	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return(foundMatchedGroups, nil)
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
@@ -167,48 +174,4 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 	require.Nil(t, err)
 
 	assert.Equal(t, len(foundMatchedGroups), len(response))
-}
-
-func randomStudent() domain.Student {
-	return domain.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: domain.Group{
-			ID:                 uuid.New(),
-			SpecializationCode: gofakeit.WeekDay(),
-			GroupNumber:        gofakeit.WeekDay(),
-		},
-	}
-}
-
-func randomGroup() domain.Group {
-	return domain.Group{
-		ID:                 uuid.New(),
-		SpecializationCode: gofakeit.WeekDay(),
-		GroupNumber:        gofakeit.WeekDay(),
-	}
-}
-
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
 }

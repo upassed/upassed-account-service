@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16.4
+    container_name: upassed_account_service_postgres
     environment:
       POSTGRES_DB: "upassed-account-service-db"
       POSTGRES_USER: "user"
@@ -9,6 +10,14 @@ services:
         - "5432:5432"
   jaeger:
     image: jaegertracing/all-in-one:1.62.0
+    container_name: upassed_account_service_jaeger
     ports:
       - "16686:16686"
       - "4317:4317"
+  redis:
+    image: redis:7.4
+    container_name: upassed_account_service_redis
+    environment:
+      - REDIS_PASSWORD=password
+    ports:
+      - "6380:6379"

@@ -27,7 +27,7 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domai
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	_, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#Save")
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#Save")
 	defer span.End()
 
 	log.Info("started saving teacher to a database")
@@ -38,5 +38,10 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domai
 	}
 
 	log.Info("teacher was successfully inserted into a database")
+	log.Info("saving teacher data into the cache")
+	if err := repository.cache.SaveTeacher(spanContext, teacher); err != nil {
+		log.Error("unable to insert teacher in cache", logging.Error(err))
+	}
+
 	return nil
 }

@@ -2,7 +2,8 @@ package group_test
 
 import (
 	"context"
-	"errors"
+	"github.com/upassed/upassed-account-service/internal/testcontainer"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	testcontainer "github.com/upassed/upassed-account-service/internal/repository"
 	"github.com/upassed/upassed-account-service/internal/repository/group"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"google.golang.org/grpc/codes"
@@ -26,7 +26,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	projectRoot, err := getProjectRoot()
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
 	if err != nil {
 		log.Fatal("error to get project root folder: ", err)
 	}
@@ -41,30 +42,45 @@ func TestMain(m *testing.M) {
 	}
 
 	ctx := context.Background()
-	container, err := testcontainer.NewPostgresTestcontainer(ctx)
+	postgresTestcontainer, err := testcontainer.NewPostgresTestcontainer(ctx)
 	if err != nil {
 		log.Fatal("unable to create a testcontainer: ", err)
 	}
 
-	port, err := container.Start(ctx)
+	port, err := postgresTestcontainer.Start(ctx)
 	if err != nil {
 		log.Fatal("unable to get a postgres testcontainer real port: ", err)
 	}
 
 	cfg.Storage.Port = strconv.Itoa(port)
 	logger := logging.New(cfg.Env)
-	if err := container.Migrate(cfg, logger); err != nil {
+	if err := postgresTestcontainer.Migrate(cfg, logger); err != nil {
 		log.Fatal("unable to run migrations: ", err)
 	}
 
+	redisTestcontainer, err := testcontainer.NewRedisTestcontainer(ctx, cfg)
+	if err != nil {
+		log.Fatal("unable to run redis testcontainer: ", err)
+	}
+
+	port, err = redisTestcontainer.Start(ctx)
+	if err != nil {
+		log.Fatal("unable to get a postgres testcontainer real port: ", err)
+	}
+
+	cfg.Redis.Port = strconv.Itoa(port)
 	repository, err = group.New(cfg, logger)
 	if err != nil {
 		log.Fatal("unable to create repository: ", err)
 	}
 
 	exitCode := m.Run()
-	if err := container.Stop(ctx); err != nil {
+	if err := postgresTestcontainer.Stop(ctx); err != nil {
 		log.Fatal("unable to stop postgres testcontainer: ", err)
+	}
+
+	if err := redisTestcontainer.Stop(ctx); err != nil {
+		log.Fatal("unable to stop redis testcontainer: ", err)
 	}
 
 	os.Exit(exitCode)
@@ -148,24 +164,4 @@ func TestFindByFilter_HasMatchedGroups(t *testing.T) {
 
 	assert.Equal(t, 1, len(matchedGroups))
 	assert.Equal(t, uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233"), matchedGroups[0].ID)
-}
-
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
 }

@@ -17,4 +17,4 @@ tasks:
         desc: "Run all rests"
         cmds:
             - go clean -testcache
-            - gotestsum --format-icons hivis -- -coverprofile=cover.out ./...
+            - gotestsum --format dots-v2

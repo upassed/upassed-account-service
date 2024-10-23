@@ -30,8 +30,15 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	_, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#FindByID")
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#FindByID")
 	defer span.End()
+
+	log.Info("started searching teacher by id in redis cache")
+	teacherFromCache, err := repository.cache.GetTeacherByID(spanContext, teacherID)
+	if err == nil {
+		log.Info("teacher was found in cache, not going to the database")
+		return teacherFromCache, nil
+	}
 
 	log.Info("started searching teacher by id in a database")
 	foundTeacher := domain.Teacher{}
@@ -47,5 +54,10 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 	}
 
 	log.Info("teacher was successfully found in a database")
+	log.Info("saving teacher to cache")
+	if err := repository.cache.SaveTeacher(spanContext, foundTeacher); err != nil {
+		log.Error("error while saving teacher to cache", logging.Error(err))
+	}
+
 	return foundTeacher, nil
 }

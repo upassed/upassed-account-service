@@ -2,8 +2,8 @@ package group_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
@@ -51,7 +51,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	projectRoot, err := getProjectRoot()
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
 	if err != nil {
 		log.Fatal("error to get project root folder: ", err)
 	}
@@ -114,7 +115,12 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 		GroupId: uuid.NewString(),
 	}
 
-	studentsInGroup := []business.Student{randomStudent(), randomStudent(), randomStudent()}
+	studentsInGroup := []business.Student{
+		util.RandomBusinessStudent(),
+		util.RandomBusinessStudent(),
+		util.RandomBusinessStudent(),
+	}
+
 	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(studentsInGroup, nil)
 
 	response, err := groupClient.FindStudentsInGroup(context.Background(), &request)
@@ -209,7 +215,12 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 		GroupNumber:        "10101",
 	}
 
-	expectedMatchedGroups := []business.Group{randomGroup(), randomGroup(), randomGroup()}
+	expectedMatchedGroups := []business.Group{
+		util.RandomBusinessGroup(),
+		util.RandomBusinessGroup(),
+		util.RandomBusinessGroup(),
+	}
+
 	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return(expectedMatchedGroups, nil)
 
 	response, err := groupClient.SearchByFilter(context.Background(), &request)
@@ -226,24 +237,4 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 func clearGroupServiceMockCalls() {
 	groupSvc.ExpectedCalls = nil
 	groupSvc.Calls = nil
-}
-
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
 }

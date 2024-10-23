@@ -3,12 +3,12 @@ package student_test
 import (
 	"context"
 	"errors"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -16,7 +16,6 @@ import (
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/internal/service/student"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -60,7 +59,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	projectRoot, err := getProjectRoot()
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
 	if err != nil {
 		log.Fatal("error to get project root folder: ", err)
 	}
@@ -82,7 +82,7 @@ func TestCreate_ErrorCheckingDuplicateExists(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomServiceStudent()
+	studentToCreate := util.RandomBusinessStudent()
 	expectedRepositoryError := errors.New("some repo error")
 	studentRepository.On(
 		"CheckDuplicateExists",
@@ -104,7 +104,7 @@ func TestCreate_DuplicateExists(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomServiceStudent()
+	studentToCreate := util.RandomBusinessStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -125,7 +125,7 @@ func TestCreate_ErrorCheckingGroupExists(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomServiceStudent()
+	studentToCreate := util.RandomBusinessStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -149,7 +149,7 @@ func TestCreate_GroupNotExists(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomServiceStudent()
+	studentToCreate := util.RandomBusinessStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -172,7 +172,7 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomServiceStudent()
+	studentToCreate := util.RandomBusinessStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -198,7 +198,7 @@ func TestCreate_HappyPath(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	groupRepository := new(mockGroupRepository)
 
-	studentToCreate := randomServiceStudent()
+	studentToCreate := util.RandomBusinessStudent()
 	studentRepository.On(
 		"CheckDuplicateExists",
 		mock.Anything,
@@ -235,7 +235,7 @@ func TestFindByID_ErrorSearchingStudentInDatabase(t *testing.T) {
 func TestFindByID_HappyPath(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
 	studentID := uuid.New()
-	foundStudent := randomRepositoryStudent()
+	foundStudent := util.RandomDomainStudent()
 
 	studentRepository.On("FindByID", mock.Anything, studentID).Return(foundStudent, nil)
 
@@ -244,54 +244,4 @@ func TestFindByID_HappyPath(t *testing.T) {
 	require.Nil(t, err)
 
 	assert.Equal(t, foundStudent, student.ConvertToRepositoryStudent(response))
-}
-
-func randomServiceStudent() business.Student {
-	return business.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: business.Group{
-			ID: uuid.New(),
-		},
-	}
-}
-
-func randomRepositoryStudent() domain.Student {
-	return domain.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: domain.Group{
-			ID:                 uuid.New(),
-			SpecializationCode: gofakeit.WeekDay(),
-			GroupNumber:        gofakeit.WeekDay(),
-		},
-	}
-}
-
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
 }

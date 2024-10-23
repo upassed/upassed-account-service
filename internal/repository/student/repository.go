@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/upassed/upassed-account-service/internal/caching"
 	"log/slog"
 	"reflect"
 	"runtime"
@@ -31,9 +32,10 @@ type Repository interface {
 }
 
 type studentRepositoryImpl struct {
-	db  *gorm.DB
-	cfg *config.Config
-	log *slog.Logger
+	db    *gorm.DB
+	cache *caching.RedisClient
+	cfg   *config.Config
+	log   *slog.Logger
 }
 
 func New(cfg *config.Config, log *slog.Logger) (Repository, error) {
@@ -44,16 +46,8 @@ func New(cfg *config.Config, log *slog.Logger) (Repository, error) {
 	)
 
 	log.Info("started connecting to postgres database")
-	postgresInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Storage.Host,
-		cfg.Storage.Port,
-		cfg.Storage.User,
-		cfg.Storage.Password,
-		cfg.Storage.DatabaseName,
-	)
-
 	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  postgresInfo,
+		DSN:                  cfg.GetPostgresConnectionString(),
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{
 		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
@@ -74,9 +68,16 @@ func New(cfg *config.Config, log *slog.Logger) (Repository, error) {
 		return nil, errRunningMigrationScripts
 	}
 
+	cache, err := caching.New(cfg, log)
+	if err != nil {
+		log.Error("unable to open connection to redis cache", logging.Error(err))
+		return nil, err
+	}
+
 	return &studentRepositoryImpl{
-		db:  db,
-		cfg: cfg,
-		log: log,
+		db:    db,
+		cache: cache,
+		cfg:   cfg,
+		log:   log,
 	}, nil
 }

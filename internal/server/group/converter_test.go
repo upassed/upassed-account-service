@@ -1,6 +1,7 @@
 package group_test
 
 import (
+	"github.com/upassed/upassed-account-service/internal/util"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -13,7 +14,11 @@ import (
 )
 
 func TestConvertToFindStudentsInGroupResponse(t *testing.T) {
-	studentsInGroup := []business.Student{randomStudent(), randomStudent(), randomStudent()}
+	studentsInGroup := []business.Student{
+		util.RandomBusinessStudent(),
+		util.RandomBusinessStudent(),
+		util.RandomBusinessStudent(),
+	}
 
 	response := group.ConvertToFindStudentsInGroupResponse(studentsInGroup)
 	require.Equal(t, len(studentsInGroup), len(response.GetStudentsInGroup()))
@@ -50,7 +55,7 @@ func TestConvertToGroupFilter(t *testing.T) {
 }
 
 func TestConvertToSearchByFilterResponse(t *testing.T) {
-	matchedGroups := []business.Group{randomGroup(), randomGroup(), randomGroup()}
+	matchedGroups := []business.Group{util.RandomBusinessGroup(), util.RandomBusinessGroup(), util.RandomBusinessGroup()}
 	response := group.ConvertToSearchByFilterResponse(matchedGroups)
 
 	require.Equal(t, len(matchedGroups), len(response.GetMatchedGroups()))
@@ -75,28 +80,4 @@ func assertGroupsEqual(t *testing.T, left business.Group, right *client.GroupDTO
 	assert.Equal(t, left.ID.String(), right.GetId())
 	assert.Equal(t, left.SpecializationCode, right.GetSpecializationCode())
 	assert.Equal(t, left.GroupNumber, right.GetGroupNumber())
-}
-
-func randomStudent() business.Student {
-	return business.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: business.Group{
-			ID:                 uuid.New(),
-			SpecializationCode: gofakeit.WeekDay(),
-			GroupNumber:        gofakeit.WeekDay(),
-		},
-	}
-}
-
-func randomGroup() business.Group {
-	return business.Group{
-		ID:                 uuid.New(),
-		SpecializationCode: gofakeit.WeekDay(),
-		GroupNumber:        gofakeit.WeekDay(),
-	}
 }
