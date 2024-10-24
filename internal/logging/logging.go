@@ -1,4 +1,4 @@
-package logger
+package logging
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"sync"
 
-	config "github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/config"
 )
 
 const (
@@ -21,8 +21,6 @@ const (
 const (
 	reset = "\033[0m"
 
-	red         = 31
-	yellow      = 33
 	cyan        = 36
 	lightGray   = 37
 	darkGray    = 90
@@ -108,7 +106,7 @@ func (handler *customFormattedJsonHandler) Handle(ctx context.Context, record sl
 		return err
 	}
 
-	bytes, err := json.MarshalIndent(attrs, "", "  ")
+	indent, err := json.MarshalIndent(attrs, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error when marshaling attrs: %w", err)
 	}
@@ -117,7 +115,7 @@ func (handler *customFormattedJsonHandler) Handle(ctx context.Context, record sl
 		colorize(lightGray, record.Time.Format(timeFormat)),
 		level,
 		colorize(white, record.Message),
-		colorize(darkGray, string(bytes)),
+		colorize(darkGray, string(indent)),
 	)
 
 	return nil

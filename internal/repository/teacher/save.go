@@ -3,23 +3,23 @@ package teacher
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"time"
-
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
-	ErrorSavingTeacher               error = errors.New("error while saving teacher")
-	ErrorSaveTeacherDeadlineExceeded error = errors.New("saving teacher into a database deadline exceeded")
+	ErrSavingTeacher = errors.New("error while saving teacher")
 )
 
 func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domain.Teacher) error {
-	const op = "teacher.teacherRepositoryImpl.Save()"
+	op := runtime.FuncForPC(reflect.ValueOf(repository.Save).Pointer()).Name()
 
 	log := repository.log.With(
 		slog.String("op", op),
@@ -27,33 +27,21 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domai
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#Save")
+	defer span.End()
 
-	resultChannel := make(chan struct{})
-	errorChannel := make(chan error)
-
-	go func() {
-		log.Debug("started saving teacher to a database")
-		saveResult := repository.db.Create(&teacher)
-		if saveResult.Error != nil || saveResult.RowsAffected != 1 {
-			log.Error("error while saving teacher data to a database", logger.Error(saveResult.Error))
-			errorChannel <- handling.New(ErrorSavingTeacher.Error(), codes.Internal)
-			return
-		}
-
-		log.Debug("teacher was successfully inserted into a database")
-		resultChannel <- struct{}{}
-	}()
-
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return ErrorSaveTeacherDeadlineExceeded
-		case <-resultChannel:
-			return nil
-		case err := <-errorChannel:
-			return err
-		}
+	log.Info("started saving teacher to a database")
+	saveResult := repository.db.WithContext(ctx).Create(&teacher)
+	if saveResult.Error != nil || saveResult.RowsAffected != 1 {
+		log.Error("error while saving teacher data to a database", logging.Error(saveResult.Error))
+		return handling.New(ErrSavingTeacher.Error(), codes.Internal)
 	}
+
+	log.Info("teacher was successfully inserted into a database")
+	log.Info("saving teacher data into the cache")
+	if err := repository.cache.SaveTeacher(spanContext, teacher); err != nil {
+		log.Error("unable to insert teacher in cache", logging.Error(err))
+	}
+
+	return nil
 }

@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Student_Create_FullMethodName   = "/api.Student/Create"
 	Student_FindByID_FullMethodName = "/api.Student/FindByID"
 )
 
@@ -27,7 +26,6 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StudentClient interface {
-	Create(ctx context.Context, in *StudentCreateRequest, opts ...grpc.CallOption) (*StudentCreateResponse, error)
 	FindByID(ctx context.Context, in *StudentFindByIDRequest, opts ...grpc.CallOption) (*StudentFindByIDResponse, error)
 }
 
@@ -37,16 +35,6 @@ type studentClient struct {
 
 func NewStudentClient(cc grpc.ClientConnInterface) StudentClient {
 	return &studentClient{cc}
-}
-
-func (c *studentClient) Create(ctx context.Context, in *StudentCreateRequest, opts ...grpc.CallOption) (*StudentCreateResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StudentCreateResponse)
-	err := c.cc.Invoke(ctx, Student_Create_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *studentClient) FindByID(ctx context.Context, in *StudentFindByIDRequest, opts ...grpc.CallOption) (*StudentFindByIDResponse, error) {
@@ -63,7 +51,6 @@ func (c *studentClient) FindByID(ctx context.Context, in *StudentFindByIDRequest
 // All implementations must embed UnimplementedStudentServer
 // for forward compatibility.
 type StudentServer interface {
-	Create(context.Context, *StudentCreateRequest) (*StudentCreateResponse, error)
 	FindByID(context.Context, *StudentFindByIDRequest) (*StudentFindByIDResponse, error)
 	mustEmbedUnimplementedStudentServer()
 }
@@ -75,9 +62,6 @@ type StudentServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStudentServer struct{}
 
-func (UnimplementedStudentServer) Create(context.Context, *StudentCreateRequest) (*StudentCreateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
-}
 func (UnimplementedStudentServer) FindByID(context.Context, *StudentFindByIDRequest) (*StudentFindByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindByID not implemented")
 }
@@ -100,24 +84,6 @@ func RegisterStudentServer(s grpc.ServiceRegistrar, srv StudentServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Student_ServiceDesc, srv)
-}
-
-func _Student_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StudentCreateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StudentServer).Create(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Student_Create_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StudentServer).Create(ctx, req.(*StudentCreateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Student_FindByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -145,10 +111,6 @@ var Student_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api.Student",
 	HandlerType: (*StudentServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Create",
-			Handler:    _Student_Create_Handler,
-		},
 		{
 			MethodName: "FindByID",
 			Handler:    _Student_FindByID_Handler,

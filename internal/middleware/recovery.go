@@ -3,6 +3,8 @@ package middleware
 import (
 	"context"
 	"log/slog"
+	"reflect"
+	"runtime"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -13,7 +15,7 @@ func PanicRecoveryMiddlewareInterceptor(log *slog.Logger) grpc.UnaryServerInterc
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				const op = "middleware.PanicRecoveryMiddlewareInterceptor()"
+				op := runtime.FuncForPC(reflect.ValueOf(PanicRecoveryMiddlewareInterceptor).Pointer()).Name()
 
 				log := log.With(
 					slog.String("op", op),

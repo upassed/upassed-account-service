@@ -3,26 +3,26 @@ package teacher
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
-	ErrorSearchingTeacherByID            error = errors.New("error while searching teacher by id")
-	ErrorTeacherNotFoundByID             error = errors.New("teacher by id  not found in database")
-	ErrorFindTeacherByIDDeadlineExceeded error = errors.New("finding teacher by id in a database deadline exceeded")
+	errSearchingTeacherByID = errors.New("error while searching teacher by id")
+	ErrTeacherNotFoundByID  = errors.New("teacher by id  not found in database")
 )
 
 func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
-	const op = "teacher.teacherRepositoryImpl.FindByID()"
+	op := runtime.FuncForPC(reflect.ValueOf(repository.FindByID).Pointer()).Name()
 
 	log := repository.log.With(
 		slog.String("op", op),
@@ -30,40 +30,34 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#FindByID")
+	defer span.End()
 
-	resultChannel := make(chan domain.Teacher)
-	errorChannel := make(chan error)
-
-	go func() {
-		log.Debug("started searching teacher in a database")
-		foundTeacher := domain.Teacher{}
-		searchResult := repository.db.First(&foundTeacher, teacherID)
-		if searchResult.Error != nil {
-			if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
-				log.Error("teacher was not found in the database", logger.Error(searchResult.Error))
-				errorChannel <- handling.New(ErrorTeacherNotFoundByID.Error(), codes.NotFound)
-				return
-			}
-
-			log.Error("error while searching teacher in the database", logger.Error(searchResult.Error))
-			errorChannel <- handling.New(ErrorSearchingTeacherByID.Error(), codes.Internal)
-			return
-		}
-
-		log.Debug("teacher was successfully found in a database")
-		resultChannel <- foundTeacher
-	}()
-
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return domain.Teacher{}, ErrorFindTeacherByIDDeadlineExceeded
-		case foundTeacher := <-resultChannel:
-			return foundTeacher, nil
-		case err := <-errorChannel:
-			return domain.Teacher{}, err
-		}
+	log.Info("started searching teacher by id in redis cache")
+	teacherFromCache, err := repository.cache.GetTeacherByID(spanContext, teacherID)
+	if err == nil {
+		log.Info("teacher was found in cache, not going to the database")
+		return teacherFromCache, nil
 	}
+
+	log.Info("started searching teacher by id in a database")
+	foundTeacher := domain.Teacher{}
+	searchResult := repository.db.WithContext(ctx).First(&foundTeacher, teacherID)
+	if searchResult.Error != nil {
+		if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
+			log.Error("teacher was not found in the database", logging.Error(searchResult.Error))
+			return domain.Teacher{}, handling.New(ErrTeacherNotFoundByID.Error(), codes.NotFound)
+		}
+
+		log.Error("error while searching teacher in the database", logging.Error(searchResult.Error))
+		return domain.Teacher{}, handling.New(errSearchingTeacherByID.Error(), codes.Internal)
+	}
+
+	log.Info("teacher was successfully found in a database")
+	log.Info("saving teacher to cache")
+	if err := repository.cache.SaveTeacher(spanContext, foundTeacher); err != nil {
+		log.Error("error while saving teacher to cache", logging.Error(err))
+	}
+
+	return foundTeacher, nil
 }

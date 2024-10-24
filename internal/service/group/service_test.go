@@ -3,6 +3,10 @@ package group_test
 import (
 	"context"
 	"errors"
+	"github.com/upassed/upassed-account-service/internal/util"
+	"log"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -11,7 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/service/group"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
@@ -38,19 +42,43 @@ func (m *mockGroupRepository) FindByFilter(ctx context.Context, filter domain.Gr
 	return args.Get(0).([]domain.Group), args.Error(1)
 }
 
+var (
+	cfg *config.Config
+)
+
+func TestMain(m *testing.M) {
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
+	if err != nil {
+		log.Fatal("error to get project root folder: ", err)
+	}
+
+	if err := os.Setenv(config.EnvConfigPath, filepath.Join(projectRoot, "config", "test.yml")); err != nil {
+		log.Fatal(err)
+	}
+
+	cfg, err = config.Load()
+	if err != nil {
+		log.Fatal("unable to parse config: ", err)
+	}
+
+	exitCode := m.Run()
+	os.Exit(exitCode)
+}
+
 func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
 	groupID := uuid.New()
-	expectedReposotiryError := errors.New("some repo error")
-	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return([]domain.Student{}, expectedReposotiryError)
+	expectedRepositoryError := errors.New("some repo error")
+	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return([]domain.Student{}, expectedRepositoryError)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindStudentsInGroup(context.Background(), groupID)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
-	assert.Equal(t, expectedReposotiryError.Error(), convertedError.Message())
+	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
 	assert.Equal(t, codes.Internal, convertedError.Code())
 }
 
@@ -58,10 +86,15 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
 	groupID := uuid.New()
-	expectedStudentsInGroup := []domain.Student{randomStudent(), randomStudent(), randomStudent()}
+	expectedStudentsInGroup := []domain.Student{
+		util.RandomDomainStudent(),
+		util.RandomDomainStudent(),
+		util.RandomDomainStudent(),
+	}
+
 	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return(expectedStudentsInGroup, nil)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	actualFoundStudentsInGroup, err := service.FindStudentsInGroup(context.Background(), groupID)
 	require.Nil(t, err)
 
@@ -72,15 +105,15 @@ func TestFindByID_RepositoryError(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
 	groupID := uuid.New()
-	expectedReposotiryError := errors.New("some repo error")
-	groupRepository.On("FindByID", mock.Anything, groupID).Return(domain.Group{}, expectedReposotiryError)
+	expectedRepositoryError := errors.New("some repo error")
+	groupRepository.On("FindByID", mock.Anything, groupID).Return(domain.Group{}, expectedRepositoryError)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByID(context.Background(), groupID)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
-	assert.Equal(t, expectedReposotiryError.Error(), convertedError.Message())
+	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
 	assert.Equal(t, codes.Internal, convertedError.Code())
 }
 
@@ -96,7 +129,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 
 	groupRepository.On("FindByID", mock.Anything, groupID).Return(expectedFoundGroup, nil)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	foundGroup, err := service.FindByID(context.Background(), groupID)
 	require.Nil(t, err)
 
@@ -113,15 +146,15 @@ func TestFindByFilter_RepositoryError(t *testing.T) {
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
-	expectedReposotiryError := errors.New("some repo error")
-	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return([]domain.Group{}, expectedReposotiryError)
+	expectedRepositoryError := errors.New("some repo error")
+	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return([]domain.Group{}, expectedRepositoryError)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByFilter(context.Background(), groupFilter)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
-	assert.Equal(t, expectedReposotiryError.Error(), convertedError.Message())
+	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
 	assert.Equal(t, codes.Internal, convertedError.Code())
 }
 
@@ -133,36 +166,12 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
-	foundMatchedGroups := []domain.Group{randomGroup(), randomGroup(), randomGroup()}
+	foundMatchedGroups := []domain.Group{util.RandomDomainGroup(), util.RandomDomainGroup(), util.RandomDomainGroup()}
 	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return(foundMatchedGroups, nil)
 
-	service := group.New(logger.New(config.EnvTesting), groupRepository)
+	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	response, err := service.FindByFilter(context.Background(), groupFilter)
 	require.Nil(t, err)
 
 	assert.Equal(t, len(foundMatchedGroups), len(response))
-}
-
-func randomStudent() domain.Student {
-	return domain.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: domain.Group{
-			ID:                 uuid.New(),
-			SpecializationCode: gofakeit.WeekDay(),
-			GroupNumber:        gofakeit.WeekDay(),
-		},
-	}
-}
-
-func randomGroup() domain.Group {
-	return domain.Group{
-		ID:                 uuid.New(),
-		SpecializationCode: gofakeit.WeekDay(),
-		GroupNumber:        gofakeit.WeekDay(),
-	}
 }

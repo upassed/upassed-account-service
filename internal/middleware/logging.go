@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"time"
 
 	"google.golang.org/grpc"
@@ -12,7 +14,7 @@ import (
 
 func LoggingMiddlewareInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		const op = "middleware.LoggingMiddlewareInterceptor()"
+		op := runtime.FuncForPC(reflect.ValueOf(LoggingMiddlewareInterceptor).Pointer()).Name()
 
 		startTime := time.Now()
 		resp, err := handler(ctx, req)

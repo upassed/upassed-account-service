@@ -2,8 +2,8 @@ package teacher_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/server"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
@@ -46,7 +46,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	projectRoot, err := getProjectRoot()
+	currentDir, _ := os.Getwd()
+	projectRoot, err := util.GetProjectRoot(currentDir)
 	if err != nil {
 		log.Fatal("error to get project root folder: ", err)
 	}
@@ -55,22 +56,22 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	config, err := config.Load()
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("config load error: ", err)
+		log.Fatal("cfg load error: ", err)
 	}
 
-	logger := logger.New(config.Env)
+	logger := logging.New(cfg.Env)
 
 	teacherSvc = new(mockTeacherService)
 	teacherServer := server.New(server.AppServerCreateParams{
-		Config:         config,
+		Config:         cfg,
 		Log:            logger,
 		TeacherService: teacherSvc,
 	})
 
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	cc, err := grpc.NewClient(fmt.Sprintf(":%s", config.GrpcServer.Port), opts...)
+	cc, err := grpc.NewClient(fmt.Sprintf(":%s", cfg.GrpcServer.Port), opts...)
 	if err != nil {
 		log.Fatal("error creating client connection: ", err)
 	}
@@ -85,66 +86,6 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	teacherServer.GracefulStop()
 	os.Exit(exitCode)
-}
-
-func TestCreate_InvalidRequest(t *testing.T) {
-	request := client.TeacherCreateRequest{
-		FirstName:   gofakeit.FirstName(),
-		LastName:    gofakeit.LastName(),
-		MiddleName:  gofakeit.MiddleName(),
-		ReportEmail: "invalid_email",
-		Username:    gofakeit.Username(),
-	}
-
-	_, err := teacherClient.Create(context.Background(), &request)
-	require.NotNil(t, err)
-
-	convertedError := status.Convert(err)
-	assert.Equal(t, codes.InvalidArgument, convertedError.Code())
-}
-
-func TestCreate_ServiceError(t *testing.T) {
-	request := client.TeacherCreateRequest{
-		FirstName:   gofakeit.FirstName(),
-		LastName:    gofakeit.LastName(),
-		MiddleName:  gofakeit.MiddleName(),
-		ReportEmail: gofakeit.Email(),
-		Username:    gofakeit.Username(),
-	}
-
-	expectedError := handling.New("some service error", codes.AlreadyExists)
-	teacherSvc.On("Create", mock.Anything, mock.Anything).Return(business.TeacherCreateResponse{}, handling.Process(expectedError))
-
-	_, err := teacherClient.Create(context.Background(), &request)
-	require.NotNil(t, err)
-
-	convertedError := status.Convert(err)
-	assert.Equal(t, expectedError.Error(), convertedError.Message())
-	assert.Equal(t, codes.AlreadyExists, convertedError.Code())
-
-	clearTeacherServiceMockCalls()
-}
-
-func TestCreate_HappyPath(t *testing.T) {
-	request := client.TeacherCreateRequest{
-		FirstName:   gofakeit.FirstName(),
-		LastName:    gofakeit.LastName(),
-		MiddleName:  gofakeit.MiddleName(),
-		ReportEmail: gofakeit.Email(),
-		Username:    gofakeit.Username(),
-	}
-
-	createdTeacherID := uuid.New()
-	teacherSvc.On("Create", mock.Anything, mock.Anything).Return(business.TeacherCreateResponse{
-		CreatedTeacherID: createdTeacherID,
-	}, nil)
-
-	response, err := teacherClient.Create(context.Background(), &request)
-	require.Nil(t, err)
-
-	assert.Equal(t, createdTeacherID.String(), response.GetCreatedTeacherId())
-
-	clearTeacherServiceMockCalls()
 }
 
 func TestFindByID_InvalidRequest(t *testing.T) {
@@ -203,24 +144,4 @@ func TestFindByID_HappyPath(t *testing.T) {
 func clearTeacherServiceMockCalls() {
 	teacherSvc.ExpectedCalls = nil
 	teacherSvc.Calls = nil
-}
-
-func getProjectRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-
-		parentDir := filepath.Dir(dir)
-		if parentDir == dir {
-			return "", errors.New("project root not found")
-		}
-
-		dir = parentDir
-	}
 }

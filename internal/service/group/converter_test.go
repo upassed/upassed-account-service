@@ -1,6 +1,7 @@
 package group_test
 
 import (
+	"github.com/upassed/upassed-account-service/internal/util"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -13,7 +14,11 @@ import (
 )
 
 func TestConvertToServiceStudents(t *testing.T) {
-	studentsToConvert := []domain.Student{randomStudent(), randomStudent(), randomStudent()}
+	studentsToConvert := []domain.Student{util.RandomDomainStudent(),
+		util.RandomDomainStudent(),
+		util.RandomDomainStudent(),
+	}
+
 	convertedStudents := group.ConvertToServiceStudents(studentsToConvert)
 
 	require.Equal(t, len(studentsToConvert), len(convertedStudents))

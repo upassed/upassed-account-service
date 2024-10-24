@@ -1,17 +1,20 @@
 package main
 
 import (
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"syscall"
 
 	"github.com/joho/godotenv"
 	"github.com/upassed/upassed-account-service/internal/app"
-	config "github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/logging"
 )
 
 func main() {
@@ -23,23 +26,35 @@ func main() {
 		log.Fatal(err)
 	}
 
-	config, err := config.Load()
+	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log := logger.New(config.Env)
-	log.Info("logger successfully initialized", slog.Any("env", config.Env))
+	logger := logging.New(cfg.Env).With(
+		slog.String("op", runtime.FuncForPC(reflect.ValueOf(main).Pointer()).Name()),
+	)
 
-	application, err := app.New(config, log)
+	logger.Info("logger successfully initialized", slog.Any("env", cfg.Env))
+
+	traceProviderShutdownFunc, err := tracing.InitTracer(cfg, logger)
 	if err != nil {
-		log.Error("error occured while creating an app", logger.Error(err))
+		logger.Error("unable to initialize traceProvider", logging.Error(err))
+		os.Exit(1)
+	}
+
+	defer traceProviderShutdownFunc()
+	logger.Info("trace provider successfully initialized")
+
+	application, err := app.New(cfg, logger)
+	if err != nil {
+		logger.Error("error occurred while creating an app", logging.Error(err))
 		os.Exit(1)
 	}
 
 	go func(app *app.App) {
 		if err := app.Server.Run(); err != nil {
-			log.Error("error occured while running a gRPC server", logger.Error(err))
+			logger.Error("error occurred while running a gRPC server", logging.Error(err))
 			os.Exit(1)
 		}
 	}(application)
@@ -49,5 +64,6 @@ func main() {
 	<-stopSignalChannel
 
 	application.Server.GracefulStop()
-	log.Info("server gracefully stopped")
+	_ = application.RabbitConn.Close()
+	logger.Info("server gracefully stopped")
 }

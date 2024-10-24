@@ -4,17 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
+	"runtime"
 
 	"github.com/golang-migrate/migrate/v4"
-	config "github.com/upassed/upassed-account-service/internal/config"
-	"github.com/upassed/upassed-account-service/internal/logger"
+	"github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/logging"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func RunMigrations(config *config.Config, log *slog.Logger) error {
-	const op = "migration.RunMigrations()"
+	op := runtime.FuncForPC(reflect.ValueOf(RunMigrations).Pointer()).Name()
 
 	migrator, err := migrate.New(
 		fmt.Sprintf("file://%s", config.Migration.MigrationsPath),
@@ -34,18 +36,18 @@ func RunMigrations(config *config.Config, log *slog.Logger) error {
 	)
 
 	if err != nil {
-		log.Error("error while creating migrator", logger.Error(err))
+		log.Error("error while creating migrator", logging.Error(err))
 		return err
 	}
 
-	log.Debug("starting sql migration scripts running")
+	log.Info("starting sql migration scripts running")
 	if err := migrator.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			log.Info("no migrations to apply, nothing changed")
 			return nil
 		}
 
-		log.Error("error while applying migrations", logger.Error(err))
+		log.Error("error while applying migrations", logging.Error(err))
 		return err
 	}
 

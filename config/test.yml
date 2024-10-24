@@ -1,4 +1,5 @@
 env: "testing"
+application_name: upassed-account-service
 storage:
     host: "localhost"
     port: "5432"
@@ -11,3 +12,33 @@ grpc_server:
 migrations:
     migrations_path: "../../../migration/scripts"
     migrations_table_name: "migrations"
+timeouts:
+    endpoint_execution_timeout_ms: 40000
+tracing:
+    host: localhost
+    port: 14268
+    group_tracer_name: group-tracer
+    student_tracer_name: student-tracer
+    teacher_tracer_name: teacher-tracer
+redis:
+    user: default
+    password: password
+    host: localhost
+    port: 6379
+    database_number: 0
+    entity_ttl: 5m
+rabbit:
+    user: upassed-rabbit-user
+    password: upassed-rabbit-password
+    host: localhost
+    port: 5672
+    exchange:
+        name: upassed-account-service
+        type: direct
+    queues:
+        student_create:
+            name: student-create-queue
+            routing_key: student.create
+        teacher_create:
+            name: teacher-create-queue
+            routing_key: teacher.create

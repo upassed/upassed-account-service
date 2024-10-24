@@ -3,21 +3,24 @@ package teacher
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"time"
-
+	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
+	"log/slog"
+	"reflect"
+	"runtime"
 )
 
 var (
-	ErrorCreateTeacherDeadlineExceeded error = errors.New("create teacher deadline exceeded")
+	errCreateTeacherDeadlineExceeded = errors.New("create teacher deadline exceeded")
 )
 
 func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate business.Teacher) (business.TeacherCreateResponse, error) {
-	const op = "teacher.teacherServiceImpl.Create()"
+	op := runtime.FuncForPC(reflect.ValueOf(service.Create).Pointer()).Name()
 
 	log := service.log.With(
 		slog.String("op", op),
@@ -25,46 +28,42 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate b
 		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
-	contextWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
+	spanContext, span := otel.Tracer(service.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherService#Create")
+	defer span.End()
 
-	resultChannel := make(chan business.TeacherCreateResponse)
-	errorChannel := make(chan error)
-
-	go func() {
-		log.Debug("started creating teacher")
-		duplicateExists, err := service.repository.CheckDuplicateExists(contextWithTimeout, teacherToCreate.ReportEmail, teacherToCreate.Username)
+	log.Info("started creating teacher")
+	timeout := service.cfg.GetEndpointExecutionTimeout()
+	teacherCreateResponse, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (business.TeacherCreateResponse, error) {
+		duplicateExists, err := service.repository.CheckDuplicateExists(ctx, teacherToCreate.ReportEmail, teacherToCreate.Username)
 		if err != nil {
-			errorChannel <- handling.Process(err)
-			return
+			return business.TeacherCreateResponse{}, handling.Process(err)
 		}
 
 		if duplicateExists {
 			log.Error("teacher with this username or report email already exists")
-			errorChannel <- handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
-			return
+			return business.TeacherCreateResponse{}, handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
 		}
 
 		domainTeacher := ConvertToRepositoryTeacher(teacherToCreate)
-		if err := service.repository.Save(contextWithTimeout, domainTeacher); err != nil {
-			errorChannel <- handling.Process(err)
-			return
+		if err := service.repository.Save(ctx, domainTeacher); err != nil {
+			return business.TeacherCreateResponse{}, handling.Process(err)
 		}
 
-		log.Debug("teacher successfully created", slog.Any("createdTeacherID", domainTeacher.ID))
-		resultChannel <- business.TeacherCreateResponse{
+		return business.TeacherCreateResponse{
 			CreatedTeacherID: domainTeacher.ID,
-		}
-	}()
+		}, nil
+	})
 
-	for {
-		select {
-		case <-contextWithTimeout.Done():
-			return business.TeacherCreateResponse{}, ErrorCreateTeacherDeadlineExceeded
-		case createdTeacherData := <-resultChannel:
-			return createdTeacherData, nil
-		case err := <-errorChannel:
-			return business.TeacherCreateResponse{}, err
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Error("creating teacher deadline exceeded")
+			return business.TeacherCreateResponse{}, handling.Wrap(errCreateTeacherDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
+
+		log.Error("error while creating a teacher", logging.Error(err))
+		return business.TeacherCreateResponse{}, handling.Wrap(err)
 	}
+
+	log.Info("teacher successfully created", slog.Any("createdTeacherID", teacherCreateResponse.CreatedTeacherID))
+	return teacherCreateResponse, nil
 }

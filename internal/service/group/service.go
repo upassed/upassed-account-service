@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/config"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -9,13 +10,14 @@ import (
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
-type groupService interface {
+type Service interface {
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]business.Student, error)
 	FindByID(context.Context, uuid.UUID) (business.Group, error)
 	FindByFilter(context.Context, business.GroupFilter) ([]business.Group, error)
 }
 
 type groupServiceImpl struct {
+	cfg        *config.Config
 	log        *slog.Logger
 	repository groupRepository
 }
@@ -26,8 +28,9 @@ type groupRepository interface {
 	FindByFilter(context.Context, domain.GroupFilter) ([]domain.Group, error)
 }
 
-func New(log *slog.Logger, repository groupRepository) groupService {
+func New(cfg *config.Config, log *slog.Logger, repository groupRepository) Service {
 	return &groupServiceImpl{
+		cfg:        cfg,
 		log:        log,
 		repository: repository,
 	}

@@ -3,9 +3,9 @@ package domain
 import "github.com/google/uuid"
 
 type Group struct {
-	ID                 uuid.UUID
-	SpecializationCode string
-	GroupNumber        string
+	ID                 uuid.UUID `json:"id"`
+	SpecializationCode string    `json:"specialization_code"`
+	GroupNumber        string    `json:"group_number"`
 }
 
 func (Group) TableName() string {
