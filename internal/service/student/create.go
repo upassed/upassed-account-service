@@ -55,6 +55,13 @@ func (service *studentServiceImpl) Create(ctx context.Context, student business.
 		}
 
 		domainStudent := ConvertToRepositoryStudent(student)
+		existingGroup, err := service.groupRepository.FindByID(ctx, student.Group.ID)
+		if err != nil {
+			log.Error("error while searching group by id", logging.Error(err))
+			return business.StudentCreateResponse{}, handling.Wrap(errors.New("error searching group"), handling.WithCode(codes.Internal))
+		}
+
+		domainStudent.Group = existingGroup
 		if err := service.studentRepository.Save(ctx, domainStudent); err != nil {
 			return business.StudentCreateResponse{}, err
 		}

@@ -84,11 +84,11 @@ func TestMain(m *testing.M) {
 	groupRepository = group.New(db, redis, cfg, logger)
 	exitCode := m.Run()
 	if err := postgresTestcontainer.Stop(ctx); err != nil {
-		log.Fatal("unable to stop postgres testcontainer: ", err)
+		log.Println("unable to stop postgres testcontainer: ", err)
 	}
 
 	if err := redisTestcontainer.Stop(ctx); err != nil {
-		log.Fatal("unable to stop redis testcontainer: ", err)
+		log.Println("unable to stop redis testcontainer: ", err)
 	}
 
 	os.Exit(exitCode)

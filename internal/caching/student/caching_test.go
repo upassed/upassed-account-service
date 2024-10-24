@@ -60,7 +60,7 @@ func TestMain(m *testing.M) {
 	redisClient = student.New(redis, cfg, logger)
 	exitCode := m.Run()
 	if err := redisTestcontainer.Stop(ctx); err != nil {
-		log.Fatal("unable to stop redis testcontainer: ", err)
+		log.Println("unable to stop redis testcontainer: ", err)
 	}
 
 	os.Exit(exitCode)

@@ -30,6 +30,7 @@ type studentRepository interface {
 
 type groupRepository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
+	FindByID(context.Context, uuid.UUID) (domain.Group, error)
 }
 
 func New(cfg *config.Config, log *slog.Logger, studentRepository studentRepository, groupRepository groupRepository) Service {

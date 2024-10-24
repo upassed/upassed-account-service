@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
 	"log/slog"
@@ -22,6 +23,7 @@ func (client *RedisClient) SaveStudent(ctx context.Context, student domain.Stude
 	log := client.log.With(
 		slog.String("op", op),
 		slog.Any("studentID", student.ID),
+		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
 	_, span := otel.Tracer(client.cfg.Tracing.StudentTracerName).Start(ctx, "redisClient#SaveStudent")

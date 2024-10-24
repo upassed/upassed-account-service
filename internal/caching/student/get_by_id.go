@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/logging"
+	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
 	"log/slog"
@@ -26,6 +27,7 @@ func (client *RedisClient) GetStudentByID(ctx context.Context, studentID uuid.UU
 	log := client.log.With(
 		slog.String("op", op),
 		slog.Any("studentID", studentID),
+		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
 	)
 
 	_, span := otel.Tracer(client.cfg.Tracing.StudentTracerName).Start(ctx, "redisClient#GetStudentByID")

@@ -3,6 +3,7 @@ package student
 import (
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
+	"github.com/upassed/upassed-account-service/internal/service/student"
 	"github.com/wagslane/go-rabbitmq"
 	"log/slog"
 	"reflect"
@@ -10,12 +11,13 @@ import (
 )
 
 type rabbitClient struct {
+	service          student.Service
+	rabbitConnection *rabbitmq.Conn
 	cfg              *config.Config
 	log              *slog.Logger
-	rabbitConnection *rabbitmq.Conn
 }
 
-func Initialize(rabbitConnection *rabbitmq.Conn, cfg *config.Config, log *slog.Logger) {
+func Initialize(service student.Service, rabbitConnection *rabbitmq.Conn, cfg *config.Config, log *slog.Logger) {
 	op := runtime.FuncForPC(reflect.ValueOf(Initialize).Pointer()).Name()
 
 	log = log.With(
@@ -23,9 +25,10 @@ func Initialize(rabbitConnection *rabbitmq.Conn, cfg *config.Config, log *slog.L
 	)
 
 	client := &rabbitClient{
+		service:          service,
+		rabbitConnection: rabbitConnection,
 		cfg:              cfg,
 		log:              log,
-		rabbitConnection: rabbitConnection,
 	}
 
 	go func() {

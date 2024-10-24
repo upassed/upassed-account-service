@@ -181,6 +181,7 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 	).Return(false, nil)
 
 	groupRepository.On("Exists", mock.Anything, studentToCreate.Group.ID).Return(true, nil)
+	groupRepository.On("FindByID", mock.Anything, studentToCreate.Group.ID).Return(util.RandomDomainGroup(), nil)
 
 	expectedRepositoryError := errors.New("some repo error")
 	studentRepository.On("Save", mock.Anything, mock.Anything).Return(expectedRepositoryError)
@@ -207,6 +208,7 @@ func TestCreate_HappyPath(t *testing.T) {
 	).Return(false, nil)
 
 	groupRepository.On("Exists", mock.Anything, studentToCreate.Group.ID).Return(true, nil)
+	groupRepository.On("FindByID", mock.Anything, studentToCreate.Group.ID).Return(util.RandomDomainGroup(), nil)
 	studentRepository.On("Save", mock.Anything, mock.Anything).Return(nil)
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, groupRepository)

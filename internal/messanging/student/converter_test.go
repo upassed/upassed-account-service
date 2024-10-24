@@ -1,27 +1,36 @@
 package student_test
 
 import (
-	"github.com/brianvoe/gofakeit/v7"
+	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	event "github.com/upassed/upassed-account-service/internal/messanging/model"
 	"github.com/upassed/upassed-account-service/internal/messanging/student"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"github.com/upassed/upassed-account-service/internal/util"
 	"testing"
 )
 
-func TestConvertToStudent(t *testing.T) {
-	request := event.StudentCreateRequest{
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		GroupId:          uuid.NewString(),
-	}
+func TestConvertToStudentCreateRequest_InvalidBytes(t *testing.T) {
+	invalidBytes := make([]byte, 10)
+	_, err := student.ConvertToStudentCreateRequest(invalidBytes)
+	require.NotNil(t, err)
+}
 
-	convertedStudent := student.ConvertToStudent(&request)
+func TestConvertToStudentCreateRequest_ValidBytes(t *testing.T) {
+	initialRequest := util.RandomEventStudentCreateRequest()
+	initialRequestBytes, err := json.Marshal(initialRequest)
+	require.Nil(t, err)
+
+	convertedRequest, err := student.ConvertToStudentCreateRequest(initialRequestBytes)
+	require.Nil(t, err)
+
+	assert.Equal(t, initialRequest, convertedRequest)
+}
+
+func TestConvertToStudent(t *testing.T) {
+	request := util.RandomEventStudentCreateRequest()
+	convertedStudent := student.ConvertToStudent(request)
 	require.NotNil(t, convertedStudent)
 
 	assert.Equal(t, request.FirstName, convertedStudent.FirstName)

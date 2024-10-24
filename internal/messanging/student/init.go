@@ -36,7 +36,7 @@ func InitializeCreateQueueConsumer(client *rabbitClient) error {
 	}
 
 	defer studentCreateGroupConsumer.Close()
-	if err := studentCreateGroupConsumer.Run(CreateQueueConsumer(log)); err != nil {
+	if err := studentCreateGroupConsumer.Run(client.CreateQueueConsumer(log)); err != nil {
 		log.Error("unable to run student queue consumer")
 		return errRunningStudentCreateQueueConsumer
 	}

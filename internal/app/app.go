@@ -52,14 +52,17 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	studentRabbit.Initialize(rabbit, config, log)
-	teacherRabbit.Initialize(rabbit, config, log)
+	studentService := student.New(config, log, studentRepository, groupRepository)
+	teacherService := teacher.New(config, log, teacherRepository)
+
+	studentRabbit.Initialize(studentService, rabbit, config, log)
+	teacherRabbit.Initialize(teacherService, rabbit, config, log)
 
 	appServer := server.New(server.AppServerCreateParams{
 		Config:         config,
 		Log:            log,
-		TeacherService: teacher.New(config, log, teacherRepository),
-		StudentService: student.New(config, log, studentRepository, groupRepository),
+		TeacherService: teacherService,
+		StudentService: studentService,
 		GroupService:   group.New(config, log, groupRepository),
 	})
 
