@@ -13,23 +13,18 @@ import (
 	"strconv"
 )
 
-type RedisClient struct {
-	cfg    *config.Config
-	log    *slog.Logger
-	client *redis.Client
-}
-
 var (
 	errCreatingRedisClient = errors.New("unable to create a redis client")
 )
 
-func New(cfg *config.Config, log *slog.Logger) (*RedisClient, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
+func OpenRedisConnection(cfg *config.Config, log *slog.Logger) (*redis.Client, error) {
+	op := runtime.FuncForPC(reflect.ValueOf(OpenRedisConnection).Pointer()).Name()
 
 	log = log.With(
 		slog.String("op", op),
 	)
 
+	log.Info("started creating redis connection")
 	databaseNumber, err := strconv.Atoi(cfg.Redis.DatabaseNumber)
 	if err != nil {
 		log.Error("unable to parse redis database number", logging.Error(err))
@@ -49,9 +44,5 @@ func New(cfg *config.Config, log *slog.Logger) (*RedisClient, error) {
 	}
 
 	log.Info("redis client successfully created")
-	return &RedisClient{
-		cfg:    cfg,
-		log:    log,
-		client: redisDatabase,
-	}, nil
+	return redisDatabase, nil
 }

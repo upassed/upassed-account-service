@@ -2,6 +2,8 @@ package group_test
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/caching"
+	"github.com/upassed/upassed-account-service/internal/repository"
 	"github.com/upassed/upassed-account-service/internal/testcontainer"
 	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
@@ -22,7 +24,7 @@ import (
 )
 
 var (
-	repository group.Repository
+	groupRepository group.Repository
 )
 
 func TestMain(m *testing.M) {
@@ -69,11 +71,17 @@ func TestMain(m *testing.M) {
 	}
 
 	cfg.Redis.Port = strconv.Itoa(port)
-	repository, err = group.New(cfg, logger)
+	db, err := repository.OpenGormDbConnection(cfg, logger)
 	if err != nil {
-		log.Fatal("unable to create repository: ", err)
+		log.Fatal("unable to open connection to postgres: ", err)
 	}
 
+	redis, err := caching.OpenRedisConnection(cfg, logger)
+	if err != nil {
+		log.Fatal("unable to open connection to redis: ", err)
+	}
+
+	groupRepository = group.New(db, redis, cfg, logger)
 	exitCode := m.Run()
 	if err := postgresTestcontainer.Stop(ctx); err != nil {
 		log.Fatal("unable to stop postgres testcontainer: ", err)
@@ -86,33 +94,23 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestConnectToDatabase_InvalidCredentials(t *testing.T) {
-	cfg, err := config.Load()
-	require.Nil(t, err)
-
-	cfg.Storage.DatabaseName = "invalid-db-name"
-	_, err = group.New(cfg, logging.New(cfg.Env))
-	require.NotNil(t, err)
-	assert.ErrorIs(t, err, group.ErrOpeningDbConnection)
-}
-
 func TestExists_GroupNotExists(t *testing.T) {
 	groupID := uuid.New()
-	exists, err := repository.Exists(context.Background(), groupID)
+	exists, err := groupRepository.Exists(context.Background(), groupID)
 	require.Nil(t, err)
 	assert.False(t, exists)
 }
 
 func TestExists_GroupExists(t *testing.T) {
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
-	exists, err := repository.Exists(context.Background(), groupID)
+	exists, err := groupRepository.Exists(context.Background(), groupID)
 	require.Nil(t, err)
 	assert.True(t, exists)
 }
 
 func TestFindStudentsInGroup_StudentsNotFound(t *testing.T) {
 	groupID := uuid.New()
-	studentsInGroup, err := repository.FindStudentsInGroup(context.Background(), groupID)
+	studentsInGroup, err := groupRepository.FindStudentsInGroup(context.Background(), groupID)
 	require.Nil(t, err)
 	assert.Equal(t, 0, len(studentsInGroup))
 }
@@ -123,7 +121,7 @@ func TestFindStudentsInGroup_StudentsExistsInGroup(t *testing.T) {
 
 func TestFindByID_GroupNotFound(t *testing.T) {
 	groupID := uuid.New()
-	_, err := repository.FindByID(context.Background(), groupID)
+	_, err := groupRepository.FindByID(context.Background(), groupID)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
@@ -133,7 +131,7 @@ func TestFindByID_GroupNotFound(t *testing.T) {
 
 func TestFindByID_GroupFound(t *testing.T) {
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
-	foundGroup, err := repository.FindByID(context.Background(), groupID)
+	foundGroup, err := groupRepository.FindByID(context.Background(), groupID)
 	require.Nil(t, err)
 
 	assert.Equal(t, groupID, foundGroup.ID)
@@ -147,7 +145,7 @@ func TestFindByFilter_NothingMatched(t *testing.T) {
 		GroupNumber:        "----",
 	}
 
-	matchedGroups, err := repository.FindByFilter(context.Background(), filter)
+	matchedGroups, err := groupRepository.FindByFilter(context.Background(), filter)
 	require.Nil(t, err)
 
 	assert.Equal(t, 0, len(matchedGroups))
@@ -159,7 +157,7 @@ func TestFindByFilter_HasMatchedGroups(t *testing.T) {
 		GroupNumber:        "10101",
 	}
 
-	matchedGroups, err := repository.FindByFilter(context.Background(), filter)
+	matchedGroups, err := groupRepository.FindByFilter(context.Background(), filter)
 	require.Nil(t, err)
 
 	assert.Equal(t, 1, len(matchedGroups))

@@ -87,69 +87,6 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestCreate_InvalidRequest(t *testing.T) {
-	request := client.StudentCreateRequest{
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: "invalid_email",
-		Username:         gofakeit.Username(),
-		GroupId:          uuid.NewString(),
-	}
-
-	_, err := studentClient.Create(context.Background(), &request)
-	require.NotNil(t, err)
-
-	convertedError := status.Convert(err)
-	assert.Equal(t, codes.InvalidArgument, convertedError.Code())
-}
-
-func TestCreate_ServiceError(t *testing.T) {
-	request := client.StudentCreateRequest{
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		GroupId:          uuid.NewString(),
-	}
-
-	expectedError := handling.New("some service error", codes.AlreadyExists)
-	studentSvc.On("Create", mock.Anything, mock.Anything).Return(business.StudentCreateResponse{}, handling.Process(expectedError))
-
-	_, err := studentClient.Create(context.Background(), &request)
-	require.NotNil(t, err)
-
-	convertedError := status.Convert(err)
-	assert.Equal(t, expectedError.Error(), convertedError.Message())
-	assert.Equal(t, codes.AlreadyExists, convertedError.Code())
-
-	clearStudentServiceMockCalls()
-}
-
-func TestCreate_HappyPath(t *testing.T) {
-	request := client.StudentCreateRequest{
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		GroupId:          uuid.NewString(),
-	}
-
-	createdStudentID := uuid.New()
-	studentSvc.On("Create", mock.Anything, mock.Anything).Return(business.StudentCreateResponse{
-		CreatedStudentID: createdStudentID,
-	}, nil)
-
-	response, err := studentClient.Create(context.Background(), &request)
-	require.Nil(t, err)
-
-	assert.Equal(t, createdStudentID.String(), response.GetCreatedStudentId())
-
-	clearStudentServiceMockCalls()
-}
-
 func TestFindByID_InvalidRequest(t *testing.T) {
 	request := client.StudentFindByIDRequest{
 		StudentId: "invalid_uuid",

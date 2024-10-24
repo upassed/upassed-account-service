@@ -37,6 +37,7 @@ type Config struct {
 	Timeouts        Timeouts        `yaml:"timeouts" env-required:"true"`
 	Tracing         Tracing         `yaml:"tracing" env-required:"true"`
 	Redis           Redis           `yaml:"redis" env-required:"true"`
+	Rabbit          Rabbit          `yaml:"rabbit" env-required:"true"`
 }
 
 type Storage struct {
@@ -76,6 +77,35 @@ type Redis struct {
 	Port           string `yaml:"port" env:"REDIS_PORT" env-required:"true"`
 	DatabaseNumber string `yaml:"database_number" env:"REDIS_DATABASE_NUMBER" env-required:"true"`
 	EntityTTL      string `yaml:"entity_ttl" env:"REDIS_ENTITY_TTL" env-required:"true"`
+}
+
+type Rabbit struct {
+	User     string         `yaml:"user" env:"RABBIT_USER" env-required:"true"`
+	Password string         `yaml:"password" env:"RABBIT_PASSWORD" env-required:"true"`
+	Host     string         `yaml:"host" env:"RABBIT_HOST" env-required:"true"`
+	Port     string         `yaml:"port" env:"RABBIT_PORT" env-required:"true"`
+	Exchange RabbitExchange `yaml:"exchange" env-required:"true"`
+	Queues   Queues         `yaml:"queues" env-required:"true"`
+}
+
+type Queues struct {
+	StudentCreate StudentCreateQueue `yaml:"student_create" env-required:"true"`
+	TeacherCreate TeacherCreateQueue `yaml:"teacher_create" env-required:"true"`
+}
+
+type RabbitExchange struct {
+	Name string `yaml:"name" env:"RABBIT_EXCHANGE_NAME" env-required:"true"`
+	Type string `yaml:"type" env:"RABBIT_EXCHANGE_TYPE" env-required:"true"`
+}
+
+type StudentCreateQueue struct {
+	Name       string `yaml:"name" env:"RABBIT_STUDENT_CREATE_QUEUE_NAME" env-required:"true"`
+	RoutingKey string `yaml:"routing_key" env:"RABBIT_STUDENT_CREATE_QUEUE_ROUTING_KEY" env-required:"true"`
+}
+
+type TeacherCreateQueue struct {
+	Name       string `yaml:"name" env:"RABBIT_TEACHER_CREATE_QUEUE_NAME" env-required:"true"`
+	RoutingKey string `yaml:"routing_key" env:"RABBIT_TEACHER_CREATE_QUEUE_ROUTING_KEY" env-required:"true"`
 }
 
 func Load() (*Config, error) {
@@ -130,4 +160,13 @@ func (cfg *Config) GetRedisEntityTTL() time.Duration {
 	}
 
 	return parsedTTL
+}
+
+func (cfg *Config) GetRabbitConnectionString() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%s/",
+		cfg.Rabbit.User,
+		cfg.Rabbit.Password,
+		cfg.Rabbit.Host,
+		cfg.Rabbit.Port,
+	)
 }

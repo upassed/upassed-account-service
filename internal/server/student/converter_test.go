@@ -9,40 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/server/student"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
-	"github.com/upassed/upassed-account-service/pkg/client"
 )
-
-func TestConvertToStudent(t *testing.T) {
-	request := client.StudentCreateRequest{
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		GroupId:          uuid.NewString(),
-	}
-
-	student := student.ConvertToStudent(&request)
-	require.NotNil(t, student)
-
-	assert.Equal(t, request.GetFirstName(), student.FirstName)
-	assert.Equal(t, request.GetLastName(), student.LastName)
-	assert.Equal(t, request.GetMiddleName(), student.MiddleName)
-	assert.Equal(t, request.GetEducationalEmail(), student.EducationalEmail)
-	assert.Equal(t, request.GetUsername(), student.Username)
-	assert.Equal(t, request.GetGroupId(), student.Group.ID.String())
-}
-
-func TestConvertToStudentCreateResponse(t *testing.T) {
-	responsFromService := business.StudentCreateResponse{
-		CreatedStudentID: uuid.New(),
-	}
-
-	convertedResponse := student.ConvertToStudentCreateResponse(responsFromService)
-	require.NotNil(t, convertedResponse)
-
-	assert.Equal(t, responsFromService.CreatedStudentID.String(), convertedResponse.CreatedStudentId)
-}
 
 func TestConvertToFindByIDResponse(t *testing.T) {
 	studentToConvert := business.Student{

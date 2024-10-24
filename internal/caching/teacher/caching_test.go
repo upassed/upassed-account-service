@@ -1,4 +1,4 @@
-package caching_test
+package teacher_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/caching"
+	"github.com/upassed/upassed-account-service/internal/caching/teacher"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/testcontainer"
@@ -18,7 +19,7 @@ import (
 )
 
 var (
-	redisClient *caching.RedisClient
+	redisClient *teacher.RedisClient
 )
 
 func TestMain(m *testing.M) {
@@ -51,57 +52,18 @@ func TestMain(m *testing.M) {
 	}
 
 	cfg.Redis.Port = strconv.Itoa(port)
-	redisClient, err = caching.New(cfg, logger)
+	redis, err := caching.OpenRedisConnection(cfg, logger)
 	if err != nil {
-		log.Fatal("unable to create repository: ", err)
+		log.Fatal("unable to open connections to redis: ", err)
 	}
 
+	redisClient = teacher.New(redis, cfg, logger)
 	exitCode := m.Run()
 	if err := redisTestcontainer.Stop(ctx); err != nil {
 		log.Fatal("unable to stop redis testcontainer: ", err)
 	}
 
 	os.Exit(exitCode)
-}
-
-func TestSaveGroup_HappyPath(t *testing.T) {
-	groupToSave := util.RandomDomainGroup()
-	ctx := context.Background()
-	err := redisClient.SaveGroup(ctx, groupToSave)
-	require.Nil(t, err)
-
-	groupFromCache, err := redisClient.GetGroupByID(ctx, groupToSave.ID)
-	require.Nil(t, err)
-
-	assert.Equal(t, groupToSave, groupFromCache)
-}
-
-func TestFindGroupByID_GroupNotFound(t *testing.T) {
-	groupID := uuid.New()
-	_, err := redisClient.GetGroupByID(context.Background(), groupID)
-	require.NotNil(t, err)
-
-	assert.ErrorIs(t, err, caching.ErrGroupIsNotPresentInCache)
-}
-
-func TestSaveStudent_HappyPath(t *testing.T) {
-	studentToSave := util.RandomDomainStudent()
-	ctx := context.Background()
-	err := redisClient.SaveStudent(ctx, studentToSave)
-	require.Nil(t, err)
-
-	studentFromCache, err := redisClient.GetStudentByID(ctx, studentToSave.ID)
-	require.Nil(t, err)
-
-	assert.Equal(t, studentToSave, studentFromCache)
-}
-
-func TestFindStudentByID_StudentNotFound(t *testing.T) {
-	studentID := uuid.New()
-	_, err := redisClient.GetStudentByID(context.Background(), studentID)
-	require.NotNil(t, err)
-
-	assert.ErrorIs(t, err, caching.ErrStudentIsNotPresentInCache)
 }
 
 func TestSaveTeacher_HappyPath(t *testing.T) {
@@ -121,5 +83,5 @@ func TestFindTeacherByID_TeacherNotFound(t *testing.T) {
 	_, err := redisClient.GetTeacherByID(context.Background(), teacherID)
 	require.NotNil(t, err)
 
-	assert.ErrorIs(t, err, caching.ErrTeacherIsNotPresentInCache)
+	assert.ErrorIs(t, err, teacher.ErrTeacherIsNotPresentInCache)
 }

@@ -2,6 +2,8 @@ package student_test
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/caching"
+	"github.com/upassed/upassed-account-service/internal/repository"
 	"github.com/upassed/upassed-account-service/internal/testcontainer"
 	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
@@ -22,7 +24,7 @@ import (
 )
 
 var (
-	repository student.Repository
+	studentRepository student.Repository
 )
 
 func TestMain(m *testing.M) {
@@ -69,11 +71,17 @@ func TestMain(m *testing.M) {
 	}
 
 	cfg.Redis.Port = strconv.Itoa(port)
-	repository, err = student.New(cfg, logger)
+	db, err := repository.OpenGormDbConnection(cfg, logger)
 	if err != nil {
-		log.Fatal("unable to create repository: ", err)
+		log.Fatal("unable to open connection to postgres: ", err)
 	}
 
+	redis, err := caching.OpenRedisConnection(cfg, logger)
+	if err != nil {
+		log.Fatal("unable to open connection to redis: ", err)
+	}
+
+	studentRepository = student.New(db, redis, cfg, logger)
 	exitCode := m.Run()
 	if err := postgresTestcontainer.Stop(ctx); err != nil {
 		log.Fatal("unable to stop postgres testcontainer: ", err)
@@ -86,21 +94,11 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestConnectToDatabase_InvalidCredentials(t *testing.T) {
-	cfg, err := config.Load()
-	require.Nil(t, err)
-
-	cfg.Storage.DatabaseName = "invalid-db-name"
-	_, err = student.New(cfg, logging.New(cfg.Env))
-	require.NotNil(t, err)
-	assert.ErrorIs(t, err, student.ErrOpeningDbConnection)
-}
-
 func TestSave_InvalidUsernameLength(t *testing.T) {
 	studentToSave := util.RandomDomainStudent()
 	studentToSave.Username = gofakeit.LoremIpsumSentence(50)
 
-	err := repository.Save(context.Background(), studentToSave)
+	err := studentRepository.Save(context.Background(), studentToSave)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
@@ -113,14 +111,14 @@ func TestSave_HappyPath(t *testing.T) {
 	studentToSave.GroupID = uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 	studentToSave.Group.ID = uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 
-	err := repository.Save(context.Background(), studentToSave)
+	err := studentRepository.Save(context.Background(), studentToSave)
 	require.Nil(t, err)
 }
 
 func TestFindByID_StudentNotFound(t *testing.T) {
 	randomStudentID := uuid.New()
 
-	_, err := repository.FindByID(context.Background(), randomStudentID)
+	_, err := studentRepository.FindByID(context.Background(), randomStudentID)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
@@ -134,10 +132,10 @@ func TestFindByID_HappyPath(t *testing.T) {
 	existingStudent.GroupID = groupID
 	existingStudent.Group.ID = groupID
 
-	err := repository.Save(context.Background(), existingStudent)
+	err := studentRepository.Save(context.Background(), existingStudent)
 	require.Nil(t, err)
 
-	foundStudent, err := repository.FindByID(context.Background(), existingStudent.ID)
+	foundStudent, err := studentRepository.FindByID(context.Background(), existingStudent.ID)
 	require.Nil(t, err)
 
 	assert.Equal(t, existingStudent.ID, foundStudent.ID)
@@ -154,7 +152,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 
 func TestCheckDuplicates_DuplicatesNotExists(t *testing.T) {
 	uniqueStudent := util.RandomDomainStudent()
-	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), uniqueStudent.EducationalEmail, uniqueStudent.Username)
+	duplicatesExists, err := studentRepository.CheckDuplicateExists(context.Background(), uniqueStudent.EducationalEmail, uniqueStudent.Username)
 	require.Nil(t, err)
 	assert.False(t, duplicatesExists)
 }
@@ -165,10 +163,10 @@ func TestCheckDuplicates_DuplicatesExists(t *testing.T) {
 	duplicateStudent.GroupID = groupID
 	duplicateStudent.Group.ID = groupID
 
-	err := repository.Save(context.Background(), duplicateStudent)
+	err := studentRepository.Save(context.Background(), duplicateStudent)
 	require.Nil(t, err)
 
-	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), duplicateStudent.EducationalEmail, duplicateStudent.Username)
+	duplicatesExists, err := studentRepository.CheckDuplicateExists(context.Background(), duplicateStudent.EducationalEmail, duplicateStudent.Username)
 	require.Nil(t, err)
 
 	assert.True(t, duplicatesExists)

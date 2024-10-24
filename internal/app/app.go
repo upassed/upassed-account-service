@@ -1,6 +1,12 @@
 package app
 
 import (
+	"github.com/upassed/upassed-account-service/internal/caching"
+	"github.com/upassed/upassed-account-service/internal/messanging"
+	studentRabbit "github.com/upassed/upassed-account-service/internal/messanging/student"
+	teacherRabbit "github.com/upassed/upassed-account-service/internal/messanging/teacher"
+	"github.com/upassed/upassed-account-service/internal/repository"
+	"github.com/wagslane/go-rabbitmq"
 	"log/slog"
 	"reflect"
 	"runtime"
@@ -16,7 +22,8 @@ import (
 )
 
 type App struct {
-	Server *server.AppServer
+	Server     *server.AppServer
+	RabbitConn *rabbitmq.Conn
 }
 
 func New(config *config.Config, log *slog.Logger) (*App, error) {
@@ -26,20 +33,27 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 		slog.String("op", op),
 	)
 
-	teacherRepository, err := teacherRepo.New(config, log)
+	db, err := repository.OpenGormDbConnection(config, log)
 	if err != nil {
 		return nil, err
 	}
 
-	studentRepository, err := studentRepo.New(config, log)
+	redis, err := caching.OpenRedisConnection(config, log)
 	if err != nil {
 		return nil, err
 	}
 
-	groupRepository, err := groupRepo.New(config, log)
+	teacherRepository := teacherRepo.New(db, redis, config, log)
+	studentRepository := studentRepo.New(db, redis, config, log)
+	groupRepository := groupRepo.New(db, redis, config, log)
+
+	rabbit, err := messanging.OpenRabbitConnection(config, log)
 	if err != nil {
 		return nil, err
 	}
+
+	studentRabbit.Initialize(rabbit, config, log)
+	teacherRabbit.Initialize(rabbit, config, log)
 
 	appServer := server.New(server.AppServerCreateParams{
 		Config:         config,
@@ -51,6 +65,7 @@ func New(config *config.Config, log *slog.Logger) (*App, error) {
 
 	log.Info("app successfully created")
 	return &App{
-		Server: appServer,
+		Server:     appServer,
+		RabbitConn: rabbit,
 	}, nil
 }

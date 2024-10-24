@@ -2,6 +2,8 @@ package teacher_test
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/caching"
+	"github.com/upassed/upassed-account-service/internal/repository"
 	"github.com/upassed/upassed-account-service/internal/testcontainer"
 	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
@@ -22,7 +24,7 @@ import (
 )
 
 var (
-	repository teacher.Repository
+	teacherRepository teacher.Repository
 )
 
 func TestMain(m *testing.M) {
@@ -69,11 +71,17 @@ func TestMain(m *testing.M) {
 	}
 
 	cfg.Redis.Port = strconv.Itoa(port)
-	repository, err = teacher.New(cfg, logger)
+	db, err := repository.OpenGormDbConnection(cfg, logger)
 	if err != nil {
-		log.Fatal("unable to create repository: ", err)
+		log.Fatal("unable to open connection to postgres: ", err)
 	}
 
+	redis, err := caching.OpenRedisConnection(cfg, logger)
+	if err != nil {
+		log.Fatal("unable to open connection to redis: ", err)
+	}
+
+	teacherRepository = teacher.New(db, redis, cfg, logger)
 	exitCode := m.Run()
 	if err := postgresTestcontainer.Stop(ctx); err != nil {
 		log.Fatal("unable to stop postgres testcontainer: ", err)
@@ -86,21 +94,11 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestConnectToDatabase_InvalidCredentials(t *testing.T) {
-	cfg, err := config.Load()
-	require.Nil(t, err)
-
-	cfg.Storage.DatabaseName = "invalid-db-name"
-	_, err = teacher.New(cfg, logging.New(cfg.Env))
-	require.NotNil(t, err)
-	assert.ErrorIs(t, err, teacher.ErrOpeningDbConnection)
-}
-
 func TestSave_InvalidUsernameLength(t *testing.T) {
 	teacherToSave := util.RandomDomainTeacher()
 	teacherToSave.Username = gofakeit.LoremIpsumSentence(50)
 
-	err := repository.Save(context.Background(), teacherToSave)
+	err := teacherRepository.Save(context.Background(), teacherToSave)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
@@ -111,14 +109,14 @@ func TestSave_InvalidUsernameLength(t *testing.T) {
 func TestSave_HappyPath(t *testing.T) {
 	teacherToSave := util.RandomDomainTeacher()
 
-	err := repository.Save(context.Background(), teacherToSave)
+	err := teacherRepository.Save(context.Background(), teacherToSave)
 	require.Nil(t, err)
 }
 
 func TestFindByID_TeacherNotFound(t *testing.T) {
 	randomTeacherID := uuid.New()
 
-	_, err := repository.FindByID(context.Background(), randomTeacherID)
+	_, err := teacherRepository.FindByID(context.Background(), randomTeacherID)
 	require.NotNil(t, err)
 
 	convertedError := status.Convert(err)
@@ -128,10 +126,10 @@ func TestFindByID_TeacherNotFound(t *testing.T) {
 
 func TestFindByID_HappyPath(t *testing.T) {
 	existingTeacher := util.RandomDomainTeacher()
-	err := repository.Save(context.Background(), existingTeacher)
+	err := teacherRepository.Save(context.Background(), existingTeacher)
 	require.Nil(t, err)
 
-	foundTeacher, err := repository.FindByID(context.Background(), existingTeacher.ID)
+	foundTeacher, err := teacherRepository.FindByID(context.Background(), existingTeacher.ID)
 	require.Nil(t, err)
 
 	assert.Equal(t, existingTeacher.ID, foundTeacher.ID)
@@ -144,17 +142,17 @@ func TestFindByID_HappyPath(t *testing.T) {
 
 func TestCheckDuplicates_DuplicatesNotExists(t *testing.T) {
 	uniqueTeacher := util.RandomDomainTeacher()
-	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), uniqueTeacher.ReportEmail, uniqueTeacher.Username)
+	duplicatesExists, err := teacherRepository.CheckDuplicateExists(context.Background(), uniqueTeacher.ReportEmail, uniqueTeacher.Username)
 	require.Nil(t, err)
 	assert.False(t, duplicatesExists)
 }
 
 func TestCheckDuplicates_DuplicatesExists(t *testing.T) {
 	duplicateTeacher := util.RandomDomainTeacher()
-	err := repository.Save(context.Background(), duplicateTeacher)
+	err := teacherRepository.Save(context.Background(), duplicateTeacher)
 	require.Nil(t, err)
 
-	duplicatesExists, err := repository.CheckDuplicateExists(context.Background(), duplicateTeacher.ReportEmail, duplicateTeacher.Username)
+	duplicatesExists, err := teacherRepository.CheckDuplicateExists(context.Background(), duplicateTeacher.ReportEmail, duplicateTeacher.Username)
 	require.Nil(t, err)
 
 	assert.True(t, duplicatesExists)

@@ -27,3 +27,18 @@ redis:
     port: ${REDIS_PORT}
     database_number: ${REDIS_DATABASE_NUMBER}
     entity_ttl: ${REDIS_ENTITY_TTL}
+rabbit:
+    user: ${RABBIT_USER}
+    password: ${RABBIT_PASSWORD}
+    host: ${RABBIT_HOST}
+    port: ${RABBIT_PORT}
+    exchange:
+        name: ${RABBIT_EXCHANGE_NAME}
+        type: ${RABBIT_EXCHANGE_TYPE}
+    queues:
+        student_create:
+            name: ${RABBIT_STUDENT_CREATE_QUEUE_NAME}
+            routing_key: ${RABBIT_STUDENT_CREATE_QUEUE_ROUTING_KEY}
+        teacher_create:
+            name: ${RABBIT_TEACHER_CREATE_QUEUE_NAME}
+            routing_key: ${RABBIT_TEACHER_CREATE_QUEUE_ROUTING_KEY}

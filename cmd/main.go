@@ -64,5 +64,6 @@ func main() {
 	<-stopSignalChannel
 
 	application.Server.GracefulStop()
+	_ = application.RabbitConn.Close()
 	logger.Info("server gracefully stopped")
 }

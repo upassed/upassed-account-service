@@ -27,3 +27,18 @@ redis:
     port: 6379
     database_number: 0
     entity_ttl: 5m
+rabbit:
+    user: upassed-rabbit-user
+    password: upassed-rabbit-password
+    host: localhost
+    port: 5672
+    exchange:
+        name: upassed-account-service
+        type: direct
+    queues:
+        student_create:
+            name: student-create-queue
+            routing_key: student.create
+        teacher_create:
+            name: teacher-create-queue
+            routing_key: teacher.create
