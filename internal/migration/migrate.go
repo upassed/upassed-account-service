@@ -15,20 +15,12 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func RunMigrations(config *config.Config, log *slog.Logger) error {
+func RunMigrations(cfg *config.Config, log *slog.Logger) error {
 	op := runtime.FuncForPC(reflect.ValueOf(RunMigrations).Pointer()).Name()
 
 	migrator, err := migrate.New(
-		fmt.Sprintf("file://%s", config.Migration.MigrationsPath),
-		fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/%s?sslmode=disable&x-migrations-table=%s",
-			config.Storage.User,
-			config.Storage.Password,
-			config.Storage.Host,
-			config.Storage.Port,
-			config.Storage.DatabaseName,
-			config.Migration.MigrationsTableName,
-		),
+		fmt.Sprintf("file://%s", cfg.Migration.MigrationsPath),
+		cfg.GetPostgresMigrationConnectionString(),
 	)
 
 	log = log.With(

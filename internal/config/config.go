@@ -151,6 +151,18 @@ func (cfg *Config) GetPostgresConnectionString() string {
 	)
 }
 
+func (cfg *Config) GetPostgresMigrationConnectionString() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable&x-migrations-table=%s",
+		cfg.Storage.User,
+		cfg.Storage.Password,
+		cfg.Storage.Host,
+		cfg.Storage.Port,
+		cfg.Storage.DatabaseName,
+		cfg.Migration.MigrationsTableName,
+	)
+}
+
 func (cfg *Config) GetRedisEntityTTL() time.Duration {
 	op := runtime.FuncForPC(reflect.ValueOf(cfg.GetRedisEntityTTL).Pointer()).Name()
 
