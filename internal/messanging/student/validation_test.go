@@ -23,6 +23,14 @@ func TestStudentCreateRequestEmailValidation_EmptyUsername(t *testing.T) {
 	require.NotNil(t, err)
 }
 
+func TestStudentCreateRequestEmailValidation_InvalidUsername(t *testing.T) {
+	request := util.RandomEventStudentCreateRequest()
+	request.Username = "_invalid_"
+
+	err := request.Validate()
+	require.NotNil(t, err)
+}
+
 func TestStudentCreateRequestEmailValidation_TooLongUsername(t *testing.T) {
 	request := util.RandomEventStudentCreateRequest()
 	request.Username = gofakeit.LoremIpsumSentence(50)
