@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 )
@@ -19,6 +20,7 @@ var (
 
 func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindByID")
+	span.SetAttributes(attribute.String("id", groupID.String()))
 	defer span.End()
 
 	log := logging.Wrap(repository.log,
@@ -53,5 +55,6 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 		log.Error("error while saving group to cache", logging.Error(err))
 	}
 
+	log.Info("group was saved to the cache")
 	return &foundGroup, nil
 }

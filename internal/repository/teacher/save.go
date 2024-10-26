@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 )
 
@@ -16,6 +17,7 @@ var (
 
 func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher *domain.Teacher) error {
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#Save")
+	span.SetAttributes(attribute.String("username", teacher.Username))
 	defer span.End()
 
 	log := logging.Wrap(repository.log,
@@ -37,5 +39,6 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher *doma
 		log.Error("unable to insert teacher in cache", logging.Error(err))
 	}
 
+	log.Info("teacher was saved to the cache")
 	return nil
 }

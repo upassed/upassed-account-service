@@ -14,7 +14,10 @@ import (
 
 func (server *studentServerAPI) FindByID(ctx context.Context, request *client.StudentFindByIDRequest) (*client.StudentFindByIDResponse, error) {
 	spanContext, span := otel.Tracer(server.cfg.Tracing.StudentTracerName).Start(ctx, "student#FindByID")
-	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
+	span.SetAttributes(
+		attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+		attribute.String("id", request.GetStudentId()),
+	)
 	defer span.End()
 
 	if err := request.Validate(); err != nil {

@@ -10,6 +10,7 @@ import (
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 )
@@ -20,6 +21,7 @@ var (
 
 func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*business.Student, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindStudentsInGroup")
+	span.SetAttributes(attribute.String("id", groupID.String()))
 	defer span.End()
 
 	log := logging.Wrap(service.log,

@@ -26,17 +26,24 @@ func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabb
 		span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
 		defer span.End()
 
+		log.Info("converting message body to student create request struct")
 		request, err := ConvertToStudentCreateRequest(delivery.Body)
 		if err != nil {
+			log.Error("unable to convert message body to create request struct", logging.Error(err))
 			return rabbitmq.NackDiscard
 		}
 
+		span.SetAttributes(attribute.String("username", request.Username))
+		log.Info("validating student create request")
 		if err := request.Validate(); err != nil {
+			log.Error("student create request is invalid", logging.Error(err))
 			return rabbitmq.NackDiscard
 		}
 
+		log.Info("creating student")
 		response, err := client.service.Create(spanContext, ConvertToStudent(request))
 		if err != nil {
+			log.Error("unable to create student", logging.Error(err))
 			return rabbitmq.NackDiscard
 		}
 

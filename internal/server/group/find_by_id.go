@@ -14,7 +14,10 @@ import (
 
 func (server *groupServerAPI) FindByID(ctx context.Context, request *client.GroupFindByIDRequest) (*client.GroupFindByIDResponse, error) {
 	spanContext, span := otel.Tracer(server.cfg.Tracing.GroupTracerName).Start(ctx, "group#FindByID")
-	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
+	span.SetAttributes(
+		attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+		attribute.String("id", request.GetGroupId()),
+	)
 	defer span.End()
 
 	if err := request.Validate(); err != nil {

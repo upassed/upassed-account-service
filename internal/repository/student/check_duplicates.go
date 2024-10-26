@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 )
@@ -17,6 +18,10 @@ var (
 
 func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error) {
 	_, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#CheckDuplicateExists")
+	span.SetAttributes(
+		attribute.String("educationalEmail", educationalEmail),
+		attribute.String("username", username),
+	)
 	defer span.End()
 
 	log := logging.Wrap(repository.log,

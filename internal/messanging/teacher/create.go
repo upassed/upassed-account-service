@@ -22,27 +22,32 @@ func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabb
 		)
 
 		log.Info("consumed teacher create message", slog.String("messageBody", string(delivery.Body)))
-
 		spanContext, span := otel.Tracer(client.cfg.Tracing.TeacherTracerName).Start(ctx, "teacher#Create")
 		span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
 		defer span.End()
 
+		log.Info("converting message body to teacher create request")
 		request, err := ConvertToTeacherCreateRequest(delivery.Body)
 		if err != nil {
+			log.Error("unable to convert message body to techer create request", logging.Error(err))
 			return rabbitmq.NackDiscard
 		}
 
+		span.SetAttributes(attribute.String("username", request.Username))
+		log.Info("validating teacher create request")
 		if err := request.Validate(); err != nil {
+			log.Error("teacher create request is invalid", logging.Error(err))
 			return rabbitmq.NackDiscard
 		}
 
+		log.Info("creating a teacher")
 		response, err := client.service.Create(spanContext, ConvertToTeacher(request))
 		if err != nil {
+			log.Error("unable to create teacher", logging.Error(err))
 			return rabbitmq.NackDiscard
 		}
 
 		log.Info("successfully created teacher", slog.Any("createdTeacherID", response.CreatedTeacherID))
 		return rabbitmq.Ack
-
 	}
 }

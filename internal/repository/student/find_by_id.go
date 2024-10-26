@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 )
@@ -19,6 +20,7 @@ var (
 
 func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID uuid.UUID) (*domain.Student, error) {
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#FindByID")
+	span.SetAttributes(attribute.String("id", studentID.String()))
 	defer span.End()
 
 	log := logging.Wrap(repository.log,
@@ -53,5 +55,6 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 		log.Error("error while saving student to cache", logging.Error(err))
 	}
 
+	log.Info("student was successfully saved to the cache")
 	return &foundStudent, nil
 }

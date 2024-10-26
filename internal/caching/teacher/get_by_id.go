@@ -10,6 +10,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 
 func (client *RedisClient) GetByID(ctx context.Context, teacherID uuid.UUID) (*domain.Teacher, error) {
 	_, span := otel.Tracer(client.cfg.Tracing.TeacherTracerName).Start(ctx, "redisClient#GetTeacherID")
+	span.SetAttributes(attribute.String("id", teacherID.String()))
 	defer span.End()
 
 	log := logging.Wrap(client.log,
@@ -28,6 +30,7 @@ func (client *RedisClient) GetByID(ctx context.Context, teacherID uuid.UUID) (*d
 		logging.WithAny("teacherID", teacherID),
 	)
 
+	log.Info("getting teacher data from the cache")
 	teacherData, err := client.client.Get(ctx, fmt.Sprintf(keyFormat, teacherID.String())).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -39,12 +42,13 @@ func (client *RedisClient) GetByID(ctx context.Context, teacherID uuid.UUID) (*d
 		return nil, errFetchingTeacherFromCache
 	}
 
+	log.Info("teacher data found in the cache, unmarshalling from json")
 	var teacher domain.Teacher
 	if err := json.Unmarshal([]byte(teacherData), &teacher); err != nil {
 		log.Error("error while unmarshalling teacher data to json", logging.Error(err))
 		return nil, errUnmarshallingTeacherDataToJson
 	}
 
-	log.Info("teacher was successfully found by id")
+	log.Info("teacher was successfully found in the cache and unmarshalled")
 	return &teacher, nil
 }

@@ -13,13 +13,14 @@ import (
 )
 
 func RunMigrations(cfg *config.Config, log *slog.Logger) error {
+	log = logging.Wrap(log,
+		logging.WithOp(RunMigrations),
+	)
+
+	log.Info("creating a new instance of migrator")
 	migrator, err := migrate.New(
 		fmt.Sprintf("file://%s", cfg.Migration.MigrationsPath),
 		cfg.GetPostgresMigrationConnectionString(),
-	)
-
-	log = logging.Wrap(log,
-		logging.WithOp(RunMigrations),
 	)
 
 	if err != nil {

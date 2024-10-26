@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 )
 
@@ -16,6 +17,7 @@ var (
 
 func (repository *studentRepositoryImpl) Save(ctx context.Context, student *domain.Student) error {
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#Save")
+	span.SetAttributes(attribute.String("username", student.Username))
 	defer span.End()
 
 	log := logging.Wrap(repository.log,
@@ -33,10 +35,10 @@ func (repository *studentRepositoryImpl) Save(ctx context.Context, student *doma
 
 	log.Info("student was successfully inserted into a database")
 	log.Info("saving student data into the cache")
-
 	if err := repository.cache.Save(spanContext, student); err != nil {
 		log.Error("unable to insert student in cache", logging.Error(err))
 	}
 
+	log.Info("student was saved to the cache")
 	return nil
 }

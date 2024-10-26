@@ -36,5 +36,6 @@ func InitializeCreateQueueConsumer(client *rabbitClient) error {
 		return errRunningTeacherCreateQueueConsumer
 	}
 
+	log.Info("teacher queue consumer successfully created")
 	return nil
 }

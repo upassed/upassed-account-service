@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 )
@@ -18,6 +19,7 @@ var (
 
 func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate *business.Teacher) (*business.TeacherCreateResponse, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherService#Create")
+	span.SetAttributes(attribute.String("username", teacherToCreate.Username))
 	defer span.End()
 
 	log := logging.Wrap(service.log,
@@ -29,8 +31,10 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate *
 	log.Info("started creating teacher")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
 	teacherCreateResponse, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (*business.TeacherCreateResponse, error) {
+		log.Info("checking teacher duplicates")
 		duplicateExists, err := service.repository.CheckDuplicateExists(ctx, teacherToCreate.ReportEmail, teacherToCreate.Username)
 		if err != nil {
+			log.Error("error while checking teacher duplicates", logging.Error(err))
 			return nil, handling.Process(err)
 		}
 
@@ -40,7 +44,9 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate *
 		}
 
 		domainTeacher := ConvertToRepositoryTeacher(teacherToCreate)
+		log.Info("saving teacher data to the database")
 		if err := service.repository.Save(ctx, domainTeacher); err != nil {
+			log.Error("error while saving teacher data to the database", logging.Error(err))
 			return nil, handling.Process(err)
 		}
 

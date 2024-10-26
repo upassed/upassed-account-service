@@ -9,6 +9,7 @@ import (
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 )
 
@@ -18,6 +19,10 @@ var (
 
 func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter *business.GroupFilter) ([]*business.Group, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByFilter")
+	span.SetAttributes(
+		attribute.String("specializationCode", filter.SpecializationCode),
+		attribute.String("groupNumber", filter.GroupNumber),
+	)
 	defer span.End()
 
 	log := logging.Wrap(service.log,

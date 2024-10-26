@@ -9,6 +9,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 )
 
@@ -18,6 +19,7 @@ var (
 
 func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.UUID) (*business.Student, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.StudentTracerName).Start(ctx, "studentService#FindByID")
+	span.SetAttributes(attribute.String("id", studentID.String()))
 	defer span.End()
 
 	log := logging.Wrap(service.log,
@@ -29,8 +31,10 @@ func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.
 	log.Info("started searching student by id")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
 	foundStudent, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (*business.Student, error) {
+		log.Info("finding student data by id")
 		foundStudent, err := service.studentRepository.FindByID(ctx, studentID)
 		if err != nil {
+			log.Error("unable to find student data by id", logging.Error(err))
 			return nil, handling.Process(err)
 		}
 

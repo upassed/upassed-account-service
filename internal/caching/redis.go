@@ -34,6 +34,7 @@ func OpenRedisConnection(cfg *config.Config, log *slog.Logger) (*redis.Client, e
 		DB:       databaseNumber,
 	})
 
+	log.Info("pinging redis database")
 	if _, err := redisDatabase.Ping(context.Background()).Result(); err != nil {
 		log.Error("unable to ping redis database", logging.Error(err))
 		return nil, errCreatingRedisClient

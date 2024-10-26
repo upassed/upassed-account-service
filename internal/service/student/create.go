@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"log/slog"
 )
@@ -18,6 +19,7 @@ var (
 
 func (service *studentServiceImpl) Create(ctx context.Context, student *business.Student) (*business.StudentCreateResponse, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.StudentTracerName).Start(ctx, "studentService#Create")
+	span.SetAttributes(attribute.String("username", student.Username))
 	defer span.End()
 
 	log := logging.Wrap(service.log,
@@ -29,8 +31,10 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 	log.Info("started creating student")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
 	studentCreateResponse, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (*business.StudentCreateResponse, error) {
+		log.Info("checking student duplicates")
 		duplicateExists, err := service.studentRepository.CheckDuplicateExists(ctx, student.EducationalEmail, student.Username)
 		if err != nil {
+			log.Error("unable to check student duplicates", logging.Error(err))
 			return nil, err
 		}
 
@@ -39,8 +43,10 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 			return nil, handling.Wrap(errors.New("student duplicate found"), handling.WithCode(codes.AlreadyExists))
 		}
 
+		log.Info("checking if group exists")
 		groupExists, err := service.groupRepository.Exists(ctx, student.Group.ID)
 		if err != nil {
+			log.Error("unable to check if group exists", logging.Error(err))
 			return nil, err
 		}
 
@@ -49,6 +55,7 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 			return nil, handling.Wrap(errors.New("group does not exists by id"), handling.WithCode(codes.NotFound))
 		}
 
+		log.Info("fetching group data by id", slog.Any("groupID", student.Group.ID))
 		domainStudent := ConvertToRepositoryStudent(student)
 		existingGroup, err := service.groupRepository.FindByID(ctx, student.Group.ID)
 		if err != nil {
@@ -57,7 +64,9 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 		}
 
 		domainStudent.Group = *existingGroup
+		log.Info("saving group data to the database")
 		if err := service.studentRepository.Save(ctx, domainStudent); err != nil {
+			log.Error("unable to save student data to the database", logging.Error(err))
 			return nil, err
 		}
 

@@ -13,7 +13,11 @@ import (
 
 func (server *groupServerAPI) SearchByFilter(ctx context.Context, request *client.GroupSearchByFilterRequest) (*client.GroupSearchByFilterResponse, error) {
 	spanContext, span := otel.Tracer(server.cfg.Tracing.GroupTracerName).Start(ctx, "group#SearchByFilter")
-	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
+	span.SetAttributes(
+		attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+		attribute.String("specializationCode", request.GetSpecializationCode()),
+		attribute.String("groupNumber", request.GetGroupNumber()),
+	)
 	defer span.End()
 
 	if err := request.Validate(); err != nil {

@@ -14,7 +14,10 @@ import (
 
 func (server *groupServerAPI) FindStudentsInGroup(ctx context.Context, request *client.FindStudentsInGroupRequest) (*client.FindStudentsInGroupResponse, error) {
 	spanContext, span := otel.Tracer(server.cfg.Tracing.GroupTracerName).Start(ctx, "group#FindStudentsInGroup")
-	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
+	span.SetAttributes(
+		attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+		attribute.String("id", request.GetGroupId()),
+	)
 	defer span.End()
 
 	if err := request.Validate(); err != nil {

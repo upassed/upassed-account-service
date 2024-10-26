@@ -10,6 +10,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 
 func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
 	_, span := otel.Tracer(client.cfg.Tracing.GroupTracerName).Start(ctx, "redisClient#GetByID")
+	span.SetAttributes(attribute.String("id", groupID.String()))
 	defer span.End()
 
 	log := logging.Wrap(client.log,
@@ -28,6 +30,7 @@ func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*dom
 		logging.WithAny("groupID", groupID),
 	)
 
+	log.Info("started getting group data by id from cache")
 	groupData, err := client.client.Get(ctx, fmt.Sprintf(keyFormat, groupID.String())).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -39,12 +42,13 @@ func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*dom
 		return nil, errFetchingGroupFromCache
 	}
 
+	log.Info("group by id was found in cache, unmarshalling from json")
 	var group domain.Group
 	if err := json.Unmarshal([]byte(groupData), &group); err != nil {
 		log.Error("error while unmarshalling group data to json", logging.Error(err))
 		return nil, errUnmarshallingGroupDataToJson
 	}
 
-	log.Info("group was successfully found by id")
+	log.Info("group was successfully found and unmarshalled")
 	return &group, nil
 }
