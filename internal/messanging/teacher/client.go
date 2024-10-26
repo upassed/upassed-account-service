@@ -6,8 +6,6 @@ import (
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
 	"github.com/wagslane/go-rabbitmq"
 	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 type rabbitClient struct {
@@ -18,10 +16,8 @@ type rabbitClient struct {
 }
 
 func Initialize(service teacher.Service, rabbitConnection *rabbitmq.Conn, cfg *config.Config, log *slog.Logger) {
-	op := runtime.FuncForPC(reflect.ValueOf(Initialize).Pointer()).Name()
-
-	log = log.With(
-		slog.String("op", op),
+	log = logging.Wrap(log,
+		logging.WithOp(Initialize),
 	)
 
 	client := &rabbitClient{

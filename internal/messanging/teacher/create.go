@@ -3,25 +3,22 @@ package teacher
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	"github.com/wagslane/go-rabbitmq"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"log/slog"
-	"reflect"
-	"runtime"
 )
 
-func (client *rabbitClient) CreateQueueConsumer(log *slog.Logger) func(d rabbitmq.Delivery) rabbitmq.Action {
-	op := runtime.FuncForPC(reflect.ValueOf(client.CreateQueueConsumer).Pointer()).Name()
-
+func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabbitmq.Action {
 	return func(delivery rabbitmq.Delivery) rabbitmq.Action {
 		requestID := uuid.New().String()
 		ctx := context.WithValue(context.Background(), middleware.RequestIDKey, requestID)
 
-		log = log.With(
-			slog.String("op", op),
-			slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+		log := logging.Wrap(client.log,
+			logging.WithOp(client.CreateQueueConsumer),
+			logging.WithCtx(ctx),
 		)
 
 		log.Info("consumed teacher create message", slog.String("messageBody", string(delivery.Body)))

@@ -13,6 +13,10 @@ var (
 )
 
 func OpenRabbitConnection(cfg *config.Config, log *slog.Logger) (*rabbitmq.Conn, error) {
+	log = logging.Wrap(log,
+		logging.WithOp(OpenRabbitConnection),
+	)
+
 	rabbitConnection, err := rabbitmq.NewConn(
 		cfg.GetRabbitConnectionString(),
 		rabbitmq.WithConnectionOptionsLogging,

@@ -8,8 +8,6 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"log/slog"
 	"net"
-	"reflect"
-	"runtime"
 	"strconv"
 )
 
@@ -18,10 +16,8 @@ var (
 )
 
 func OpenRedisConnection(cfg *config.Config, log *slog.Logger) (*redis.Client, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(OpenRedisConnection).Pointer()).Name()
-
-	log = log.With(
-		slog.String("op", op),
+	log = logging.Wrap(log,
+		logging.WithOp(OpenRedisConnection),
 	)
 
 	log.Info("started creating redis connection")

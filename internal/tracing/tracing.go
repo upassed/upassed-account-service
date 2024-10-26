@@ -12,15 +12,11 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"reflect"
-	"runtime"
 )
 
 func InitTracer(cfg *config.Config, log *slog.Logger) (func(), error) {
-	op := runtime.FuncForPC(reflect.ValueOf(InitTracer).Pointer()).Name()
-
-	log = log.With(
-		slog.String("op", op),
+	log = logging.Wrap(log,
+		logging.WithOp(InitTracer),
 	)
 
 	ctx := context.Background()

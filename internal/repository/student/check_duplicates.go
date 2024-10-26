@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/internal/middleware"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 var (
@@ -18,16 +16,13 @@ var (
 )
 
 func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(repository.CheckDuplicateExists).Pointer()).Name()
-
 	_, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#CheckDuplicateExists")
 	defer span.End()
 
-	log := repository.log.With(
-		slog.String("op", op),
-		slog.String("studentUsername", username),
-		slog.String("studentEducationalEmail", educationalEmail),
-		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+	log := logging.Wrap(repository.log,
+		logging.WithOp(repository.CheckDuplicateExists),
+		logging.WithCtx(ctx),
+		logging.WithAny("studentEducationalEmail", educationalEmail),
 	)
 
 	log.Info("started checking student duplicates")

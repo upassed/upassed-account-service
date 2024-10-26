@@ -5,13 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/middleware"
 	"io"
 	"log/slog"
 	"os"
+	"reflect"
+	"runtime"
 	"strconv"
 	"sync"
-
-	"github.com/upassed/upassed-account-service/internal/config"
 )
 
 const (
@@ -28,6 +30,63 @@ const (
 	lightYellow = 93
 	white       = 97
 )
+
+type Option func(*wrapOptions)
+
+type wrapOptions struct {
+	opName     any
+	ctx        context.Context
+	attributes map[string]any
+}
+
+func WithOp(op any) Option {
+	return func(opts *wrapOptions) {
+		opts.opName = op
+	}
+}
+
+func WithCtx(ctx context.Context) Option {
+	return func(opts *wrapOptions) {
+		opts.ctx = ctx
+	}
+}
+
+func WithAny(key string, value any) Option {
+	return func(opts *wrapOptions) {
+		opts.attributes[key] = value
+	}
+}
+
+func defaultOptions() *wrapOptions {
+	return &wrapOptions{
+		opName:     nil,
+		ctx:        nil,
+		attributes: make(map[string]any),
+	}
+}
+
+func Wrap(log *slog.Logger, options ...Option) *slog.Logger {
+	opts := defaultOptions()
+	for _, opt := range options {
+		opt(opts)
+	}
+
+	if opts.opName != nil {
+		log = log.With(slog.String("op", runtime.FuncForPC(reflect.ValueOf(opts.opName).Pointer()).Name()))
+	}
+
+	if opts.ctx != nil {
+		log = log.With(slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(opts.ctx)))
+	}
+
+	if len(opts.attributes) != 0 {
+		for key, value := range opts.attributes {
+			log = log.With(slog.Any(key, value))
+		}
+	}
+
+	return log
+}
 
 func New(envType config.EnvType) *slog.Logger {
 	var log *slog.Logger

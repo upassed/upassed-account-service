@@ -7,8 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"reflect"
-	"runtime"
 	"syscall"
 
 	"github.com/joho/godotenv"
@@ -31,10 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	logger := logging.New(cfg.Env).With(
-		slog.String("op", runtime.FuncForPC(reflect.ValueOf(main).Pointer()).Name()),
-	)
-
+	logger := logging.Wrap(logging.New(cfg.Env), logging.WithOp(main))
 	logger.Info("logger successfully initialized", slog.Any("env", cfg.Env))
 
 	traceProviderShutdownFunc, err := tracing.InitTracer(cfg, logger)

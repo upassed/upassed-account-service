@@ -3,20 +3,18 @@ package server
 import (
 	"errors"
 	"fmt"
-	groupSvc "github.com/upassed/upassed-account-service/internal/service/group"
-	studentSvc "github.com/upassed/upassed-account-service/internal/service/student"
-	teacherSvc "github.com/upassed/upassed-account-service/internal/service/teacher"
-	"log/slog"
-	"net"
-	"reflect"
-	"runtime"
-
 	"github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	"github.com/upassed/upassed-account-service/internal/server/group"
 	"github.com/upassed/upassed-account-service/internal/server/student"
 	"github.com/upassed/upassed-account-service/internal/server/teacher"
+	groupSvc "github.com/upassed/upassed-account-service/internal/service/group"
+	studentSvc "github.com/upassed/upassed-account-service/internal/service/student"
+	teacherSvc "github.com/upassed/upassed-account-service/internal/service/teacher"
 	"google.golang.org/grpc"
+	"log/slog"
+	"net"
 )
 
 var (
@@ -59,30 +57,26 @@ func New(params AppServerCreateParams) *AppServer {
 }
 
 func (server *AppServer) Run() error {
-	op := runtime.FuncForPC(reflect.ValueOf(server.Run).Pointer()).Name()
-
-	log := server.log.With(
-		slog.String("op", op),
+	log := logging.Wrap(server.log,
+		logging.WithOp(server.Run),
 	)
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", server.config.GrpcServer.Port))
 	if err != nil {
-		return fmt.Errorf("%s -> %w; %w", op, errStartingTcpConnection, err)
+		return errStartingTcpConnection
 	}
 
 	log.Info("gRPC server is running", slog.String("address", listener.Addr().String()))
 	if err := server.server.Serve(listener); err != nil {
-		return fmt.Errorf("%s -> %w; %w", op, errStartingServer, err)
+		return errStartingServer
 	}
 
 	return nil
 }
 
 func (server *AppServer) GracefulStop() {
-	op := runtime.FuncForPC(reflect.ValueOf(server.GracefulStop).Pointer()).Name()
-
-	log := server.log.With(
-		slog.String("op", op),
+	log := logging.Wrap(server.log,
+		logging.WithOp(server.GracefulStop),
 	)
 
 	log.Info("gracefully stopping gRPC server...")

@@ -2,16 +2,12 @@ package app
 
 import (
 	"github.com/upassed/upassed-account-service/internal/caching"
+	"github.com/upassed/upassed-account-service/internal/config"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/messanging"
 	studentRabbit "github.com/upassed/upassed-account-service/internal/messanging/student"
 	teacherRabbit "github.com/upassed/upassed-account-service/internal/messanging/teacher"
 	"github.com/upassed/upassed-account-service/internal/repository"
-	"github.com/wagslane/go-rabbitmq"
-	"log/slog"
-	"reflect"
-	"runtime"
-
-	"github.com/upassed/upassed-account-service/internal/config"
 	groupRepo "github.com/upassed/upassed-account-service/internal/repository/group"
 	studentRepo "github.com/upassed/upassed-account-service/internal/repository/student"
 	teacherRepo "github.com/upassed/upassed-account-service/internal/repository/teacher"
@@ -19,6 +15,8 @@ import (
 	"github.com/upassed/upassed-account-service/internal/service/group"
 	"github.com/upassed/upassed-account-service/internal/service/student"
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
+	"github.com/wagslane/go-rabbitmq"
+	"log/slog"
 )
 
 type App struct {
@@ -27,11 +25,7 @@ type App struct {
 }
 
 func New(config *config.Config, log *slog.Logger) (*App, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
-
-	log = log.With(
-		slog.String("op", op),
-	)
+	log = logging.Wrap(log, logging.WithOp(New))
 
 	db, err := repository.OpenGormDbConnection(config, log)
 	if err != nil {

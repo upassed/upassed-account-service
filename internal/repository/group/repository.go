@@ -9,8 +9,6 @@ import (
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"gorm.io/gorm"
 	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 type Repository interface {
@@ -28,12 +26,6 @@ type groupRepositoryImpl struct {
 }
 
 func New(db *gorm.DB, redisClient *redis.Client, cfg *config.Config, log *slog.Logger) Repository {
-	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
-
-	log = log.With(
-		slog.String("op", op),
-	)
-
 	cacheClient := group.New(redisClient, cfg, log)
 	return &groupRepositoryImpl{
 		db:    db,

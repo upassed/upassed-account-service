@@ -7,14 +7,10 @@ import (
 	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
-	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 var (
@@ -22,12 +18,10 @@ var (
 )
 
 func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*business.Group, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(service.FindByID).Pointer()).Name()
-
-	log := service.log.With(
-		slog.String("op", op),
-		slog.Any("groupID", groupID),
-		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+	log := logging.Wrap(service.log,
+		logging.WithOp(service.FindByID),
+		logging.WithCtx(ctx),
+		logging.WithAny("groupID", groupID),
 	)
 
 	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByID")

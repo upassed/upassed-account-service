@@ -6,13 +6,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 var (
@@ -20,12 +17,10 @@ var (
 )
 
 func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*domain.Student, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(repository.FindStudentsInGroup).Pointer()).Name()
-
-	log := repository.log.With(
-		slog.String("op", op),
-		slog.Any("groupID", groupID),
-		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+	log := logging.Wrap(repository.log,
+		logging.WithOp(repository.Exists),
+		logging.WithCtx(ctx),
+		logging.WithAny("groupID", groupID),
 	)
 
 	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindStudentsInGroup")

@@ -8,12 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
-	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 var (
@@ -22,16 +18,14 @@ var (
 	errUnmarshallingGroupDataToJson = errors.New("unable to unmarshall group data from the cache to json format")
 )
 
-func (client *RedisClient) GetGroupByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(client.GetGroupByID).Pointer()).Name()
-
-	log := client.log.With(
-		slog.String("op", op),
-		slog.Any("groupID", groupID),
-		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
+	log := logging.Wrap(client.log,
+		logging.WithOp(client.GetByID),
+		logging.WithCtx(ctx),
+		logging.WithAny("groupID", groupID),
 	)
 
-	_, span := otel.Tracer(client.cfg.Tracing.GroupTracerName).Start(ctx, "redisClient#GetGroupByID")
+	_, span := otel.Tracer(client.cfg.Tracing.GroupTracerName).Start(ctx, "redisClient#GetByID")
 	defer span.End()
 
 	groupData, err := client.client.Get(ctx, fmt.Sprintf(keyFormat, groupID.String())).Result()

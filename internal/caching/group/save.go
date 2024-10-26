@@ -5,12 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/upassed/upassed-account-service/internal/middleware"
+	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
-	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 var (
@@ -18,16 +15,14 @@ var (
 	errSavingGroupDataToCache = errors.New("unable to save group data to redis cache")
 )
 
-func (client *RedisClient) SaveGroup(ctx context.Context, group *domain.Group) error {
-	op := runtime.FuncForPC(reflect.ValueOf(client.SaveGroup).Pointer()).Name()
-
-	log := client.log.With(
-		slog.String("op", op),
-		slog.Any("groupID", group.ID),
-		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+func (client *RedisClient) Save(ctx context.Context, group *domain.Group) error {
+	log := logging.Wrap(client.log,
+		logging.WithOp(client.Save),
+		logging.WithCtx(ctx),
+		logging.WithAny("groupID", group.ID),
 	)
 
-	_, span := otel.Tracer(client.cfg.Tracing.GroupTracerName).Start(ctx, "redisClient#SaveGroup")
+	_, span := otel.Tracer(client.cfg.Tracing.GroupTracerName).Start(ctx, "redisClient#Save")
 	defer span.End()
 
 	jsonGroupData, err := json.Marshal(group)

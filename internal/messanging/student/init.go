@@ -4,9 +4,6 @@ import (
 	"errors"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/wagslane/go-rabbitmq"
-	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 var (
@@ -15,10 +12,8 @@ var (
 )
 
 func InitializeCreateQueueConsumer(client *rabbitClient) error {
-	op := runtime.FuncForPC(reflect.ValueOf(InitializeCreateQueueConsumer).Pointer()).Name()
-
-	log := client.log.With(
-		slog.String("op", op),
+	log := logging.Wrap(client.log,
+		logging.WithOp(InitializeCreateQueueConsumer),
 	)
 
 	log.Info("started crating student create queue consumer")
@@ -36,7 +31,7 @@ func InitializeCreateQueueConsumer(client *rabbitClient) error {
 	}
 
 	defer studentCreateGroupConsumer.Close()
-	if err := studentCreateGroupConsumer.Run(client.CreateQueueConsumer(log)); err != nil {
+	if err := studentCreateGroupConsumer.Run(client.CreateQueueConsumer()); err != nil {
 		log.Error("unable to run student queue consumer")
 		return errRunningStudentCreateQueueConsumer
 	}

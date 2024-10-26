@@ -8,12 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
-	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 var (
@@ -22,13 +18,11 @@ var (
 	errUnmarshallingTeacherDataToJson = errors.New(`unable to unmarshall teacher data from the cache to json format`)
 )
 
-func (client *RedisClient) GetTeacherByID(ctx context.Context, teacherID uuid.UUID) (*domain.Teacher, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(client.GetTeacherByID).Pointer()).Name()
-
-	log := client.log.With(
-		slog.String("op", op),
-		slog.Any("teacherID", teacherID),
-		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+func (client *RedisClient) GetByID(ctx context.Context, teacherID uuid.UUID) (*domain.Teacher, error) {
+	log := logging.Wrap(client.log,
+		logging.WithOp(client.GetByID),
+		logging.WithCtx(ctx),
+		logging.WithAny("teacherID", teacherID),
 	)
 
 	_, span := otel.Tracer(client.cfg.Tracing.TeacherTracerName).Start(ctx, "redisClient#GetTeacherID")

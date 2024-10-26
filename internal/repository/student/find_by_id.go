@@ -6,14 +6,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
-	"log/slog"
-	"reflect"
-	"runtime"
 )
 
 var (
@@ -22,19 +18,17 @@ var (
 )
 
 func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID uuid.UUID) (*domain.Student, error) {
-	op := runtime.FuncForPC(reflect.ValueOf(repository.FindByID).Pointer()).Name()
-
-	log := repository.log.With(
-		slog.String("op", op),
-		slog.Any("studentID", studentID),
-		slog.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)),
+	log := logging.Wrap(repository.log,
+		logging.WithOp(repository.FindByID),
+		logging.WithCtx(ctx),
+		logging.WithAny("studentID", studentID),
 	)
 
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#FindByID")
 	defer span.End()
 
 	log.Info("started searching student by id in redis cache")
-	studentFromCache, err := repository.cache.GetStudentByID(spanContext, studentID)
+	studentFromCache, err := repository.cache.GetByID(spanContext, studentID)
 	if err == nil {
 		log.Info("student was found in cache, not going to the database")
 		return studentFromCache, nil
@@ -55,7 +49,7 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 
 	log.Info("student was successfully found in a database")
 	log.Info("saving student to cache")
-	if err := repository.cache.SaveStudent(spanContext, &foundStudent); err != nil {
+	if err := repository.cache.Save(spanContext, &foundStudent); err != nil {
 		log.Error("error while saving student to cache", logging.Error(err))
 	}
 

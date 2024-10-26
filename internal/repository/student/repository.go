@@ -2,16 +2,13 @@ package student
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/caching/student"
-	"log/slog"
-	"reflect"
-	"runtime"
-
-	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/config"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"gorm.io/gorm"
+	"log/slog"
 )
 
 type Repository interface {
@@ -28,12 +25,6 @@ type studentRepositoryImpl struct {
 }
 
 func New(db *gorm.DB, redisClient *redis.Client, cfg *config.Config, log *slog.Logger) Repository {
-	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
-
-	log = log.With(
-		slog.String("op", op),
-	)
-
 	cacheClient := student.New(redisClient, cfg, log)
 	return &studentRepositoryImpl{
 		db:    db,

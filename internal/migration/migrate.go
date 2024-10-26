@@ -3,28 +3,23 @@ package migration
 import (
 	"errors"
 	"fmt"
-	"log/slog"
-	"reflect"
-	"runtime"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
+	"log/slog"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func RunMigrations(cfg *config.Config, log *slog.Logger) error {
-	op := runtime.FuncForPC(reflect.ValueOf(RunMigrations).Pointer()).Name()
-
 	migrator, err := migrate.New(
 		fmt.Sprintf("file://%s", cfg.Migration.MigrationsPath),
 		cfg.GetPostgresMigrationConnectionString(),
 	)
 
-	log = log.With(
-		slog.String("op", op),
+	log = logging.Wrap(log,
+		logging.WithOp(RunMigrations),
 	)
 
 	if err != nil {
