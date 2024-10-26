@@ -33,8 +33,9 @@ func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 	log.Info("started checking student duplicates")
 	var studentCount int64
 	countResult := repository.db.WithContext(ctx).Model(&domain.Student{}).Where("educational_email = ?", educationalEmail).Or("username = ?", username).Count(&studentCount)
-	if countResult.Error != nil {
+	if err := countResult.Error; err != nil {
 		log.Error("error while counting students with educational_email and username in database")
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return false, handling.New(errCountingDuplicatesStudent.Error(), codes.Internal)
 	}
 

@@ -35,6 +35,7 @@ func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.
 		foundStudent, err := service.studentRepository.FindByID(ctx, studentID)
 		if err != nil {
 			log.Error("unable to find student data by id", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Process(err)
 		}
 
@@ -44,10 +45,12 @@ func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("searching student by id deadline exceeded")
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Wrap(errFindStudentByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while searching student by id", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Wrap(err)
 	}
 

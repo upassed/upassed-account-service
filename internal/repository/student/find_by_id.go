@@ -39,13 +39,15 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 	log.Info("started searching student in a database")
 	foundStudent := domain.Student{}
 	searchResult := repository.db.WithContext(ctx).Preload("Group").First(&foundStudent, studentID)
-	if searchResult.Error != nil {
-		if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
-			log.Error("student was not found in the database", logging.Error(searchResult.Error))
+	if err := searchResult.Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Error("student was not found in the database", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.New(ErrStudentNotFoundByID.Error(), codes.NotFound)
 		}
 
-		log.Error("error while searching student in the database", logging.Error(searchResult.Error))
+		log.Error("error while searching student in the database", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.New(errSearchingStudentByID.Error(), codes.Internal)
 	}
 
@@ -53,6 +55,7 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 	log.Info("saving student to cache")
 	if err := repository.cache.Save(spanContext, &foundStudent); err != nil {
 		log.Error("error while saving student to cache", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 	}
 
 	log.Info("student was successfully saved to the cache")

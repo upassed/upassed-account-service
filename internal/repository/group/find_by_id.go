@@ -39,13 +39,15 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 	log.Info("started searching group by id in a database")
 	foundGroup := domain.Group{}
 	searchResult := repository.db.WithContext(ctx).First(&foundGroup, groupID)
-	if searchResult.Error != nil {
-		if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
-			log.Error("group by id was not found in the database", logging.Error(searchResult.Error))
+	if err := searchResult.Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Error("group by id was not found in the database", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.New(ErrGroupNotFoundByID.Error(), codes.NotFound)
 		}
 
-		log.Error("error while searching group in the database", logging.Error(searchResult.Error))
+		log.Error("error while searching group in the database", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.New(errSearchingGroupByID.Error(), codes.Internal)
 	}
 
@@ -53,6 +55,7 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 	log.Info("saving group to cache")
 	if err := repository.cache.Save(spanContext, &foundGroup); err != nil {
 		log.Error("error while saving group to cache", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 	}
 
 	log.Info("group was saved to the cache")

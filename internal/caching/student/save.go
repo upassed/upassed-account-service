@@ -31,11 +31,13 @@ func (client *RedisClient) Save(ctx context.Context, student *domain.Student) er
 	jsonStudentData, err := json.Marshal(student)
 	if err != nil {
 		log.Error("unable to marshall student data to json format")
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return errMarshallingStudentData
 	}
 
 	if err := client.client.Set(ctx, fmt.Sprintf(keyFormat, student.ID.String()), jsonStudentData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
 		log.Error("unable to save student data to the cache", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return errSavingStudentDataToCache
 	}
 

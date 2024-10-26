@@ -35,10 +35,12 @@ func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*dom
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			log.Error("group by id was not found in cache")
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, ErrGroupIsNotPresentInCache
 		}
 
 		log.Error("error while fetching group by id from cache", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, errFetchingGroupFromCache
 	}
 
@@ -46,6 +48,7 @@ func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*dom
 	var group domain.Group
 	if err := json.Unmarshal([]byte(groupData), &group); err != nil {
 		log.Error("error while unmarshalling group data to json", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, errUnmarshallingGroupDataToJson
 	}
 

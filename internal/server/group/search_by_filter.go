@@ -21,11 +21,13 @@ func (server *groupServerAPI) SearchByFilter(ctx context.Context, request *clien
 	defer span.End()
 
 	if err := request.Validate(); err != nil {
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
 	matchedGroups, err := server.service.FindByFilter(spanContext, ConvertToGroupFilter(request))
 	if err != nil {
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, err
 	}
 

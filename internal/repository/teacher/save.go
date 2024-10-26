@@ -28,8 +28,9 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher *doma
 
 	log.Info("started saving teacher to a database")
 	saveResult := repository.db.WithContext(ctx).Create(&teacher)
-	if saveResult.Error != nil || saveResult.RowsAffected != 1 {
-		log.Error("error while saving teacher data to a database", logging.Error(saveResult.Error))
+	if err := saveResult.Error; err != nil || saveResult.RowsAffected != 1 {
+		log.Error("error while saving teacher data to a database", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return handling.New(ErrSavingTeacher.Error(), codes.Internal)
 	}
 
@@ -37,6 +38,7 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher *doma
 	log.Info("saving teacher data into the cache")
 	if err := repository.cache.Save(spanContext, teacher); err != nil {
 		log.Error("unable to insert teacher in cache", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 	}
 
 	log.Info("teacher was saved to the cache")

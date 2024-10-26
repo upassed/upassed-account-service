@@ -38,10 +38,12 @@ func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("group searching by id deadline exceeded")
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Wrap(errFindGroupByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while searching group by id", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Process(err)
 	}
 

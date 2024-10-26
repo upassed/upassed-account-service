@@ -39,10 +39,12 @@ func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupI
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("students in group searching deadline exceeded")
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Wrap(errFindStudentsInGroupDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while searching students in group", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Process(err)
 	}
 

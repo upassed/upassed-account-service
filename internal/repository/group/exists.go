@@ -30,8 +30,9 @@ func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.
 	log.Info("started checking group exists")
 	var groupCount int64
 	countResult := repository.db.WithContext(ctx).Model(&domain.Group{}).Where("id = ?", groupID).Count(&groupCount)
-	if countResult.Error != nil {
+	if err := countResult.Error; err != nil {
 		log.Error("error while counting groups with id in database")
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return false, handling.New(errCheckGroupExists.Error(), codes.Internal)
 	}
 

@@ -21,11 +21,13 @@ func (server *groupServerAPI) FindByID(ctx context.Context, request *client.Grou
 	defer span.End()
 
 	if err := request.Validate(); err != nil {
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
 	foundGroup, err := server.service.FindByID(spanContext, uuid.MustParse(request.GetGroupId()))
 	if err != nil {
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, err
 	}
 

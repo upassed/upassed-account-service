@@ -21,11 +21,13 @@ func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.Te
 	defer span.End()
 
 	if err := request.Validate(); err != nil {
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
 	teacher, err := server.service.FindByID(spanContext, uuid.MustParse(request.GetTeacherId()))
 	if err != nil {
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, err
 	}
 

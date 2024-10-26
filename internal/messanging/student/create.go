@@ -30,6 +30,7 @@ func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabb
 		request, err := ConvertToStudentCreateRequest(delivery.Body)
 		if err != nil {
 			log.Error("unable to convert message body to create request struct", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return rabbitmq.NackDiscard
 		}
 
@@ -37,6 +38,7 @@ func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabb
 		log.Info("validating student create request")
 		if err := request.Validate(); err != nil {
 			log.Error("student create request is invalid", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return rabbitmq.NackDiscard
 		}
 
@@ -44,6 +46,7 @@ func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabb
 		response, err := client.service.Create(spanContext, ConvertToStudent(request))
 		if err != nil {
 			log.Error("unable to create student", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return rabbitmq.NackDiscard
 		}
 

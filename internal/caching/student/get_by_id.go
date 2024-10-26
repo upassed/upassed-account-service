@@ -35,10 +35,12 @@ func (client *RedisClient) GetByID(ctx context.Context, studentID uuid.UUID) (*d
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			log.Error("student by id was not found in cache")
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, ErrStudentIsNotPresentInCache
 		}
 
 		log.Error("error while fetching student by id from cache", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, errFetchingStudentFromCache
 	}
 
@@ -46,6 +48,7 @@ func (client *RedisClient) GetByID(ctx context.Context, studentID uuid.UUID) (*d
 	var student domain.Student
 	if err := json.Unmarshal([]byte(studentData), &student); err != nil {
 		log.Error("error while unmarshalling student data to json", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, errUnmarshallingStudentDataToJson
 	}
 

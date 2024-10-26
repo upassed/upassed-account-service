@@ -39,10 +39,12 @@ func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter *busin
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("group searching by filter deadline exceeded")
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Wrap(errFindGroupsByFilterDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while searching groups by filter", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Process(err)
 	}
 

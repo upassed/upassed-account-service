@@ -35,11 +35,13 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate *
 		duplicateExists, err := service.repository.CheckDuplicateExists(ctx, teacherToCreate.ReportEmail, teacherToCreate.Username)
 		if err != nil {
 			log.Error("error while checking teacher duplicates", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Process(err)
 		}
 
 		if duplicateExists {
 			log.Error("teacher with this username or report email already exists")
+			span.SetAttributes(attribute.String("err", "teacher duplicate found"))
 			return nil, handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
 		}
 
@@ -47,6 +49,7 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate *
 		log.Info("saving teacher data to the database")
 		if err := service.repository.Save(ctx, domainTeacher); err != nil {
 			log.Error("error while saving teacher data to the database", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Process(err)
 		}
 
@@ -58,10 +61,12 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate *
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("creating teacher deadline exceeded")
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Wrap(errCreateTeacherDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while creating a teacher", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Wrap(err)
 	}
 

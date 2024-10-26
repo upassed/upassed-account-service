@@ -38,8 +38,9 @@ func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter 
 	groupNumber := fmt.Sprintf(sqlContainsFormat, filter.GroupNumber)
 	searchResult := repository.db.WithContext(ctx).Where("specialization_code LIKE ? AND group_number LIKE ?", specializationCode, groupNumber).Find(&foundGroups)
 
-	if searchResult.Error != nil {
-		log.Error("error while searching groups by filter in the database", logging.Error(searchResult.Error))
+	if err := searchResult.Error; err != nil {
+		log.Error("error while searching groups by filter in the database", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.New(errSearchingGroupByFilter.Error(), codes.Internal)
 	}
 

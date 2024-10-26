@@ -35,11 +35,13 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 		duplicateExists, err := service.studentRepository.CheckDuplicateExists(ctx, student.EducationalEmail, student.Username)
 		if err != nil {
 			log.Error("unable to check student duplicates", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, err
 		}
 
 		if duplicateExists {
 			log.Error("student with this username or educational email already exists")
+			span.SetAttributes(attribute.String("err", "student duplicate found"))
 			return nil, handling.Wrap(errors.New("student duplicate found"), handling.WithCode(codes.AlreadyExists))
 		}
 
@@ -47,11 +49,13 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 		groupExists, err := service.groupRepository.Exists(ctx, student.Group.ID)
 		if err != nil {
 			log.Error("unable to check if group exists", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, err
 		}
 
 		if !groupExists {
 			log.Error("group with this id was not found in database", slog.Any("groupID", student.Group.ID))
+			span.SetAttributes(attribute.String("err", "group does not exists by id"))
 			return nil, handling.Wrap(errors.New("group does not exists by id"), handling.WithCode(codes.NotFound))
 		}
 
@@ -60,6 +64,7 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 		existingGroup, err := service.groupRepository.FindByID(ctx, student.Group.ID)
 		if err != nil {
 			log.Error("error while searching group by id", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Wrap(errors.New("error searching group"), handling.WithCode(codes.Internal))
 		}
 
@@ -67,6 +72,7 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 		log.Info("saving group data to the database")
 		if err := service.studentRepository.Save(ctx, domainStudent); err != nil {
 			log.Error("unable to save student data to the database", logging.Error(err))
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, err
 		}
 
@@ -78,10 +84,12 @@ func (service *studentServiceImpl) Create(ctx context.Context, student *business
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("student creating deadline exceeded")
+			span.SetAttributes(attribute.String("err", err.Error()))
 			return nil, handling.Wrap(errCreateStudentDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while creating student", logging.Error(err))
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Process(err)
 	}
 

@@ -21,11 +21,13 @@ func (server *groupServerAPI) FindStudentsInGroup(ctx context.Context, request *
 	defer span.End()
 
 	if err := request.Validate(); err != nil {
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
 	response, err := server.service.FindStudentsInGroup(spanContext, uuid.MustParse(request.GetGroupId()))
 	if err != nil {
+		span.SetAttributes(attribute.String("err", err.Error()))
 		return nil, err
 	}
 
