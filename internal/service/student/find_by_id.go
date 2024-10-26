@@ -17,14 +17,14 @@ var (
 )
 
 func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.UUID) (*business.Student, error) {
+	spanContext, span := otel.Tracer(service.cfg.Tracing.StudentTracerName).Start(ctx, "studentService#FindByID")
+	defer span.End()
+
 	log := logging.Wrap(service.log,
 		logging.WithOp(service.FindByID),
 		logging.WithCtx(ctx),
 		logging.WithAny("studentID", studentID),
 	)
-
-	spanContext, span := otel.Tracer(service.cfg.Tracing.StudentTracerName).Start(ctx, "studentService#FindByID")
-	defer span.End()
 
 	log.Info("started searching student by id")
 	timeout := service.cfg.GetEndpointExecutionTimeout()

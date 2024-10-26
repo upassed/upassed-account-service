@@ -16,14 +16,14 @@ var (
 )
 
 func (client *RedisClient) Save(ctx context.Context, student *domain.Student) error {
+	_, span := otel.Tracer(client.cfg.Tracing.StudentTracerName).Start(ctx, "redisClient#Save")
+	defer span.End()
+
 	log := logging.Wrap(client.log,
 		logging.WithOp(client.Save),
 		logging.WithCtx(ctx),
 		logging.WithAny("studentID", student.ID),
 	)
-
-	_, span := otel.Tracer(client.cfg.Tracing.StudentTracerName).Start(ctx, "redisClient#Save")
-	defer span.End()
 
 	jsonStudentData, err := json.Marshal(student)
 	if err != nil {

@@ -15,14 +15,14 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher *domain.Teacher) error {
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#Save")
+	defer span.End()
+
 	log := logging.Wrap(repository.log,
 		logging.WithOp(repository.Save),
 		logging.WithCtx(ctx),
 		logging.WithAny("teacherUsername", teacher.Username),
 	)
-
-	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#Save")
-	defer span.End()
 
 	log.Info("started saving teacher to a database")
 	saveResult := repository.db.WithContext(ctx).Create(&teacher)

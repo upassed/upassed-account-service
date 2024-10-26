@@ -13,13 +13,13 @@ import (
 )
 
 func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.TeacherFindByIDRequest) (*client.TeacherFindByIDResponse, error) {
-	if err := request.Validate(); err != nil {
-		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
-	}
-
 	spanContext, span := otel.Tracer(server.cfg.Tracing.TeacherTracerName).Start(ctx, "teacher#FindByID")
 	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
 	defer span.End()
+
+	if err := request.Validate(); err != nil {
+		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
+	}
 
 	teacher, err := server.service.FindByID(spanContext, uuid.MustParse(request.GetTeacherId()))
 	if err != nil {

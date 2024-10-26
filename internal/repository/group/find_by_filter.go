@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 )
 
@@ -17,6 +18,9 @@ var (
 const sqlContainsFormat = "%%%s%%"
 
 func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter *domain.GroupFilter) ([]*domain.Group, error) {
+	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindByFilter")
+	defer span.End()
+
 	log := logging.Wrap(repository.log,
 		logging.WithOp(repository.FindByFilter),
 		logging.WithCtx(ctx),

@@ -18,14 +18,14 @@ var (
 )
 
 func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindByID")
+	defer span.End()
+
 	log := logging.Wrap(repository.log,
 		logging.WithOp(repository.FindByID),
 		logging.WithCtx(ctx),
 		logging.WithAny("groupID", groupID),
 	)
-
-	spanContext, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindByID")
-	defer span.End()
 
 	log.Info("started searching group by id in redis cache")
 	groupFromCache, err := repository.cache.GetByID(spanContext, groupID)

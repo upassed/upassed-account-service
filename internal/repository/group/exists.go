@@ -16,14 +16,14 @@ var (
 )
 
 func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.UUID) (bool, error) {
+	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#Exists")
+	defer span.End()
+
 	log := logging.Wrap(repository.log,
 		logging.WithOp(repository.Exists),
 		logging.WithCtx(ctx),
 		logging.WithAny("groupID", groupID),
 	)
-
-	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#Exists")
-	defer span.End()
 
 	log.Info("started checking group exists")
 	var groupCount int64

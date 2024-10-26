@@ -18,14 +18,14 @@ var (
 )
 
 func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*business.Group, error) {
+	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByID")
+	defer span.End()
+
 	log := logging.Wrap(service.log,
 		logging.WithOp(service.FindByID),
 		logging.WithCtx(ctx),
 		logging.WithAny("groupID", groupID),
 	)
-
-	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByID")
-	defer span.End()
 
 	log.Info("started searching group by id")
 	timeout := service.cfg.GetEndpointExecutionTimeout()

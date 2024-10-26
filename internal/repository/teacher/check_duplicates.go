@@ -16,14 +16,14 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
+	_, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#CheckDuplicateExists")
+	defer span.End()
+
 	log := logging.Wrap(repository.log,
 		logging.WithOp(repository.CheckDuplicateExists),
 		logging.WithCtx(ctx),
 		logging.WithAny("teacherReportEmail", reportEmail),
 	)
-
-	_, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#CheckDuplicateExists")
-	defer span.End()
 
 	log.Info("started checking teacher duplicates")
 	var teacherCount int64

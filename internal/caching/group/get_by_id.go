@@ -19,14 +19,14 @@ var (
 )
 
 func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
+	_, span := otel.Tracer(client.cfg.Tracing.GroupTracerName).Start(ctx, "redisClient#GetByID")
+	defer span.End()
+
 	log := logging.Wrap(client.log,
 		logging.WithOp(client.GetByID),
 		logging.WithCtx(ctx),
 		logging.WithAny("groupID", groupID),
 	)
-
-	_, span := otel.Tracer(client.cfg.Tracing.GroupTracerName).Start(ctx, "redisClient#GetByID")
-	defer span.End()
 
 	groupData, err := client.client.Get(ctx, fmt.Sprintf(keyFormat, groupID.String())).Result()
 	if err != nil {

@@ -13,13 +13,13 @@ import (
 )
 
 func (server *groupServerAPI) FindByID(ctx context.Context, request *client.GroupFindByIDRequest) (*client.GroupFindByIDResponse, error) {
-	if err := request.Validate(); err != nil {
-		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
-	}
-
 	spanContext, span := otel.Tracer(server.cfg.Tracing.GroupTracerName).Start(ctx, "group#FindByID")
 	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
 	defer span.End()
+
+	if err := request.Validate(); err != nil {
+		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
+	}
 
 	foundGroup, err := server.service.FindByID(spanContext, uuid.MustParse(request.GetGroupId()))
 	if err != nil {

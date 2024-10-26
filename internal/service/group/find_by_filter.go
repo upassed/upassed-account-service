@@ -17,13 +17,13 @@ var (
 )
 
 func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter *business.GroupFilter) ([]*business.Group, error) {
+	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByFilter")
+	defer span.End()
+
 	log := logging.Wrap(service.log,
 		logging.WithOp(service.FindByFilter),
 		logging.WithCtx(ctx),
 	)
-
-	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByFilter")
-	defer span.End()
 
 	log.Info("started searching groups by filter")
 	timeout := service.cfg.GetEndpointExecutionTimeout()

@@ -19,14 +19,14 @@ var (
 )
 
 func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*business.Student, error) {
+	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindStudentsInGroup")
+	defer span.End()
+
 	log := logging.Wrap(service.log,
 		logging.WithOp(service.FindByID),
 		logging.WithCtx(ctx),
 		logging.WithAny("groupID", groupID),
 	)
-
-	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindStudentsInGroup")
-	defer span.End()
 
 	log.Info("started searching students in group")
 	timeout := service.cfg.GetEndpointExecutionTimeout()

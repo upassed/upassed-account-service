@@ -17,14 +17,14 @@ var (
 )
 
 func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*domain.Student, error) {
+	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindStudentsInGroup")
+	defer span.End()
+
 	log := logging.Wrap(repository.log,
 		logging.WithOp(repository.Exists),
 		logging.WithCtx(ctx),
 		logging.WithAny("groupID", groupID),
 	)
-
-	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindStudentsInGroup")
-	defer span.End()
 
 	log.Info("started searching students in group in a database")
 	foundStudents := make([]*domain.Student, 0)

@@ -18,14 +18,14 @@ var (
 )
 
 func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (*domain.Teacher, error) {
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#FindByID")
+	defer span.End()
+
 	log := logging.Wrap(repository.log,
 		logging.WithOp(repository.FindByID),
 		logging.WithCtx(ctx),
 		logging.WithAny("teacherID", teacherID),
 	)
-
-	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#FindByID")
-	defer span.End()
 
 	log.Info("started searching teacher by id in redis cache")
 	teacherFromCache, err := repository.cache.GetByID(spanContext, teacherID)

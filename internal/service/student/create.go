@@ -17,14 +17,14 @@ var (
 )
 
 func (service *studentServiceImpl) Create(ctx context.Context, student *business.Student) (*business.StudentCreateResponse, error) {
+	spanContext, span := otel.Tracer(service.cfg.Tracing.StudentTracerName).Start(ctx, "studentService#Create")
+	defer span.End()
+
 	log := logging.Wrap(service.log,
 		logging.WithOp(service.Create),
 		logging.WithCtx(ctx),
 		logging.WithAny("studentUsername", student.Username),
 	)
-
-	spanContext, span := otel.Tracer(service.cfg.Tracing.StudentTracerName).Start(ctx, "studentService#Create")
-	defer span.End()
 
 	log.Info("started creating student")
 	timeout := service.cfg.GetEndpointExecutionTimeout()

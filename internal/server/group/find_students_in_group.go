@@ -13,13 +13,13 @@ import (
 )
 
 func (server *groupServerAPI) FindStudentsInGroup(ctx context.Context, request *client.FindStudentsInGroupRequest) (*client.FindStudentsInGroupResponse, error) {
-	if err := request.Validate(); err != nil {
-		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
-	}
-
 	spanContext, span := otel.Tracer(server.cfg.Tracing.GroupTracerName).Start(ctx, "group#FindStudentsInGroup")
 	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
 	defer span.End()
+
+	if err := request.Validate(); err != nil {
+		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
+	}
 
 	response, err := server.service.FindStudentsInGroup(spanContext, uuid.MustParse(request.GetGroupId()))
 	if err != nil {

@@ -13,13 +13,13 @@ import (
 )
 
 func (server *studentServerAPI) FindByID(ctx context.Context, request *client.StudentFindByIDRequest) (*client.StudentFindByIDResponse, error) {
-	if err := request.Validate(); err != nil {
-		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
-	}
-
 	spanContext, span := otel.Tracer(server.cfg.Tracing.StudentTracerName).Start(ctx, "student#FindByID")
 	span.SetAttributes(attribute.String(string(middleware.RequestIDKey), middleware.GetRequestIDFromContext(ctx)))
 	defer span.End()
+
+	if err := request.Validate(); err != nil {
+		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
+	}
 
 	response, err := server.service.FindByID(spanContext, uuid.MustParse(request.GetStudentId()))
 	if err != nil {
