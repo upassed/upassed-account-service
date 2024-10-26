@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,14 +29,24 @@ type mockTeacherService struct {
 	mock.Mock
 }
 
-func (m *mockTeacherService) Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error) {
+func (m *mockTeacherService) Create(ctx context.Context, teacher *business.Teacher) (*business.TeacherCreateResponse, error) {
 	args := m.Called(ctx, teacher)
-	return args.Get(0).(business.TeacherCreateResponse), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*business.TeacherCreateResponse), args.Error(1)
 }
 
-func (m *mockTeacherService) FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error) {
+func (m *mockTeacherService) FindByID(ctx context.Context, teacherID uuid.UUID) (*business.Teacher, error) {
 	args := m.Called(ctx, teacherID)
-	return args.Get(0).(business.Teacher), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*business.Teacher), args.Error(1)
 }
 
 var (
@@ -106,7 +115,7 @@ func TestFindByID_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	teacherSvc.On("FindByID", mock.Anything, uuid.MustParse(request.TeacherId)).Return(business.Teacher{}, handling.Process(expectedError))
+	teacherSvc.On("FindByID", mock.Anything, uuid.MustParse(request.TeacherId)).Return(nil, handling.Process(expectedError))
 
 	_, err := teacherClient.FindByID(context.Background(), &request)
 	require.NotNil(t, err)
@@ -124,14 +133,9 @@ func TestFindByID_HappyPath(t *testing.T) {
 		TeacherId: teacherID.String(),
 	}
 
-	teacherSvc.On("FindByID", mock.Anything, teacherID).Return(business.Teacher{
-		ID:          teacherID,
-		FirstName:   gofakeit.FirstName(),
-		LastName:    gofakeit.LastName(),
-		MiddleName:  gofakeit.MiddleName(),
-		ReportEmail: gofakeit.Email(),
-		Username:    gofakeit.Username(),
-	}, nil)
+	foundTeacher := util.RandomBusinessTeacher()
+	foundTeacher.ID = teacherID
+	teacherSvc.On("FindByID", mock.Anything, teacherID).Return(foundTeacher, nil)
 
 	response, err := teacherClient.FindByID(context.Background(), &request)
 	require.Nil(t, err)

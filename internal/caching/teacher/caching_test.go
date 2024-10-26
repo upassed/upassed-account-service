@@ -75,13 +75,14 @@ func TestSaveTeacher_HappyPath(t *testing.T) {
 	teacherFromCache, err := redisClient.GetTeacherByID(ctx, teacherToSave.ID)
 	require.Nil(t, err)
 
-	assert.Equal(t, teacherToSave, teacherFromCache)
+	assert.Equal(t, *teacherToSave, *teacherFromCache)
 }
 
 func TestFindTeacherByID_TeacherNotFound(t *testing.T) {
 	teacherID := uuid.New()
-	_, err := redisClient.GetTeacherByID(context.Background(), teacherID)
+	foundTeacher, err := redisClient.GetTeacherByID(context.Background(), teacherID)
 	require.NotNil(t, err)
 
 	assert.ErrorIs(t, err, teacher.ErrTeacherIsNotPresentInCache)
+	assert.Nil(t, foundTeacher)
 }

@@ -21,7 +21,7 @@ var (
 	ErrTeacherNotFoundByID  = errors.New("teacher by id  not found in database")
 )
 
-func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
+func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (*domain.Teacher, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.FindByID).Pointer()).Name()
 
 	log := repository.log.With(
@@ -46,18 +46,18 @@ func (repository *teacherRepositoryImpl) FindByID(ctx context.Context, teacherID
 	if searchResult.Error != nil {
 		if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
 			log.Error("teacher was not found in the database", logging.Error(searchResult.Error))
-			return domain.Teacher{}, handling.New(ErrTeacherNotFoundByID.Error(), codes.NotFound)
+			return nil, handling.New(ErrTeacherNotFoundByID.Error(), codes.NotFound)
 		}
 
 		log.Error("error while searching teacher in the database", logging.Error(searchResult.Error))
-		return domain.Teacher{}, handling.New(errSearchingTeacherByID.Error(), codes.Internal)
+		return nil, handling.New(errSearchingTeacherByID.Error(), codes.Internal)
 	}
 
 	log.Info("teacher was successfully found in a database")
 	log.Info("saving teacher to cache")
-	if err := repository.cache.SaveTeacher(spanContext, foundTeacher); err != nil {
+	if err := repository.cache.SaveTeacher(spanContext, &foundTeacher); err != nil {
 		log.Error("error while saving teacher to cache", logging.Error(err))
 	}
 
-	return foundTeacher, nil
+	return &foundTeacher, nil
 }

@@ -145,7 +145,7 @@ func TestFindByFilter_NothingMatched(t *testing.T) {
 		GroupNumber:        "----",
 	}
 
-	matchedGroups, err := groupRepository.FindByFilter(context.Background(), filter)
+	matchedGroups, err := groupRepository.FindByFilter(context.Background(), &filter)
 	require.Nil(t, err)
 
 	assert.Equal(t, 0, len(matchedGroups))
@@ -157,7 +157,7 @@ func TestFindByFilter_HasMatchedGroups(t *testing.T) {
 		GroupNumber:        "10101",
 	}
 
-	matchedGroups, err := groupRepository.FindByFilter(context.Background(), filter)
+	matchedGroups, err := groupRepository.FindByFilter(context.Background(), &filter)
 	require.Nil(t, err)
 
 	assert.Equal(t, 1, len(matchedGroups))

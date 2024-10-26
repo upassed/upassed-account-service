@@ -1,26 +1,15 @@
 package teacher_test
 
 import (
+	"github.com/upassed/upassed-account-service/internal/util"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	domain "github.com/upassed/upassed-account-service/internal/repository/model"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
 )
 
 func TestConvertToRepositoryTeacher(t *testing.T) {
-	teacherToConvert := business.Teacher{
-		ID:          uuid.New(),
-		FirstName:   gofakeit.FirstName(),
-		LastName:    gofakeit.LastName(),
-		MiddleName:  gofakeit.MiddleName(),
-		ReportEmail: gofakeit.Email(),
-		Username:    gofakeit.Username(),
-	}
-
+	teacherToConvert := util.RandomBusinessTeacher()
 	repositoryTeacher := teacher.ConvertToRepositoryTeacher(teacherToConvert)
 
 	assert.Equal(t, teacherToConvert.ID, repositoryTeacher.ID)
@@ -32,15 +21,7 @@ func TestConvertToRepositoryTeacher(t *testing.T) {
 }
 
 func TestConvertToServiceTeacher(t *testing.T) {
-	teacherToConvert := domain.Teacher{
-		ID:          uuid.New(),
-		FirstName:   gofakeit.FirstName(),
-		LastName:    gofakeit.LastName(),
-		MiddleName:  gofakeit.MiddleName(),
-		ReportEmail: gofakeit.Email(),
-		Username:    gofakeit.Username(),
-	}
-
+	teacherToConvert := util.RandomDomainTeacher()
 	serviceTeacher := teacher.ConvertToServiceTeacher(teacherToConvert)
 
 	assert.Equal(t, teacherToConvert.ID, serviceTeacher.ID)

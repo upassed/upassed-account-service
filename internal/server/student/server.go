@@ -17,8 +17,8 @@ type studentServerAPI struct {
 }
 
 type studentService interface {
-	Create(context.Context, business.Student) (business.StudentCreateResponse, error)
-	FindByID(ctx context.Context, studentID uuid.UUID) (business.Student, error)
+	Create(context.Context, *business.Student) (*business.StudentCreateResponse, error)
+	FindByID(ctx context.Context, studentID uuid.UUID) (*business.Student, error)
 }
 
 func Register(gRPC *grpc.Server, cfg *config.Config, service studentService) {

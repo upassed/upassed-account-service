@@ -11,8 +11,8 @@ import (
 )
 
 type Service interface {
-	Create(ctx context.Context, teacher business.Teacher) (business.TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error)
+	Create(ctx context.Context, teacher *business.Teacher) (*business.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID uuid.UUID) (*business.Teacher, error)
 }
 
 type teacherServiceImpl struct {
@@ -22,9 +22,9 @@ type teacherServiceImpl struct {
 }
 
 type teacherRepository interface {
-	Save(context.Context, domain.Teacher) error
-	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
+	Save(context.Context, *domain.Teacher) error
+	FindByID(context.Context, uuid.UUID) (*domain.Teacher, error)
 }
 
 func New(cfg *config.Config, log *slog.Logger, repository teacherRepository) Service {

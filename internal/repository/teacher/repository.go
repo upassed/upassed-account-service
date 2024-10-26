@@ -15,9 +15,9 @@ import (
 )
 
 type Repository interface {
-	Save(context.Context, domain.Teacher) error
-	FindByID(context.Context, uuid.UUID) (domain.Teacher, error)
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
+	Save(context.Context, *domain.Teacher) error
+	FindByID(context.Context, uuid.UUID) (*domain.Teacher, error)
 }
 
 type teacherRepositoryImpl struct {

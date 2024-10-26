@@ -20,7 +20,7 @@ var (
 	errFindStudentByIDDeadlineExceeded = errors.New("find student by id deadline exceeded")
 )
 
-func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.UUID) (business.Student, error) {
+func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.UUID) (*business.Student, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(service.FindByID).Pointer()).Name()
 
 	log := service.log.With(
@@ -34,10 +34,10 @@ func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.
 
 	log.Info("started searching student by id")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
-	foundStudent, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (business.Student, error) {
+	foundStudent, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (*business.Student, error) {
 		foundStudent, err := service.studentRepository.FindByID(ctx, studentID)
 		if err != nil {
-			return business.Student{}, handling.Process(err)
+			return nil, handling.Process(err)
 		}
 
 		return ConvertToServiceStudent(foundStudent), nil
@@ -46,11 +46,11 @@ func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("searching student by id deadline exceeded")
-			return business.Student{}, handling.Wrap(errFindStudentByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
+			return nil, handling.Wrap(errFindStudentByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while searching student by id", logging.Error(err))
-		return business.Student{}, handling.Wrap(err)
+		return nil, handling.Wrap(err)
 	}
 
 	log.Info("student successfully found by id")

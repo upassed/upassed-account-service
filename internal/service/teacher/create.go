@@ -19,7 +19,7 @@ var (
 	errCreateTeacherDeadlineExceeded = errors.New("create teacher deadline exceeded")
 )
 
-func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate business.Teacher) (business.TeacherCreateResponse, error) {
+func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate *business.Teacher) (*business.TeacherCreateResponse, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(service.Create).Pointer()).Name()
 
 	log := service.log.With(
@@ -33,23 +33,23 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate b
 
 	log.Info("started creating teacher")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
-	teacherCreateResponse, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (business.TeacherCreateResponse, error) {
+	teacherCreateResponse, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (*business.TeacherCreateResponse, error) {
 		duplicateExists, err := service.repository.CheckDuplicateExists(ctx, teacherToCreate.ReportEmail, teacherToCreate.Username)
 		if err != nil {
-			return business.TeacherCreateResponse{}, handling.Process(err)
+			return nil, handling.Process(err)
 		}
 
 		if duplicateExists {
 			log.Error("teacher with this username or report email already exists")
-			return business.TeacherCreateResponse{}, handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
+			return nil, handling.Wrap(errors.New("teacher duplicate found"), handling.WithCode(codes.AlreadyExists))
 		}
 
 		domainTeacher := ConvertToRepositoryTeacher(teacherToCreate)
 		if err := service.repository.Save(ctx, domainTeacher); err != nil {
-			return business.TeacherCreateResponse{}, handling.Process(err)
+			return nil, handling.Process(err)
 		}
 
-		return business.TeacherCreateResponse{
+		return &business.TeacherCreateResponse{
 			CreatedTeacherID: domainTeacher.ID,
 		}, nil
 	})
@@ -57,11 +57,11 @@ func (service *teacherServiceImpl) Create(ctx context.Context, teacherToCreate b
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("creating teacher deadline exceeded")
-			return business.TeacherCreateResponse{}, handling.Wrap(errCreateTeacherDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
+			return nil, handling.Wrap(errCreateTeacherDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while creating a teacher", logging.Error(err))
-		return business.TeacherCreateResponse{}, handling.Wrap(err)
+		return nil, handling.Wrap(err)
 	}
 
 	log.Info("teacher successfully created", slog.Any("createdTeacherID", teacherCreateResponse.CreatedTeacherID))

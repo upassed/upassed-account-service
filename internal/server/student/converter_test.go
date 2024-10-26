@@ -1,31 +1,16 @@
 package student_test
 
 import (
+	"github.com/upassed/upassed-account-service/internal/util"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/server/student"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
 func TestConvertToFindByIDResponse(t *testing.T) {
-	studentToConvert := business.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: business.Group{
-			ID:                 uuid.New(),
-			SpecializationCode: gofakeit.WeekDay(),
-			GroupNumber:        gofakeit.WeekDay(),
-		},
-	}
-
+	studentToConvert := util.RandomBusinessStudent()
 	response := student.ConvertToFindByIDResponse(studentToConvert)
 	require.NotNil(t, response)
 

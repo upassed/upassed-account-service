@@ -5,7 +5,7 @@ import (
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
-func ConvertToFindStudentsInGroupResponse(studentsInGroup []business.Student) *client.FindStudentsInGroupResponse {
+func ConvertToFindStudentsInGroupResponse(studentsInGroup []*business.Student) *client.FindStudentsInGroupResponse {
 	response := client.FindStudentsInGroupResponse{}
 	convertedStudents := make([]*client.StudentDTO, 0, len(studentsInGroup))
 	for _, studentToConvert := range studentsInGroup {
@@ -16,7 +16,7 @@ func ConvertToFindStudentsInGroupResponse(studentsInGroup []business.Student) *c
 	return &response
 }
 
-func convertStudent(studentToConvert business.Student) *client.StudentDTO {
+func convertStudent(studentToConvert *business.Student) *client.StudentDTO {
 	return &client.StudentDTO{
 		Id:               studentToConvert.ID.String(),
 		FirstName:        studentToConvert.FirstName,
@@ -32,7 +32,7 @@ func convertStudent(studentToConvert business.Student) *client.StudentDTO {
 	}
 }
 
-func ConvertToFindByIDResponse(group business.Group) *client.GroupFindByIDResponse {
+func ConvertToFindByIDResponse(group *business.Group) *client.GroupFindByIDResponse {
 	return &client.GroupFindByIDResponse{
 		Group: &client.GroupDTO{
 			Id:                 group.ID.String(),
@@ -42,14 +42,14 @@ func ConvertToFindByIDResponse(group business.Group) *client.GroupFindByIDRespon
 	}
 }
 
-func ConvertToGroupFilter(request *client.GroupSearchByFilterRequest) business.GroupFilter {
-	return business.GroupFilter{
+func ConvertToGroupFilter(request *client.GroupSearchByFilterRequest) *business.GroupFilter {
+	return &business.GroupFilter{
 		SpecializationCode: request.GetSpecializationCode(),
 		GroupNumber:        request.GetGroupNumber(),
 	}
 }
 
-func ConvertToSearchByFilterResponse(matchedGroups []business.Group) *client.GroupSearchByFilterResponse {
+func ConvertToSearchByFilterResponse(matchedGroups []*business.Group) *client.GroupSearchByFilterResponse {
 	convertedGroups := make([]*client.GroupDTO, 0, len(matchedGroups))
 	for idx := range matchedGroups {
 		convertedGroups = append(convertedGroups, convertToGroup(matchedGroups[idx]))
@@ -60,7 +60,7 @@ func ConvertToSearchByFilterResponse(matchedGroups []business.Group) *client.Gro
 	}
 }
 
-func convertToGroup(groupToConvert business.Group) *client.GroupDTO {
+func convertToGroup(groupToConvert *business.Group) *client.GroupDTO {
 	return &client.GroupDTO{
 		Id:                 groupToConvert.ID.String(),
 		SpecializationCode: groupToConvert.SpecializationCode,

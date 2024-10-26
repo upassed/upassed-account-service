@@ -8,6 +8,8 @@ import (
 	"runtime"
 )
 
+const keyFormat = "student:%s"
+
 type RedisClient struct {
 	cfg    *config.Config
 	log    *slog.Logger

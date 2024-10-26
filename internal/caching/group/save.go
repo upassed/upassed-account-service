@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
@@ -17,7 +18,7 @@ var (
 	errSavingGroupDataToCache = errors.New("unable to save group data to redis cache")
 )
 
-func (client *RedisClient) SaveGroup(ctx context.Context, group domain.Group) error {
+func (client *RedisClient) SaveGroup(ctx context.Context, group *domain.Group) error {
 	op := runtime.FuncForPC(reflect.ValueOf(client.SaveGroup).Pointer()).Name()
 
 	log := client.log.With(
@@ -35,7 +36,7 @@ func (client *RedisClient) SaveGroup(ctx context.Context, group domain.Group) er
 		return errMarshallingGroupData
 	}
 
-	if err := client.client.Set(ctx, "group:"+group.ID.String(), jsonGroupData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
+	if err := client.client.Set(ctx, fmt.Sprintf(keyFormat, group.ID.String()), jsonGroupData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
 		return errSavingGroupDataToCache
 	}
 

@@ -75,13 +75,14 @@ func TestSaveGroup_HappyPath(t *testing.T) {
 	groupFromCache, err := redisClient.GetGroupByID(ctx, groupToSave.ID)
 	require.Nil(t, err)
 
-	assert.Equal(t, groupToSave, groupFromCache)
+	assert.Equal(t, *groupToSave, *groupFromCache)
 }
 
 func TestFindGroupByID_GroupNotFound(t *testing.T) {
 	groupID := uuid.New()
-	_, err := redisClient.GetGroupByID(context.Background(), groupID)
+	foundGroup, err := redisClient.GetGroupByID(context.Background(), groupID)
 	require.NotNil(t, err)
 
 	assert.ErrorIs(t, err, group.ErrGroupIsNotPresentInCache)
+	assert.Nil(t, foundGroup)
 }

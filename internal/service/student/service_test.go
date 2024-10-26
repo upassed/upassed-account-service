@@ -25,14 +25,19 @@ type mockStudentRepository struct {
 	mock.Mock
 }
 
-func (m *mockStudentRepository) Save(ctx context.Context, student domain.Student) error {
+func (m *mockStudentRepository) Save(ctx context.Context, student *domain.Student) error {
 	args := m.Called(ctx, student)
 	return args.Error(0)
 }
 
-func (m *mockStudentRepository) FindByID(ctx context.Context, studentID uuid.UUID) (domain.Student, error) {
+func (m *mockStudentRepository) FindByID(ctx context.Context, studentID uuid.UUID) (*domain.Student, error) {
 	args := m.Called(ctx, studentID)
-	return args.Get(0).(domain.Student), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*domain.Student), args.Error(1)
 }
 
 func (m *mockStudentRepository) CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error) {
@@ -49,9 +54,14 @@ func (m *mockGroupRepository) Exists(ctx context.Context, groupID uuid.UUID) (bo
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockGroupRepository) FindByID(ctx context.Context, groupID uuid.UUID) (domain.Group, error) {
+func (m *mockGroupRepository) FindByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
 	args := m.Called(ctx, groupID)
-	return args.Get(0).(domain.Group), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*domain.Group), args.Error(1)
 }
 
 var (
@@ -223,7 +233,7 @@ func TestFindByID_ErrorSearchingStudentInDatabase(t *testing.T) {
 	studentID := uuid.New()
 
 	expectedRepositoryError := errors.New("some repo error")
-	studentRepository.On("FindByID", mock.Anything, studentID).Return(domain.Student{}, expectedRepositoryError)
+	studentRepository.On("FindByID", mock.Anything, studentID).Return(nil, expectedRepositoryError)
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
 	_, err := service.FindByID(context.Background(), studentID)

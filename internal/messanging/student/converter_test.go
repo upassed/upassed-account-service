@@ -25,7 +25,7 @@ func TestConvertToStudentCreateRequest_ValidBytes(t *testing.T) {
 	convertedRequest, err := student.ConvertToStudentCreateRequest(initialRequestBytes)
 	require.Nil(t, err)
 
-	assert.Equal(t, initialRequest, convertedRequest)
+	assert.Equal(t, *initialRequest, *convertedRequest)
 }
 
 func TestConvertToStudent(t *testing.T) {
@@ -46,7 +46,7 @@ func TestConvertToStudentCreateResponse(t *testing.T) {
 		CreatedStudentID: uuid.New(),
 	}
 
-	convertedResponse := student.ConvertToStudentCreateResponse(responseFromService)
+	convertedResponse := student.ConvertToStudentCreateResponse(&responseFromService)
 	require.NotNil(t, convertedResponse)
 
 	assert.Equal(t, responseFromService.CreatedStudentID.String(), convertedResponse.CreatedStudentID)

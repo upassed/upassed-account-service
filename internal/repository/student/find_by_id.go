@@ -21,7 +21,7 @@ var (
 	ErrStudentNotFoundByID  = errors.New("student by id not found in database")
 )
 
-func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID uuid.UUID) (domain.Student, error) {
+func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID uuid.UUID) (*domain.Student, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.FindByID).Pointer()).Name()
 
 	log := repository.log.With(
@@ -46,18 +46,18 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 	if searchResult.Error != nil {
 		if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
 			log.Error("student was not found in the database", logging.Error(searchResult.Error))
-			return domain.Student{}, handling.New(ErrStudentNotFoundByID.Error(), codes.NotFound)
+			return nil, handling.New(ErrStudentNotFoundByID.Error(), codes.NotFound)
 		}
 
 		log.Error("error while searching student in the database", logging.Error(searchResult.Error))
-		return domain.Student{}, handling.New(errSearchingStudentByID.Error(), codes.Internal)
+		return nil, handling.New(errSearchingStudentByID.Error(), codes.Internal)
 	}
 
 	log.Info("student was successfully found in a database")
 	log.Info("saving student to cache")
-	if err := repository.cache.SaveStudent(spanContext, foundStudent); err != nil {
+	if err := repository.cache.SaveStudent(spanContext, &foundStudent); err != nil {
 		log.Error("error while saving student to cache", logging.Error(err))
 	}
 
-	return foundStudent, nil
+	return &foundStudent, nil
 }

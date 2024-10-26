@@ -5,8 +5,8 @@ import (
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
-func ConvertToRepositoryStudent(serviceStudent business.Student) domain.Student {
-	return domain.Student{
+func ConvertToRepositoryStudent(serviceStudent *business.Student) *domain.Student {
+	return &domain.Student{
 		ID:               serviceStudent.ID,
 		FirstName:        serviceStudent.FirstName,
 		LastName:         serviceStudent.LastName,
@@ -21,8 +21,8 @@ func ConvertToRepositoryStudent(serviceStudent business.Student) domain.Student 
 	}
 }
 
-func ConvertToServiceStudent(repoStudent domain.Student) business.Student {
-	return business.Student{
+func ConvertToServiceStudent(repoStudent *domain.Student) *business.Student {
+	return &business.Student{
 		ID:               repoStudent.ID,
 		FirstName:        repoStudent.FirstName,
 		LastName:         repoStudent.LastName,

@@ -25,14 +25,19 @@ type mockTeacherRepository struct {
 	mock.Mock
 }
 
-func (m *mockTeacherRepository) Save(ctx context.Context, teacher domain.Teacher) error {
+func (m *mockTeacherRepository) Save(ctx context.Context, teacher *domain.Teacher) error {
 	args := m.Called(ctx, teacher)
 	return args.Error(0)
 }
 
-func (m *mockTeacherRepository) FindByID(ctx context.Context, teacherID uuid.UUID) (domain.Teacher, error) {
+func (m *mockTeacherRepository) FindByID(ctx context.Context, teacherID uuid.UUID) (*domain.Teacher, error) {
 	args := m.Called(ctx, teacherID)
-	return args.Get(0).(domain.Teacher), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*domain.Teacher), args.Error(1)
 }
 
 func (m *mockTeacherRepository) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
@@ -140,7 +145,7 @@ func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	teacherID := uuid.New()
 
 	expectedRepoError := handling.New("repo layer error message", codes.NotFound)
-	teacherRepository.On("FindByID", mock.Anything, teacherID).Return(domain.Teacher{}, expectedRepoError)
+	teacherRepository.On("FindByID", mock.Anything, teacherID).Return(nil, expectedRepoError)
 	service := teacher.New(cfg, logger, teacherRepository)
 
 	_, err := service.FindByID(context.Background(), teacherID)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/logging"
@@ -21,7 +22,7 @@ var (
 	errUnmarshallingStudentDataToJson = errors.New("unable to unmarshall student data from the cache to json format")
 )
 
-func (client *RedisClient) GetStudentByID(ctx context.Context, studentID uuid.UUID) (domain.Student, error) {
+func (client *RedisClient) GetStudentByID(ctx context.Context, studentID uuid.UUID) (*domain.Student, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(client.GetStudentByID).Pointer()).Name()
 
 	log := client.log.With(
@@ -33,23 +34,23 @@ func (client *RedisClient) GetStudentByID(ctx context.Context, studentID uuid.UU
 	_, span := otel.Tracer(client.cfg.Tracing.StudentTracerName).Start(ctx, "redisClient#GetStudentByID")
 	defer span.End()
 
-	studentData, err := client.client.Get(ctx, "student:"+studentID.String()).Result()
+	studentData, err := client.client.Get(ctx, fmt.Sprintf(keyFormat, studentID.String())).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			log.Error("student by id was not found in cache")
-			return domain.Student{}, ErrStudentIsNotPresentInCache
+			return nil, ErrStudentIsNotPresentInCache
 		}
 
 		log.Error("error while fetching student by id from cache", logging.Error(err))
-		return domain.Student{}, errFetchingStudentFromCache
+		return nil, errFetchingStudentFromCache
 	}
 
 	var student domain.Student
 	if err := json.Unmarshal([]byte(studentData), &student); err != nil {
 		log.Error("error while unmarshalling student data to json", logging.Error(err))
-		return domain.Student{}, errUnmarshallingStudentDataToJson
+		return nil, errUnmarshallingStudentDataToJson
 	}
 
 	log.Info("student was successfully found by id")
-	return student, nil
+	return &student, nil
 }

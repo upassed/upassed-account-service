@@ -14,9 +14,9 @@ import (
 )
 
 type Repository interface {
-	FindStudentsInGroup(context.Context, uuid.UUID) ([]domain.Student, error)
-	FindByID(context.Context, uuid.UUID) (domain.Group, error)
-	FindByFilter(context.Context, domain.GroupFilter) ([]domain.Group, error)
+	FindStudentsInGroup(context.Context, uuid.UUID) ([]*domain.Student, error)
+	FindByID(context.Context, uuid.UUID) (*domain.Group, error)
+	FindByFilter(context.Context, *domain.GroupFilter) ([]*domain.Group, error)
 	Exists(context.Context, uuid.UUID) (bool, error)
 }
 

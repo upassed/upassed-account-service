@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/logging"
@@ -21,7 +22,7 @@ var (
 	errUnmarshallingGroupDataToJson = errors.New("unable to unmarshall group data from the cache to json format")
 )
 
-func (client *RedisClient) GetGroupByID(ctx context.Context, groupID uuid.UUID) (domain.Group, error) {
+func (client *RedisClient) GetGroupByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(client.GetGroupByID).Pointer()).Name()
 
 	log := client.log.With(
@@ -33,23 +34,23 @@ func (client *RedisClient) GetGroupByID(ctx context.Context, groupID uuid.UUID) 
 	_, span := otel.Tracer(client.cfg.Tracing.GroupTracerName).Start(ctx, "redisClient#GetGroupByID")
 	defer span.End()
 
-	groupData, err := client.client.Get(ctx, "group:"+groupID.String()).Result()
+	groupData, err := client.client.Get(ctx, fmt.Sprintf(keyFormat, groupID.String())).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			log.Error("group by id was not found in cache")
-			return domain.Group{}, ErrGroupIsNotPresentInCache
+			return nil, ErrGroupIsNotPresentInCache
 		}
 
 		log.Error("error while fetching group by id from cache", logging.Error(err))
-		return domain.Group{}, errFetchingGroupFromCache
+		return nil, errFetchingGroupFromCache
 	}
 
 	var group domain.Group
 	if err := json.Unmarshal([]byte(groupData), &group); err != nil {
 		log.Error("error while unmarshalling group data to json", logging.Error(err))
-		return domain.Group{}, errUnmarshallingGroupDataToJson
+		return nil, errUnmarshallingGroupDataToJson
 	}
 
 	log.Info("group was successfully found by id")
-	return group, nil
+	return &group, nil
 }

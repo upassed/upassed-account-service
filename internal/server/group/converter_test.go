@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/server/group"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestConvertToFindStudentsInGroupResponse(t *testing.T) {
-	studentsInGroup := []business.Student{
+	studentsInGroup := []*business.Student{
 		util.RandomBusinessStudent(),
 		util.RandomBusinessStudent(),
 		util.RandomBusinessStudent(),
@@ -28,12 +27,7 @@ func TestConvertToFindStudentsInGroupResponse(t *testing.T) {
 }
 
 func TestConvertToFindByIDResponse(t *testing.T) {
-	groupToConvert := business.Group{
-		ID:                 uuid.New(),
-		SpecializationCode: gofakeit.WeekDay(),
-		GroupNumber:        gofakeit.WeekDay(),
-	}
-
+	groupToConvert := util.RandomBusinessGroup()
 	response := group.ConvertToFindByIDResponse(groupToConvert)
 	require.NotNil(t, response)
 
@@ -55,7 +49,7 @@ func TestConvertToGroupFilter(t *testing.T) {
 }
 
 func TestConvertToSearchByFilterResponse(t *testing.T) {
-	matchedGroups := []business.Group{util.RandomBusinessGroup(), util.RandomBusinessGroup(), util.RandomBusinessGroup()}
+	matchedGroups := []*business.Group{util.RandomBusinessGroup(), util.RandomBusinessGroup(), util.RandomBusinessGroup()}
 	response := group.ConvertToSearchByFilterResponse(matchedGroups)
 
 	require.Equal(t, len(matchedGroups), len(response.GetMatchedGroups()))
@@ -64,7 +58,7 @@ func TestConvertToSearchByFilterResponse(t *testing.T) {
 	}
 }
 
-func assertStudentsEqual(t *testing.T, left business.Student, right *client.StudentDTO) {
+func assertStudentsEqual(t *testing.T, left *business.Student, right *client.StudentDTO) {
 	assert.Equal(t, left.ID.String(), right.GetId())
 	assert.Equal(t, left.FirstName, right.GetFirstName())
 	assert.Equal(t, left.LastName, right.GetLastName())
@@ -76,7 +70,7 @@ func assertStudentsEqual(t *testing.T, left business.Student, right *client.Stud
 	assert.Equal(t, left.Group.GroupNumber, right.GetGroup().GetGroupNumber())
 }
 
-func assertGroupsEqual(t *testing.T, left business.Group, right *client.GroupDTO) {
+func assertGroupsEqual(t *testing.T, left *business.Group, right *client.GroupDTO) {
 	assert.Equal(t, left.ID.String(), right.GetId())
 	assert.Equal(t, left.SpecializationCode, right.GetSpecializationCode())
 	assert.Equal(t, left.GroupNumber, right.GetGroupNumber())

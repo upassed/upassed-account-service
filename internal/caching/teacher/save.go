@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/upassed/upassed-account-service/internal/middleware"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"go.opentelemetry.io/otel"
@@ -17,7 +18,7 @@ var (
 	errSavingTeacherDataToCache = errors.New("unable to save teacher data to redis cache")
 )
 
-func (client *RedisClient) SaveTeacher(ctx context.Context, teacher domain.Teacher) error {
+func (client *RedisClient) SaveTeacher(ctx context.Context, teacher *domain.Teacher) error {
 	op := runtime.FuncForPC(reflect.ValueOf(client.SaveTeacher).Pointer()).Name()
 
 	log := client.log.With(
@@ -35,7 +36,7 @@ func (client *RedisClient) SaveTeacher(ctx context.Context, teacher domain.Teach
 		return errMarshallingTeacherData
 	}
 
-	if err := client.client.Set(ctx, "teacher:"+teacher.ID.String(), jsonTeacherData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
+	if err := client.client.Set(ctx, fmt.Sprintf(keyFormat, teacher.ID.String()), jsonTeacherData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
 		return errSavingTeacherDataToCache
 	}
 

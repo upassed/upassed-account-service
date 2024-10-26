@@ -18,7 +18,7 @@ var (
 	ErrSavingStudent = errors.New("error while saving student")
 )
 
-func (repository *studentRepositoryImpl) Save(ctx context.Context, student domain.Student) error {
+func (repository *studentRepositoryImpl) Save(ctx context.Context, student *domain.Student) error {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.Save).Pointer()).Name()
 
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#Save")

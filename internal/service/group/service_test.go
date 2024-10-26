@@ -27,19 +27,34 @@ type mockGroupRepository struct {
 	mock.Mock
 }
 
-func (m *mockGroupRepository) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]domain.Student, error) {
+func (m *mockGroupRepository) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*domain.Student, error) {
 	args := m.Called(ctx, groupID)
-	return args.Get(0).([]domain.Student), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).([]*domain.Student), args.Error(1)
 }
 
-func (m *mockGroupRepository) FindByID(ctx context.Context, groupID uuid.UUID) (domain.Group, error) {
+func (m *mockGroupRepository) FindByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
 	args := m.Called(ctx, groupID)
-	return args.Get(0).(domain.Group), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*domain.Group), args.Error(1)
 }
 
-func (m *mockGroupRepository) FindByFilter(ctx context.Context, filter domain.GroupFilter) ([]domain.Group, error) {
+func (m *mockGroupRepository) FindByFilter(ctx context.Context, filter *domain.GroupFilter) ([]*domain.Group, error) {
 	args := m.Called(ctx, filter)
-	return args.Get(0).([]domain.Group), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).([]*domain.Group), args.Error(1)
 }
 
 var (
@@ -71,7 +86,7 @@ func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
 
 	groupID := uuid.New()
 	expectedRepositoryError := errors.New("some repo error")
-	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return([]domain.Student{}, expectedRepositoryError)
+	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return(nil, expectedRepositoryError)
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindStudentsInGroup(context.Background(), groupID)
@@ -86,7 +101,7 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
 	groupID := uuid.New()
-	expectedStudentsInGroup := []domain.Student{
+	expectedStudentsInGroup := []*domain.Student{
 		util.RandomDomainStudent(),
 		util.RandomDomainStudent(),
 		util.RandomDomainStudent(),
@@ -106,7 +121,7 @@ func TestFindByID_RepositoryError(t *testing.T) {
 
 	groupID := uuid.New()
 	expectedRepositoryError := errors.New("some repo error")
-	groupRepository.On("FindByID", mock.Anything, groupID).Return(domain.Group{}, expectedRepositoryError)
+	groupRepository.On("FindByID", mock.Anything, groupID).Return(nil, expectedRepositoryError)
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByID(context.Background(), groupID)
@@ -121,11 +136,8 @@ func TestFindByID_HappyPath(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
 	groupID := uuid.New()
-	expectedFoundGroup := domain.Group{
-		ID:                 groupID,
-		SpecializationCode: gofakeit.WeekDay(),
-		GroupNumber:        gofakeit.WeekDay(),
-	}
+	expectedFoundGroup := util.RandomDomainGroup()
+	expectedFoundGroup.ID = groupID
 
 	groupRepository.On("FindByID", mock.Anything, groupID).Return(expectedFoundGroup, nil)
 
@@ -141,13 +153,13 @@ func TestFindByID_HappyPath(t *testing.T) {
 func TestFindByFilter_RepositoryError(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
-	groupFilter := business.GroupFilter{
+	groupFilter := &business.GroupFilter{
 		SpecializationCode: gofakeit.WeekDay(),
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
 	expectedRepositoryError := errors.New("some repo error")
-	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return([]domain.Group{}, expectedRepositoryError)
+	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return(nil, expectedRepositoryError)
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByFilter(context.Background(), groupFilter)
@@ -161,12 +173,12 @@ func TestFindByFilter_RepositoryError(t *testing.T) {
 func TestFindByFilter_HappyPath(t *testing.T) {
 	groupRepository := new(mockGroupRepository)
 
-	groupFilter := business.GroupFilter{
+	groupFilter := &business.GroupFilter{
 		SpecializationCode: gofakeit.WeekDay(),
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
-	foundMatchedGroups := []domain.Group{util.RandomDomainGroup(), util.RandomDomainGroup(), util.RandomDomainGroup()}
+	foundMatchedGroups := []*domain.Group{util.RandomDomainGroup(), util.RandomDomainGroup(), util.RandomDomainGroup()}
 	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return(foundMatchedGroups, nil)
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)

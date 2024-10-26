@@ -30,19 +30,34 @@ type mockGroupService struct {
 	mock.Mock
 }
 
-func (m *mockGroupService) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]business.Student, error) {
+func (m *mockGroupService) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*business.Student, error) {
 	args := m.Called(ctx, groupID)
-	return args.Get(0).([]business.Student), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).([]*business.Student), args.Error(1)
 }
 
-func (m *mockGroupService) FindByID(ctx context.Context, groupID uuid.UUID) (business.Group, error) {
+func (m *mockGroupService) FindByID(ctx context.Context, groupID uuid.UUID) (*business.Group, error) {
 	args := m.Called(ctx, groupID)
-	return args.Get(0).(business.Group), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*business.Group), args.Error(1)
 }
 
-func (m *mockGroupService) FindByFilter(ctx context.Context, filter business.GroupFilter) ([]business.Group, error) {
+func (m *mockGroupService) FindByFilter(ctx context.Context, filter *business.GroupFilter) ([]*business.Group, error) {
 	args := m.Called(ctx, filter)
-	return args.Get(0).([]business.Group), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).([]*business.Group), args.Error(1)
 }
 
 var (
@@ -98,7 +113,7 @@ func TestFindStudentsInGroup_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(make([]business.Student, 0), handling.Process(expectedError))
+	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(nil, handling.Process(expectedError))
 
 	_, err := groupClient.FindStudentsInGroup(context.Background(), &request)
 	require.NotNil(t, err)
@@ -115,7 +130,7 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 		GroupId: uuid.NewString(),
 	}
 
-	studentsInGroup := []business.Student{
+	studentsInGroup := []*business.Student{
 		util.RandomBusinessStudent(),
 		util.RandomBusinessStudent(),
 		util.RandomBusinessStudent(),
@@ -140,7 +155,7 @@ func TestFindByID_ServiceLayerError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(business.Group{}, expectedError)
+	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(nil, expectedError)
 
 	_, err := groupClient.FindByID(context.Background(), &request)
 	require.NotNil(t, err)
@@ -157,12 +172,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 		GroupId: uuid.NewString(),
 	}
 
-	expectedFoundGroup := business.Group{
-		ID:                 uuid.MustParse(request.GroupId),
-		SpecializationCode: gofakeit.WeekDay(),
-		GroupNumber:        gofakeit.WeekDay(),
-	}
-
+	expectedFoundGroup := util.RandomBusinessGroup()
 	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(expectedFoundGroup, nil)
 
 	response, err := groupClient.FindByID(context.Background(), &request)
@@ -197,7 +207,7 @@ func TestFindByFilter_ServiceError(t *testing.T) {
 	}
 
 	expectedServiceError := handling.New("some service error", codes.DeadlineExceeded)
-	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return([]business.Group{}, expectedServiceError)
+	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return(nil, expectedServiceError)
 
 	_, err := groupClient.SearchByFilter(context.Background(), &request)
 	require.NotNil(t, err)
@@ -215,7 +225,7 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 		GroupNumber:        "10101",
 	}
 
-	expectedMatchedGroups := []business.Group{
+	expectedMatchedGroups := []*business.Group{
 		util.RandomBusinessGroup(),
 		util.RandomBusinessGroup(),
 		util.RandomBusinessGroup(),

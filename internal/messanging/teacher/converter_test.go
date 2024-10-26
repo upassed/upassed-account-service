@@ -27,7 +27,7 @@ func TestConvertToTeacherCreateRequest_ValidBytes(t *testing.T) {
 	convertedRequest, err := teacher.ConvertToTeacherCreateRequest(initialRequestBytes)
 	require.Nil(t, err)
 
-	assert.Equal(t, initialRequest, convertedRequest)
+	assert.Equal(t, *initialRequest, *convertedRequest)
 }
 
 func TestConvertToTeacher(t *testing.T) {
@@ -39,7 +39,7 @@ func TestConvertToTeacher(t *testing.T) {
 		Username:    gofakeit.Username(),
 	}
 
-	convertedTeacher := teacher.ConvertToTeacher(request)
+	convertedTeacher := teacher.ConvertToTeacher(&request)
 	require.NotNil(t, convertedTeacher.ID)
 
 	assert.Equal(t, request.FirstName, convertedTeacher.FirstName)
@@ -54,6 +54,6 @@ func TestConvertToTeacherCreateResponse(t *testing.T) {
 		CreatedTeacherID: uuid.New(),
 	}
 
-	convertedResponse := teacher.ConvertToTeacherCreateResponse(response)
+	convertedResponse := teacher.ConvertToTeacherCreateResponse(&response)
 	assert.Equal(t, response.CreatedTeacherID.String(), convertedResponse.CreatedTeacherID)
 }

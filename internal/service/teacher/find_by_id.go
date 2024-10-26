@@ -20,7 +20,7 @@ var (
 	errFindTeacherByIDDeadlineExceeded = errors.New("find teacher by id deadline exceeded")
 )
 
-func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error) {
+func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (*business.Teacher, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(service.FindByID).Pointer()).Name()
 
 	log := service.log.With(
@@ -34,10 +34,10 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.
 
 	log.Info("started finding teacher by id")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
-	foundTeacher, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (business.Teacher, error) {
+	foundTeacher, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (*business.Teacher, error) {
 		foundTeacher, err := service.repository.FindByID(ctx, teacherID)
 		if err != nil {
-			return business.Teacher{}, handling.Process(err)
+			return nil, handling.Process(err)
 		}
 
 		return ConvertToServiceTeacher(foundTeacher), nil
@@ -46,11 +46,11 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("find teacher by id deadline exceeded")
-			return business.Teacher{}, handling.Wrap(errFindTeacherByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
+			return nil, handling.Wrap(errFindTeacherByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while finding teacher by id", logging.Error(err))
-		return business.Teacher{}, handling.Wrap(err)
+		return nil, handling.Wrap(err)
 	}
 
 	log.Info("teacher successfully found by id")

@@ -14,6 +14,8 @@ type RedisClient struct {
 	client *redis.Client
 }
 
+const keyFormat = "teacher:%s"
+
 func New(client *redis.Client, cfg *config.Config, log *slog.Logger) *RedisClient {
 	op := runtime.FuncForPC(reflect.ValueOf(New).Pointer()).Name()
 

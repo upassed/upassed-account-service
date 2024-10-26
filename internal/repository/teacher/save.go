@@ -18,7 +18,7 @@ var (
 	ErrSavingTeacher = errors.New("error while saving teacher")
 )
 
-func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher domain.Teacher) error {
+func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher *domain.Teacher) error {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.Save).Pointer()).Name()
 
 	log := repository.log.With(

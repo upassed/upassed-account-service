@@ -21,7 +21,7 @@ var (
 	ErrGroupNotFoundByID  = errors.New("group by id not found in database")
 )
 
-func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uuid.UUID) (domain.Group, error) {
+func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.FindByID).Pointer()).Name()
 
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindByID")
@@ -46,18 +46,18 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 	if searchResult.Error != nil {
 		if errors.Is(searchResult.Error, gorm.ErrRecordNotFound) {
 			log.Error("group by id was not found in the database", logging.Error(searchResult.Error))
-			return domain.Group{}, handling.New(ErrGroupNotFoundByID.Error(), codes.NotFound)
+			return nil, handling.New(ErrGroupNotFoundByID.Error(), codes.NotFound)
 		}
 
 		log.Error("error while searching group in the database", logging.Error(searchResult.Error))
-		return domain.Group{}, handling.New(errSearchingGroupByID.Error(), codes.Internal)
+		return nil, handling.New(errSearchingGroupByID.Error(), codes.Internal)
 	}
 
 	log.Info("group by id was successfully found in a database")
 	log.Info("saving group to cache")
-	if err := repository.cache.SaveGroup(spanContext, foundGroup); err != nil {
+	if err := repository.cache.SaveGroup(spanContext, &foundGroup); err != nil {
 		log.Error("error while saving group to cache", logging.Error(err))
 	}
 
-	return foundGroup, nil
+	return &foundGroup, nil
 }

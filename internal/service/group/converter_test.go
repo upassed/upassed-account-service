@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestConvertToServiceStudents(t *testing.T) {
-	studentsToConvert := []domain.Student{util.RandomDomainStudent(),
+	studentsToConvert := []*domain.Student{util.RandomDomainStudent(),
 		util.RandomDomainStudent(),
 		util.RandomDomainStudent(),
 	}
@@ -28,12 +27,7 @@ func TestConvertToServiceStudents(t *testing.T) {
 }
 
 func TestConvertToServiceGroup(t *testing.T) {
-	groupToConvert := domain.Group{
-		ID:                 uuid.New(),
-		SpecializationCode: gofakeit.WeekDay(),
-		GroupNumber:        gofakeit.WeekDay(),
-	}
-
+	groupToConvert := util.RandomDomainGroup()
 	convertedGroup := group.ConvertToServiceGroup(groupToConvert)
 
 	assert.Equal(t, groupToConvert.ID, convertedGroup.ID)
@@ -47,13 +41,13 @@ func TestConvertToGroupFilter(t *testing.T) {
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
-	convertedFilter := group.ConvertToGroupFilter(filterToConvert)
+	convertedFilter := group.ConvertToGroupFilter(&filterToConvert)
 
 	assert.Equal(t, filterToConvert.SpecializationCode, convertedFilter.SpecializationCode)
 	assert.Equal(t, filterToConvert.GroupNumber, convertedFilter.GroupNumber)
 }
 
-func assertStudentsEqual(t *testing.T, left domain.Student, right business.Student) {
+func assertStudentsEqual(t *testing.T, left *domain.Student, right *business.Student) {
 	assert.Equal(t, left.ID, right.ID)
 	assert.Equal(t, left.FirstName, right.FirstName)
 	assert.Equal(t, left.LastName, right.LastName)

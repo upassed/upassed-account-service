@@ -1,32 +1,16 @@
 package student_test
 
 import (
+	"github.com/upassed/upassed-account-service/internal/util"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	domain "github.com/upassed/upassed-account-service/internal/repository/model"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/internal/service/student"
 )
 
 func TestConvertToRepositoryStudent(t *testing.T) {
-	serviceStudent := business.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: business.Group{
-			ID:                 uuid.New(),
-			SpecializationCode: gofakeit.WeekDay(),
-			GroupNumber:        gofakeit.WeekDay(),
-		},
-	}
-
+	serviceStudent := util.RandomBusinessStudent()
 	convertedStudent := student.ConvertToRepositoryStudent(serviceStudent)
 	require.NotNil(t, convertedStudent)
 
@@ -42,20 +26,7 @@ func TestConvertToRepositoryStudent(t *testing.T) {
 }
 
 func TestConvertToServiceStudent(t *testing.T) {
-	repositoryStudent := domain.Student{
-		ID:               uuid.New(),
-		FirstName:        gofakeit.FirstName(),
-		LastName:         gofakeit.LastName(),
-		MiddleName:       gofakeit.MiddleName(),
-		EducationalEmail: gofakeit.Email(),
-		Username:         gofakeit.Username(),
-		Group: domain.Group{
-			ID:                 uuid.New(),
-			SpecializationCode: gofakeit.WeekDay(),
-			GroupNumber:        gofakeit.WeekDay(),
-		},
-	}
-
+	repositoryStudent := util.RandomDomainStudent()
 	serviceStudent := student.ConvertToServiceStudent(repositoryStudent)
 	require.NotNil(t, serviceStudent)
 

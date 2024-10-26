@@ -8,8 +8,8 @@ import (
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
-func RandomEventStudentCreateRequest() event.StudentCreateRequest {
-	return event.StudentCreateRequest{
+func RandomEventStudentCreateRequest() *event.StudentCreateRequest {
+	return &event.StudentCreateRequest{
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
 		MiddleName:       gofakeit.MiddleName(),
@@ -19,8 +19,8 @@ func RandomEventStudentCreateRequest() event.StudentCreateRequest {
 	}
 }
 
-func RandomEventTeacherCreateRequest() event.TeacherCreateRequest {
-	return event.TeacherCreateRequest{
+func RandomEventTeacherCreateRequest() *event.TeacherCreateRequest {
+	return &event.TeacherCreateRequest{
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),
 		MiddleName:  gofakeit.MiddleName(),
@@ -29,8 +29,8 @@ func RandomEventTeacherCreateRequest() event.TeacherCreateRequest {
 	}
 }
 
-func RandomDomainStudent() domain.Student {
-	return domain.Student{
+func RandomDomainStudent() *domain.Student {
+	return &domain.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
@@ -45,8 +45,8 @@ func RandomDomainStudent() domain.Student {
 	}
 }
 
-func RandomBusinessStudent() business.Student {
-	return business.Student{
+func RandomBusinessStudent() *business.Student {
+	return &business.Student{
 		ID:               uuid.New(),
 		FirstName:        gofakeit.FirstName(),
 		LastName:         gofakeit.LastName(),
@@ -61,8 +61,8 @@ func RandomBusinessStudent() business.Student {
 	}
 }
 
-func RandomDomainTeacher() domain.Teacher {
-	return domain.Teacher{
+func RandomDomainTeacher() *domain.Teacher {
+	return &domain.Teacher{
 		ID:          uuid.New(),
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),
@@ -72,8 +72,8 @@ func RandomDomainTeacher() domain.Teacher {
 	}
 }
 
-func RandomBusinessTeacher() business.Teacher {
-	return business.Teacher{
+func RandomBusinessTeacher() *business.Teacher {
+	return &business.Teacher{
 		ID:          uuid.New(),
 		FirstName:   gofakeit.FirstName(),
 		LastName:    gofakeit.LastName(),
@@ -83,16 +83,16 @@ func RandomBusinessTeacher() business.Teacher {
 	}
 }
 
-func RandomDomainGroup() domain.Group {
-	return domain.Group{
+func RandomDomainGroup() *domain.Group {
+	return &domain.Group{
 		ID:                 uuid.New(),
 		SpecializationCode: gofakeit.WeekDay(),
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 }
 
-func RandomBusinessGroup() business.Group {
-	return business.Group{
+func RandomBusinessGroup() *business.Group {
+	return &business.Group{
 		ID:                 uuid.New(),
 		SpecializationCode: gofakeit.WeekDay(),
 		GroupNumber:        gofakeit.WeekDay(),

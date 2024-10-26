@@ -19,7 +19,7 @@ var (
 	errSearchingStudentsInGroup = errors.New("error while searching students in group")
 )
 
-func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]domain.Student, error) {
+func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*domain.Student, error) {
 	op := runtime.FuncForPC(reflect.ValueOf(repository.FindStudentsInGroup).Pointer()).Name()
 
 	log := repository.log.With(
@@ -32,11 +32,11 @@ func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, 
 	defer span.End()
 
 	log.Info("started searching students in group in a database")
-	foundStudents := make([]domain.Student, 0)
+	foundStudents := make([]*domain.Student, 0)
 	searchResult := repository.db.WithContext(ctx).Preload("Group").Where("group_id = ?", groupID).Find(&foundStudents)
 	if searchResult.Error != nil {
 		log.Error("error while searching students in group in the database", logging.Error(searchResult.Error))
-		return make([]domain.Student, 0), handling.New(errSearchingStudentsInGroup.Error(), codes.Internal)
+		return nil, handling.New(errSearchingStudentsInGroup.Error(), codes.Internal)
 	}
 
 	log.Info("students in group were successfully found in a database", slog.Int("studentInGroup", len(foundStudents)))

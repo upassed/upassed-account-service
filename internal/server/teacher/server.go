@@ -17,8 +17,8 @@ type teacherServerAPI struct {
 }
 
 type teacherService interface {
-	Create(context.Context, business.Teacher) (business.TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID uuid.UUID) (business.Teacher, error)
+	Create(context.Context, *business.Teacher) (*business.TeacherCreateResponse, error)
+	FindByID(ctx context.Context, teacherID uuid.UUID) (*business.Teacher, error)
 }
 
 func Register(gRPC *grpc.Server, cfg *config.Config, service teacherService) {
