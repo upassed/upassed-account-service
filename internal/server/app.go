@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	logging2 "github.com/upassed/upassed-account-service/internal/middleware/logging"
+	loggingMW "github.com/upassed/upassed-account-service/internal/middleware/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware/recovery"
 	"github.com/upassed/upassed-account-service/internal/middleware/requestid"
 	"github.com/upassed/upassed-account-service/internal/server/group"
@@ -43,7 +43,7 @@ func New(params AppServerCreateParams) *AppServer {
 		grpc.ChainUnaryInterceptor(
 			requestid.MiddlewareInterceptor(),
 			recovery.MiddlewareInterceptor(params.Log),
-			logging2.MiddlewareInterceptor(params.Log),
+			loggingMW.MiddlewareInterceptor(params.Log),
 		),
 	)
 
