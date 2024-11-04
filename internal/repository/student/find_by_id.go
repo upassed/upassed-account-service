@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -42,12 +43,12 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 	if err := searchResult.Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Error("student was not found in the database", logging.Error(err))
-			span.SetAttributes(attribute.String("err", err.Error()))
+			tracing.SetSpanError(span, err)
 			return nil, handling.New(ErrStudentNotFoundByID.Error(), codes.NotFound)
 		}
 
 		log.Error("error while searching student in the database", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, handling.New(errSearchingStudentByID.Error(), codes.Internal)
 	}
 
@@ -55,7 +56,7 @@ func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID
 	log.Info("saving student to cache")
 	if err := repository.cache.Save(spanContext, &foundStudent); err != nil {
 		log.Error("error while saving student to cache", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 	}
 
 	log.Info("student was successfully saved to the cache")

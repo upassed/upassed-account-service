@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -34,14 +35,14 @@ func (client *RedisClient) Save(ctx context.Context, group *domain.Group) error 
 	jsonGroupData, err := json.Marshal(group)
 	if err != nil {
 		log.Error("unable to marshall group data to json format")
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return errMarshallingGroupData
 	}
 
 	log.Info("saving group data to the cache")
 	if err := client.client.Set(ctx, fmt.Sprintf(keyFormat, group.ID.String()), jsonGroupData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
 		log.Error("error while saving group data to the cache", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return errSavingGroupDataToCache
 	}
 

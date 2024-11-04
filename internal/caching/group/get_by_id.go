@@ -9,6 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -35,12 +36,12 @@ func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*dom
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			log.Error("group by id was not found in cache")
-			span.SetAttributes(attribute.String("err", err.Error()))
+			tracing.SetSpanError(span, err)
 			return nil, ErrGroupIsNotPresentInCache
 		}
 
 		log.Error("error while fetching group by id from cache", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, errFetchingGroupFromCache
 	}
 
@@ -48,7 +49,7 @@ func (client *RedisClient) GetByID(ctx context.Context, groupID uuid.UUID) (*dom
 	var group domain.Group
 	if err := json.Unmarshal([]byte(groupData), &group); err != nil {
 		log.Error("error while unmarshalling group data to json", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, errUnmarshallingGroupDataToJson
 	}
 

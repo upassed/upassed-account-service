@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -40,7 +41,7 @@ func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter 
 
 	if err := searchResult.Error; err != nil {
 		log.Error("error while searching groups by filter in the database", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, handling.New(errSearchingGroupByFilter.Error(), codes.Internal)
 	}
 

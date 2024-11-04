@@ -8,6 +8,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -35,7 +36,7 @@ func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.
 		foundStudent, err := service.studentRepository.FindByID(ctx, studentID)
 		if err != nil {
 			log.Error("unable to find student data by id", logging.Error(err))
-			span.SetAttributes(attribute.String("err", err.Error()))
+			tracing.SetSpanError(span, err)
 			return nil, handling.Process(err)
 		}
 
@@ -45,12 +46,12 @@ func (service *studentServiceImpl) FindByID(ctx context.Context, studentID uuid.
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("searching student by id deadline exceeded")
-			span.SetAttributes(attribute.String("err", err.Error()))
+			tracing.SetSpanError(span, err)
 			return nil, handling.Wrap(errFindStudentByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while searching student by id", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, handling.Wrap(err)
 	}
 

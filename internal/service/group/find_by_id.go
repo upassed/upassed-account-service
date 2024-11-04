@@ -9,6 +9,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -38,12 +39,12 @@ func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Error("group searching by id deadline exceeded")
-			span.SetAttributes(attribute.String("err", err.Error()))
+			tracing.SetSpanError(span, err)
 			return nil, handling.Wrap(errFindGroupByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
 		log.Error("error while searching group by id", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, handling.Process(err)
 	}
 

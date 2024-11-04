@@ -6,6 +6,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -35,7 +36,7 @@ func (repository *teacherRepositoryImpl) CheckDuplicateExists(ctx context.Contex
 	countResult := repository.db.WithContext(ctx).Model(&domain.Teacher{}).Where("report_email = ?", reportEmail).Or("username = ?", username).Count(&teacherCount)
 	if err := countResult.Error; err != nil {
 		log.Error("error while counting teachers with report_email and username in database")
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return false, handling.New(errCountingDuplicatesTeacher.Error(), codes.Internal)
 	}
 

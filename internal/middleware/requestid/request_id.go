@@ -1,4 +1,4 @@
-package middleware
+package requestid
 
 import (
 	"context"
@@ -9,18 +9,18 @@ import (
 
 type contextKey string
 
-const RequestIDKey = contextKey("requestID")
+const ContextKey = contextKey("requestID")
 
-func RequestIDMiddlewareInterceptor() grpc.UnaryServerInterceptor {
+func MiddlewareInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		requestID := uuid.New().String()
-		ctx = context.WithValue(ctx, RequestIDKey, requestID)
+		ctx = context.WithValue(ctx, ContextKey, requestID)
 		return handler(ctx, req)
 	}
 }
 
 func GetRequestIDFromContext(ctx context.Context) string {
-	requestID, ok := ctx.Value(RequestIDKey).(string)
+	requestID, ok := ctx.Value(ContextKey).(string)
 	if !ok {
 		return ""
 	}

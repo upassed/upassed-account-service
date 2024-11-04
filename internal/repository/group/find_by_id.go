@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -42,12 +43,12 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 	if err := searchResult.Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Error("group by id was not found in the database", logging.Error(err))
-			span.SetAttributes(attribute.String("err", err.Error()))
+			tracing.SetSpanError(span, err)
 			return nil, handling.New(ErrGroupNotFoundByID.Error(), codes.NotFound)
 		}
 
 		log.Error("error while searching group in the database", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, handling.New(errSearchingGroupByID.Error(), codes.Internal)
 	}
 
@@ -55,7 +56,7 @@ func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uui
 	log.Info("saving group to cache")
 	if err := repository.cache.Save(spanContext, &foundGroup); err != nil {
 		log.Error("error while saving group to cache", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 	}
 
 	log.Info("group was saved to the cache")

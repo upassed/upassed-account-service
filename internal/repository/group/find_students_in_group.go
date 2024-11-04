@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -33,7 +34,7 @@ func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, 
 	searchResult := repository.db.WithContext(ctx).Preload("Group").Where("group_id = ?", groupID).Find(&foundStudents)
 	if err := searchResult.Error; err != nil {
 		log.Error("error while searching students in group in the database", logging.Error(searchResult.Error))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, handling.New(errSearchingStudentsInGroup.Error(), codes.Internal)
 	}
 

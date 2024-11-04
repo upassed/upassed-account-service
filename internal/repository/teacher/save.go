@@ -6,6 +6,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -30,7 +31,7 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher *doma
 	saveResult := repository.db.WithContext(ctx).Create(&teacher)
 	if err := saveResult.Error; err != nil || saveResult.RowsAffected != 1 {
 		log.Error("error while saving teacher data to a database", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return handling.New(ErrSavingTeacher.Error(), codes.Internal)
 	}
 
@@ -38,7 +39,7 @@ func (repository *teacherRepositoryImpl) Save(ctx context.Context, teacher *doma
 	log.Info("saving teacher data into the cache")
 	if err := repository.cache.Save(spanContext, teacher); err != nil {
 		log.Error("unable to insert teacher in cache", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 	}
 
 	log.Info("teacher was saved to the cache")

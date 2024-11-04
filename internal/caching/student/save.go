@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -31,13 +32,13 @@ func (client *RedisClient) Save(ctx context.Context, student *domain.Student) er
 	jsonStudentData, err := json.Marshal(student)
 	if err != nil {
 		log.Error("unable to marshall student data to json format")
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return errMarshallingStudentData
 	}
 
 	if err := client.client.Set(ctx, fmt.Sprintf(keyFormat, student.ID.String()), jsonStudentData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
 		log.Error("unable to save student data to the cache", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return errSavingStudentDataToCache
 	}
 

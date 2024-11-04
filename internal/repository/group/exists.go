@@ -7,6 +7,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
@@ -32,7 +33,7 @@ func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.
 	countResult := repository.db.WithContext(ctx).Model(&domain.Group{}).Where("id = ?", groupID).Count(&groupCount)
 	if err := countResult.Error; err != nil {
 		log.Error("error while counting groups with id in database")
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return false, handling.New(errCheckGroupExists.Error(), codes.Internal)
 	}
 

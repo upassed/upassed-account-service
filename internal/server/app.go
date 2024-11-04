@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	"github.com/upassed/upassed-account-service/internal/middleware"
+	logging2 "github.com/upassed/upassed-account-service/internal/middleware/logging"
+	"github.com/upassed/upassed-account-service/internal/middleware/recovery"
+	"github.com/upassed/upassed-account-service/internal/middleware/requestid"
 	"github.com/upassed/upassed-account-service/internal/server/group"
 	"github.com/upassed/upassed-account-service/internal/server/student"
 	"github.com/upassed/upassed-account-service/internal/server/teacher"
@@ -39,9 +41,9 @@ type AppServerCreateParams struct {
 func New(params AppServerCreateParams) *AppServer {
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			middleware.RequestIDMiddlewareInterceptor(),
-			middleware.PanicRecoveryMiddlewareInterceptor(params.Log),
-			middleware.LoggingMiddlewareInterceptor(params.Log),
+			requestid.MiddlewareInterceptor(),
+			recovery.MiddlewareInterceptor(params.Log),
+			logging2.MiddlewareInterceptor(params.Log),
 		),
 	)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
+	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -35,12 +36,12 @@ func (client *RedisClient) GetByID(ctx context.Context, studentID uuid.UUID) (*d
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			log.Error("student by id was not found in cache")
-			span.SetAttributes(attribute.String("err", err.Error()))
+			tracing.SetSpanError(span, err)
 			return nil, ErrStudentIsNotPresentInCache
 		}
 
 		log.Error("error while fetching student by id from cache", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, errFetchingStudentFromCache
 	}
 
@@ -48,7 +49,7 @@ func (client *RedisClient) GetByID(ctx context.Context, studentID uuid.UUID) (*d
 	var student domain.Student
 	if err := json.Unmarshal([]byte(studentData), &student); err != nil {
 		log.Error("error while unmarshalling student data to json", logging.Error(err))
-		span.SetAttributes(attribute.String("err", err.Error()))
+		tracing.SetSpanError(span, err)
 		return nil, errUnmarshallingStudentDataToJson
 	}
 
