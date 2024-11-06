@@ -32,7 +32,7 @@ func TestConvertApplicationError_WrapOptions(t *testing.T) {
 	wrappedError := handling.Process(applicationError, handling.WithCode(codes.OK))
 
 	st := status.Convert(wrappedError)
-	require.NotNil(t, wrappedError)
+	require.Error(t, wrappedError)
 
 	assert.Equal(t, message, st.Message())
 	assert.Equal(t, code, st.Code())
@@ -55,7 +55,7 @@ func TestCreateAnApplicationError(t *testing.T) {
 
 	applicationError := handling.New(message, code)
 
-	require.NotNil(t, applicationError)
+	require.Error(t, applicationError)
 
 	assert.Equal(t, message, applicationError.Error())
 	assert.Equal(t, message, applicationError.GRPCStatus().Message())

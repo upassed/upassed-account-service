@@ -103,7 +103,7 @@ func TestFindByID_InvalidRequest(t *testing.T) {
 	}
 
 	_, err := teacherClient.FindByID(context.Background(), &request)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.InvalidArgument, convertedError.Code())
@@ -118,7 +118,7 @@ func TestFindByID_ServiceError(t *testing.T) {
 	teacherSvc.On("FindByID", mock.Anything, uuid.MustParse(request.TeacherId)).Return(nil, handling.Process(expectedError))
 
 	_, err := teacherClient.FindByID(context.Background(), &request)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedError.Error(), convertedError.Message())
@@ -138,7 +138,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 	teacherSvc.On("FindByID", mock.Anything, teacherID).Return(foundTeacher, nil)
 
 	response, err := teacherClient.FindByID(context.Background(), &request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, teacherID.String(), response.GetTeacher().GetId())
 

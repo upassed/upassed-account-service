@@ -80,7 +80,7 @@ func TestCreate_ErrorCheckingDuplicateExistsOccurred(t *testing.T) {
 	service := teacher.New(cfg, logger, repository)
 
 	_, err := service.Create(context.Background(), duplicateTeacher)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepoError.Error(), convertedError.Message())
@@ -96,7 +96,7 @@ func TestCreate_DuplicateExists(t *testing.T) {
 	service := teacher.New(cfg, logger, repository)
 
 	_, err := service.Create(context.Background(), duplicateTeacher)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, "teacher duplicate found", convertedError.Message())
@@ -116,7 +116,7 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 	service := teacher.New(cfg, logger, repository)
 
 	_, err := service.Create(context.Background(), teacherToSave)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepoError.Error(), convertedError.Message())
@@ -134,7 +134,7 @@ func TestCreate_HappyPath(t *testing.T) {
 	service := teacher.New(cfg, logger, repository)
 
 	response, err := service.Create(context.Background(), teacherToSave)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, teacherToSave.ID, response.CreatedTeacherID)
 }
@@ -149,7 +149,7 @@ func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	service := teacher.New(cfg, logger, teacherRepository)
 
 	_, err := service.FindByID(context.Background(), teacherID)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepoError.Code(), convertedError.Code())
@@ -166,7 +166,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 	service := teacher.New(cfg, logger, repository)
 
 	foundTeacher, err := service.FindByID(context.Background(), teacherID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, teacher.ConvertToServiceTeacher(expectedFoundTeacher), foundTeacher)
 }

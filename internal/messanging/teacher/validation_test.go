@@ -12,7 +12,7 @@ func TestTeacherCreateRequestEmailValidation_InvalidEmail(t *testing.T) {
 	request.ReportEmail = "invalid-email"
 
 	err := request.Validate()
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestTeacherCreateRequestEmailValidation_EmptyUsername(t *testing.T) {
@@ -20,7 +20,7 @@ func TestTeacherCreateRequestEmailValidation_EmptyUsername(t *testing.T) {
 	request.Username = ""
 
 	err := request.Validate()
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestTeacherCreateRequestEmailValidation_TooLongUsername(t *testing.T) {
@@ -28,7 +28,7 @@ func TestTeacherCreateRequestEmailValidation_TooLongUsername(t *testing.T) {
 	request.Username = gofakeit.LoremIpsumSentence(50)
 
 	err := request.Validate()
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestTeacherCreateRequestEmailValidation_TooShortUsername(t *testing.T) {
@@ -36,5 +36,5 @@ func TestTeacherCreateRequestEmailValidation_TooShortUsername(t *testing.T) {
 	request.Username = "1"
 
 	err := request.Validate()
-	require.NotNil(t, err)
+	require.Error(t, err)
 }

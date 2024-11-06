@@ -103,7 +103,7 @@ func TestCreate_ErrorCheckingDuplicateExists(t *testing.T) {
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
@@ -124,7 +124,7 @@ func TestCreate_DuplicateExists(t *testing.T) {
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, "student duplicate found", convertedError.Message())
@@ -148,7 +148,7 @@ func TestCreate_ErrorCheckingGroupExists(t *testing.T) {
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
@@ -171,7 +171,7 @@ func TestCreate_GroupNotExists(t *testing.T) {
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, "group does not exists by id", convertedError.Message())
@@ -198,7 +198,7 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, groupRepository)
 	_, err := service.Create(context.Background(), studentToCreate)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
@@ -223,7 +223,7 @@ func TestCreate_HappyPath(t *testing.T) {
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, groupRepository)
 	response, err := service.Create(context.Background(), studentToCreate)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, studentToCreate.ID, response.CreatedStudentID)
 }
@@ -237,7 +237,7 @@ func TestFindByID_ErrorSearchingStudentInDatabase(t *testing.T) {
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
 	_, err := service.FindByID(context.Background(), studentID)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
@@ -253,7 +253,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 
 	studentService := student.New(cfg, logging.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
 	response, err := studentService.FindByID(context.Background(), studentID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, foundStudent, student.ConvertToRepositoryStudent(response))
 }

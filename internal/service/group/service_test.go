@@ -90,7 +90,7 @@ func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindStudentsInGroup(context.Background(), groupID)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
@@ -111,7 +111,7 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	actualFoundStudentsInGroup, err := service.FindStudentsInGroup(context.Background(), groupID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, len(expectedStudentsInGroup), len(actualFoundStudentsInGroup))
 }
@@ -125,7 +125,7 @@ func TestFindByID_RepositoryError(t *testing.T) {
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByID(context.Background(), groupID)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
@@ -143,7 +143,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	foundGroup, err := service.FindByID(context.Background(), groupID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, expectedFoundGroup.ID, foundGroup.ID)
 	assert.Equal(t, expectedFoundGroup.SpecializationCode, foundGroup.SpecializationCode)
@@ -163,7 +163,7 @@ func TestFindByFilter_RepositoryError(t *testing.T) {
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByFilter(context.Background(), groupFilter)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedRepositoryError.Error(), convertedError.Message())
@@ -183,7 +183,7 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 
 	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	response, err := service.FindByFilter(context.Background(), groupFilter)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, len(foundMatchedGroups), len(response))
 }

@@ -99,7 +99,7 @@ func TestSave_InvalidUsernameLength(t *testing.T) {
 	studentToSave.Username = gofakeit.LoremIpsumSentence(50)
 
 	err := studentRepository.Save(context.Background(), studentToSave)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.Internal, convertedError.Code())
@@ -112,14 +112,14 @@ func TestSave_HappyPath(t *testing.T) {
 	studentToSave.Group.ID = uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 
 	err := studentRepository.Save(context.Background(), studentToSave)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestFindByID_StudentNotFound(t *testing.T) {
 	randomStudentID := uuid.New()
 
 	_, err := studentRepository.FindByID(context.Background(), randomStudentID)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.NotFound, convertedError.Code())
@@ -133,10 +133,10 @@ func TestFindByID_HappyPath(t *testing.T) {
 	existingStudent.Group.ID = groupID
 
 	err := studentRepository.Save(context.Background(), existingStudent)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	foundStudent, err := studentRepository.FindByID(context.Background(), existingStudent.ID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, existingStudent.ID, foundStudent.ID)
 	assert.Equal(t, existingStudent.FirstName, foundStudent.FirstName)
@@ -153,7 +153,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 func TestCheckDuplicates_DuplicatesNotExists(t *testing.T) {
 	uniqueStudent := util.RandomDomainStudent()
 	duplicatesExists, err := studentRepository.CheckDuplicateExists(context.Background(), uniqueStudent.EducationalEmail, uniqueStudent.Username)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.False(t, duplicatesExists)
 }
 
@@ -164,10 +164,10 @@ func TestCheckDuplicates_DuplicatesExists(t *testing.T) {
 	duplicateStudent.Group.ID = groupID
 
 	err := studentRepository.Save(context.Background(), duplicateStudent)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	duplicatesExists, err := studentRepository.CheckDuplicateExists(context.Background(), duplicateStudent.EducationalEmail, duplicateStudent.Username)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.True(t, duplicatesExists)
 }

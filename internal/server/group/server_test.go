@@ -116,7 +116,7 @@ func TestFindStudentsInGroup_ServiceError(t *testing.T) {
 	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(nil, handling.Process(expectedError))
 
 	_, err := groupClient.FindStudentsInGroup(context.Background(), &request)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedError.Error(), convertedError.Message())
@@ -139,7 +139,7 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(studentsInGroup, nil)
 
 	response, err := groupClient.FindStudentsInGroup(context.Background(), &request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, len(studentsInGroup), len(response.GetStudentsInGroup()))
 	for idx := range studentsInGroup {
@@ -158,7 +158,7 @@ func TestFindByID_ServiceLayerError(t *testing.T) {
 	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(nil, expectedError)
 
 	_, err := groupClient.FindByID(context.Background(), &request)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedError.Error(), convertedError.Message())
@@ -176,7 +176,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(expectedFoundGroup, nil)
 
 	response, err := groupClient.FindByID(context.Background(), &request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, expectedFoundGroup.ID.String(), response.GetGroup().GetId())
 	assert.Equal(t, expectedFoundGroup.SpecializationCode, response.GetGroup().GetSpecializationCode())
@@ -192,7 +192,7 @@ func TestFindByFilter_InvalidRequest(t *testing.T) {
 	}
 
 	_, err := groupClient.SearchByFilter(context.Background(), &request)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.InvalidArgument, convertedError.Code())
@@ -210,7 +210,7 @@ func TestFindByFilter_ServiceError(t *testing.T) {
 	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return(nil, expectedServiceError)
 
 	_, err := groupClient.SearchByFilter(context.Background(), &request)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.DeadlineExceeded, convertedError.Code())
@@ -234,7 +234,7 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return(expectedMatchedGroups, nil)
 
 	response, err := groupClient.SearchByFilter(context.Background(), &request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, len(expectedMatchedGroups), len(response.MatchedGroups))
 	for idx := range expectedMatchedGroups {

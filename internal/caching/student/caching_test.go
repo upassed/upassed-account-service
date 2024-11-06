@@ -70,10 +70,10 @@ func TestSaveStudent_HappyPath(t *testing.T) {
 	studentToSave := util.RandomDomainStudent()
 	ctx := context.Background()
 	err := redisClient.Save(ctx, studentToSave)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	studentFromCache, err := redisClient.GetByID(ctx, studentToSave.ID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, *studentToSave, *studentFromCache)
 }
@@ -81,7 +81,7 @@ func TestSaveStudent_HappyPath(t *testing.T) {
 func TestFindStudentByID_StudentNotFound(t *testing.T) {
 	studentID := uuid.New()
 	foundStudent, err := redisClient.GetByID(context.Background(), studentID)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	assert.ErrorIs(t, err, student.ErrStudentIsNotPresentInCache)
 	assert.Nil(t, foundStudent)

@@ -97,21 +97,21 @@ func TestMain(m *testing.M) {
 func TestExists_GroupNotExists(t *testing.T) {
 	groupID := uuid.New()
 	exists, err := groupRepository.Exists(context.Background(), groupID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.False(t, exists)
 }
 
 func TestExists_GroupExists(t *testing.T) {
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 	exists, err := groupRepository.Exists(context.Background(), groupID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.True(t, exists)
 }
 
 func TestFindStudentsInGroup_StudentsNotFound(t *testing.T) {
 	groupID := uuid.New()
 	studentsInGroup, err := groupRepository.FindStudentsInGroup(context.Background(), groupID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 0, len(studentsInGroup))
 }
 
@@ -122,7 +122,7 @@ func TestFindStudentsInGroup_StudentsExistsInGroup(t *testing.T) {
 func TestFindByID_GroupNotFound(t *testing.T) {
 	groupID := uuid.New()
 	_, err := groupRepository.FindByID(context.Background(), groupID)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.NotFound, convertedError.Code())
@@ -132,7 +132,7 @@ func TestFindByID_GroupNotFound(t *testing.T) {
 func TestFindByID_GroupFound(t *testing.T) {
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 	foundGroup, err := groupRepository.FindByID(context.Background(), groupID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, groupID, foundGroup.ID)
 	assert.Equal(t, "5130904", foundGroup.SpecializationCode)
@@ -146,7 +146,7 @@ func TestFindByFilter_NothingMatched(t *testing.T) {
 	}
 
 	matchedGroups, err := groupRepository.FindByFilter(context.Background(), &filter)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, 0, len(matchedGroups))
 }
@@ -158,7 +158,7 @@ func TestFindByFilter_HasMatchedGroups(t *testing.T) {
 	}
 
 	matchedGroups, err := groupRepository.FindByFilter(context.Background(), &filter)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, 1, len(matchedGroups))
 	assert.Equal(t, uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233"), matchedGroups[0].ID)
