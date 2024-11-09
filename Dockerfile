@@ -13,6 +13,6 @@ COPY --from=builder /app/upassed-account-service /upassed-account-service/upasse
 COPY --from=builder /app/config/dev.yml /upassed-account-service/config/dev.yml
 COPY --from=builder /app/migration/scripts/* /upassed-account-service/migration/scripts
 RUN chmod +x /upassed-account-service/upassed-account-service
-ENV APP_CONFIG_PATH="/upassed-account-service/config/dev.yml"
+ENV APP_CONFIG_PATH="/upassed-account-service/config/local.yml"
 EXPOSE 44044
 CMD ["/upassed-account-service/upassed-account-service"]
