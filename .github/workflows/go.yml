@@ -123,6 +123,7 @@ jobs:
               -e RABBIT_STUDENT_CREATE_QUEUE_ROUTING_KEY=${{ secrets.RABBIT_STUDENT_CREATE_QUEUE_ROUTING_KEY }} \
               -e RABBIT_TEACHER_CREATE_QUEUE_NAME=${{ secrets.RABBIT_TEACHER_CREATE_QUEUE_NAME }} \
               -e RABBIT_TEACHER_CREATE_QUEUE_ROUTING_KEY=${{ secrets.RABBIT_TEACHER_CREATE_QUEUE_ROUTING_KEY }} \
+              -- network upassed \
               -p ${{ secrets.GRPC_SERVER_PORT }}:${{ secrets.GRPC_SERVER_PORT }} \
               ${{ secrets.DOCKER_USERNAME }}/upassed-account-service:latest
           EOF
