@@ -6,7 +6,7 @@ import (
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/messanging"
 	"github.com/upassed/upassed-account-service/internal/middleware/amqp"
-	"github.com/upassed/upassed-account-service/internal/middleware/grpc/requestid"
+	requestid "github.com/upassed/upassed-account-service/internal/middleware/common/request_id"
 	"github.com/wagslane/go-rabbitmq"
 	"log/slog"
 	"time"

@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware/amqp"
-	logging2 "github.com/upassed/upassed-account-service/internal/middleware/amqp/logging"
+	loggingMiddleware "github.com/upassed/upassed-account-service/internal/middleware/amqp/logging"
 	"github.com/upassed/upassed-account-service/internal/middleware/amqp/recovery"
-	requestid2 "github.com/upassed/upassed-account-service/internal/middleware/amqp/request_id"
-	"github.com/upassed/upassed-account-service/internal/middleware/grpc/requestid"
+	requestidMiddleware "github.com/upassed/upassed-account-service/internal/middleware/amqp/request_id"
+	"github.com/upassed/upassed-account-service/internal/middleware/common/request_id"
 	"github.com/upassed/upassed-account-service/internal/tracing"
 	"github.com/wagslane/go-rabbitmq"
 	"go.opentelemetry.io/otel"
@@ -57,9 +57,9 @@ func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabb
 
 	handlerWithMiddleware := amqp.ChainMiddleware(
 		baseHandler,
-		requestid2.Middleware(),
+		requestidMiddleware.Middleware(),
 		recovery.Middleware(client.log),
-		logging2.Middleware(client.log),
+		loggingMiddleware.Middleware(client.log),
 	)
 
 	return func(d rabbitmq.Delivery) (action rabbitmq.Action) {

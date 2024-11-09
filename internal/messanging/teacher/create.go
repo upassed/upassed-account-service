@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	"github.com/upassed/upassed-account-service/internal/middleware/grpc/requestid"
+	requestid "github.com/upassed/upassed-account-service/internal/middleware/common/request_id"
 	"github.com/upassed/upassed-account-service/internal/tracing"
 	"github.com/wagslane/go-rabbitmq"
 	"go.opentelemetry.io/otel"
