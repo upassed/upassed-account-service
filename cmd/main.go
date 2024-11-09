@@ -20,7 +20,7 @@ func main() {
 		log.Println("error while loading env variables: ", err.Error())
 	}
 
-	if err := os.Setenv(config.EnvConfigPath, filepath.Join("config", "local.yml")); err != nil {
+	if err := os.Setenv(config.EnvConfigPath, filepath.Join("config", "dev.yml")); err != nil {
 		log.Fatal(err)
 	}
 

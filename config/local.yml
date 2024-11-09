@@ -1,4 +1,4 @@
-env: "dev"
+env: "local"
 application_name: upassed-account-service
 storage:
     host: ${POSTGRES_HOST}
