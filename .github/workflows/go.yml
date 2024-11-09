@@ -56,6 +56,7 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -70,3 +71,57 @@ jobs:
       - name: Push Docker image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/upassed-account-service:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - name: Install SSH client
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Deploy Docker Container on Remote Server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: root
+          SERVER_PASSWORD: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
+            docker stop upassed-account-service || true
+            docker rm upassed-account-service || true
+            docker rmi ${{ secrets.DOCKER_USERNAME }}/upassed-account-service:latest || true
+            docker pull ${{ secrets.DOCKER_USERNAME }}/upassed-account-service:latest
+            docker run -d --name upassed-account-service \
+              -e POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
+              -e POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} \
+              -e POSTGRES_DATABASE_NAME=${{ secrets.POSTGRES_DATABASE_NAME }} \
+              -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+              -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+              -e GRPC_SERVER_PORT=${{ secrets.GRPC_SERVER_PORT }} \
+              -e GRPC_SERVER_TIMEOUT=${{ secrets.GRPC_SERVER_TIMEOUT }} \
+              -e MIGRATIONS_PATH=${{ secrets.MIGRATIONS_PATH }} \
+              -e MIGRATIONS_TABLE_NAME=${{ secrets.MIGRATIONS_TABLE_NAME }} \
+              -e ENDPOINT_EXECUTION_TIMEOUT_MS=${{ secrets.ENDPOINT_EXECUTION_TIMEOUT_MS }} \
+              -e JAEGER_HOST=${{ secrets.JAEGER_HOST }} \
+              -e JAEGER_PORT=${{ secrets.JAEGER_PORT }} \
+              -e GROUP_TRACER_NAME=${{ secrets.GROUP_TRACER_NAME }} \
+              -e STUDENT_TRACER_NAME=${{ secrets.STUDENT_TRACER_NAME }} \
+              -e TEACHER_TRACER_NAME=${{ secrets.TEACHER_TRACER_NAME }} \
+              -e REDIS_USER=${{ secrets.REDIS_USER }} \
+              -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+              -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
+              -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
+              -e REDIS_DATABASE_NUMBER=${{ secrets.REDIS_DATABASE_NUMBER }} \
+              -e REDIS_ENTITY_TTL=${{ secrets.REDIS_ENTITY_TTL }} \
+              -e RABBIT_USER=${{ secrets.RABBIT_USER }} \
+              -e RABBIT_PASSWORD=${{ secrets.RABBIT_PASSWORD }} \
+              -e RABBIT_HOST=${{ secrets.RABBIT_HOST }} \
+              -e RABBIT_PORT=${{ secrets.RABBIT_PORT }} \
+              -e RABBIT_EXCHANGE_NAME=${{ secrets.RABBIT_EXCHANGE_NAME }} \
+              -e RABBIT_EXCHANGE_TYPE=${{ secrets.RABBIT_EXCHANGE_TYPE }} \
+              -e RABBIT_STUDENT_CREATE_QUEUE_NAME=${{ secrets.RABBIT_STUDENT_CREATE_QUEUE_NAME }} \
+              -e RABBIT_STUDENT_CREATE_QUEUE_ROUTING_KEY=${{ secrets.RABBIT_STUDENT_CREATE_QUEUE_ROUTING_KEY }} \
+              -e RABBIT_TEACHER_CREATE_QUEUE_NAME=${{ secrets.RABBIT_TEACHER_CREATE_QUEUE_NAME }} \
+              -e RABBIT_TEACHER_CREATE_QUEUE_ROUTING_KEY=${{ secrets.RABBIT_TEACHER_CREATE_QUEUE_ROUTING_KEY }} \
+              -p ${{ secrets.GRPC_SERVER_PORT }}:${{ secrets.GRPC_SERVER_PORT }} \
+              ${{ secrets.DOCKER_USERNAME }}/upassed-account-service:latest
+          EOF
