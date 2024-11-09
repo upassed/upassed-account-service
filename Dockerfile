@@ -10,7 +10,7 @@ RUN apk --no-cache add ca-certificates
 RUN mkdir -p /upassed-account-service/config
 RUN mkdir -p /upassed-account-service/migration/scripts
 COPY --from=builder /app/upassed-account-service /upassed-account-service/upassed-account-service
-COPY --from=builder /app/config/dev.yml /upassed-account-service/config/dev.yml
+COPY --from=builder /app/config/* /upassed-account-service/config
 COPY --from=builder /app/migration/scripts/* /upassed-account-service/migration/scripts
 RUN chmod +x /upassed-account-service/upassed-account-service
 ENV APP_CONFIG_PATH="/upassed-account-service/config/local.yml"
