@@ -17,11 +17,17 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Println("error while loading env variables: ", err.Error())
+		log.Println("error while loading env variables:", err.Error())
 	}
 
-	if err := os.Setenv(config.EnvConfigPath, filepath.Join("config", "dev.yml")); err != nil {
-		log.Fatal(err)
+	configFilePath := os.Getenv(config.EnvConfigPath)
+	if configFilePath == "" {
+		log.Println("using local config file path")
+
+		configFilePath = filepath.Join("config", "local.yml")
+		if err := os.Setenv(config.EnvConfigPath, configFilePath); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	cfg, err := config.Load()
