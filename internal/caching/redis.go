@@ -30,14 +30,14 @@ func OpenRedisConnection(cfg *config.Config, log *slog.Logger) (*redis.Client, e
 	redisDatabase := redis.NewClient(&redis.Options{
 		Addr:     net.JoinHostPort(cfg.Redis.Host, cfg.Redis.Port),
 		Username: cfg.Redis.User,
-		Password: cfg.Redis.DatabaseNumber,
+		Password: cfg.Redis.Password,
 		DB:       databaseNumber,
 	})
 
 	log.Info("pinging redis database")
 	if _, err := redisDatabase.Ping(context.Background()).Result(); err != nil {
 		log.Error("unable to ping redis database", logging.Error(err))
-		// TODO return nil, errCreatingRedisClient
+		return nil, errCreatingRedisClient
 	}
 
 	log.Info("redis client successfully created")
