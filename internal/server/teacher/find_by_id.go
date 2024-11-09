@@ -2,7 +2,7 @@ package teacher
 
 import (
 	"context"
-	"github.com/upassed/upassed-account-service/internal/middleware/requestid"
+	"github.com/upassed/upassed-account-service/internal/middleware/grpc/requestid"
 	"github.com/upassed/upassed-account-service/internal/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"

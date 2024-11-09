@@ -2,9 +2,12 @@ package student
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	"github.com/upassed/upassed-account-service/internal/middleware/requestid"
+	"github.com/upassed/upassed-account-service/internal/middleware/amqp"
+	logging2 "github.com/upassed/upassed-account-service/internal/middleware/amqp/logging"
+	"github.com/upassed/upassed-account-service/internal/middleware/amqp/recovery"
+	requestid2 "github.com/upassed/upassed-account-service/internal/middleware/amqp/request_id"
+	"github.com/upassed/upassed-account-service/internal/middleware/grpc/requestid"
 	"github.com/upassed/upassed-account-service/internal/tracing"
 	"github.com/wagslane/go-rabbitmq"
 	"go.opentelemetry.io/otel"
@@ -13,10 +16,7 @@ import (
 )
 
 func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabbitmq.Action {
-	return func(delivery rabbitmq.Delivery) rabbitmq.Action {
-		requestID := uuid.New().String()
-		ctx := context.WithValue(context.Background(), requestid.ContextKey, requestID)
-
+	baseHandler := func(ctx context.Context, delivery rabbitmq.Delivery) rabbitmq.Action {
 		log := logging.Wrap(client.log,
 			logging.WithOp(client.CreateQueueConsumer),
 			logging.WithCtx(ctx),
@@ -53,5 +53,17 @@ func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabb
 
 		log.Info("successfully created student", slog.Any("createdStudentID", response.CreatedStudentID))
 		return rabbitmq.Ack
+	}
+
+	handlerWithMiddleware := amqp.ChainMiddleware(
+		baseHandler,
+		requestid2.Middleware(),
+		recovery.Middleware(client.log),
+		logging2.Middleware(client.log),
+	)
+
+	return func(d rabbitmq.Delivery) (action rabbitmq.Action) {
+		ctx := context.Background()
+		return handlerWithMiddleware(ctx, d)
 	}
 }
