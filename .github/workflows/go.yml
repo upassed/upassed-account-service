@@ -90,9 +90,6 @@ jobs:
             docker rm upassed-account-service || true
             docker rmi ${{ secrets.DOCKER_USERNAME }}/upassed-account-service:latest || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/upassed-account-service:latest
-            
-            docker run -d --name upassed-account-service-TEST -p ${{ secrets.GRPC_SERVER_PORT }}:${{ secrets.GRPC_SERVER_PORT }} \
-              ${{ secrets.DOCKER_USERNAME }}/upassed-account-service:latest
           
             docker run -d --name upassed-account-service \
               -e POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \

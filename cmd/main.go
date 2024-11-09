@@ -17,7 +17,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal(err)
+		log.Println("error while loading env variables: ", err.Error())
 	}
 
 	if err := os.Setenv(config.EnvConfigPath, filepath.Join("config", "local.yml")); err != nil {
