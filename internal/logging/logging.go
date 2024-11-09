@@ -72,7 +72,7 @@ func Wrap(log *slog.Logger, options ...Option) *slog.Logger {
 	}
 
 	if opts.opName != nil {
-		log = log.With(slog.String("op", runtime.FuncForPC(reflect.ValueOf(opts.opName).Pointer()).Name()))
+		opts.attributes["op"] = runtime.FuncForPC(reflect.ValueOf(opts.opName).Pointer()).Name()
 	}
 
 	if opts.ctx != nil {
