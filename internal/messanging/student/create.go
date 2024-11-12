@@ -58,8 +58,8 @@ func (client *rabbitClient) CreateQueueConsumer() func(d rabbitmq.Delivery) rabb
 	handlerWithMiddleware := amqp.ChainMiddleware(
 		baseHandler,
 		requestidMiddleware.Middleware(),
-		recovery.Middleware(client.log),
 		loggingMiddleware.Middleware(client.log),
+		recovery.Middleware(client.log),
 	)
 
 	return func(d rabbitmq.Delivery) (action rabbitmq.Action) {

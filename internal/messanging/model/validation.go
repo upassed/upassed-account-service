@@ -16,7 +16,7 @@ func ValidateUUID() func(fl validator.FieldLevel) bool {
 func ValidateUsername() func(fl validator.FieldLevel) bool {
 	return func(fl validator.FieldLevel) bool {
 		usernameToValidate := fl.Field().String()
-		usernameExpression := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]$`)
+		usernameExpression := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]+$`)
 		return usernameExpression.MatchString(usernameToValidate)
 	}
 }

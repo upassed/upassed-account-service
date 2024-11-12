@@ -12,9 +12,17 @@ func ExecuteWithTimeout[T any](parentContext context.Context, timeout time.Durat
 
 	errGroup, errGroupContext := errgroup.WithContext(ctxWithTimeout)
 	resultChannel := make(chan T)
+	panicChannel := make(chan interface{})
 
 	var callableResult T
+
 	errGroup.Go(func() error {
+		defer func() {
+			if r := recover(); r != nil {
+				panicChannel <- r
+			}
+		}()
+
 		result, err := callable(errGroupContext)
 		if err != nil {
 			return err
@@ -37,6 +45,8 @@ func ExecuteWithTimeout[T any](parentContext context.Context, timeout time.Durat
 		if err := errGroup.Wait(); err != nil {
 			return callableResult, err
 		}
+	case p := <-panicChannel:
+		panic(p)
 	}
 
 	if err := errGroup.Wait(); err != nil {
