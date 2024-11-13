@@ -3,7 +3,6 @@ package teacher
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/async"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
@@ -15,27 +14,27 @@ import (
 )
 
 var (
-	errFindTeacherByIDDeadlineExceeded = errors.New("find teacher by id deadline exceeded")
+	errFindTeacherByUsernameDeadlineExceeded = errors.New("find teacher by username deadline exceeded")
 )
 
-func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.UUID) (*business.Teacher, error) {
-	spanContext, span := otel.Tracer(service.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherService#FindByID")
-	span.SetAttributes(attribute.String("id", teacherID.String()))
+func (service *teacherServiceImpl) FindByUsername(ctx context.Context, teacherUsername string) (*business.Teacher, error) {
+	spanContext, span := otel.Tracer(service.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherService#FindByUsername")
+	span.SetAttributes(attribute.String("teacherUsername", teacherUsername))
 	defer span.End()
 
 	log := logging.Wrap(service.log,
-		logging.WithOp(service.FindByID),
+		logging.WithOp(service.FindByUsername),
 		logging.WithCtx(ctx),
-		logging.WithAny("teacherID", teacherID),
+		logging.WithAny("teacherUsername", teacherUsername),
 	)
 
-	log.Info("started finding teacher by id")
+	log.Info("started finding teacher by username")
 	timeout := service.cfg.GetEndpointExecutionTimeout()
 	foundTeacher, err := async.ExecuteWithTimeout(spanContext, timeout, func(ctx context.Context) (*business.Teacher, error) {
 		log.Info("finding teacher data")
-		foundTeacher, err := service.repository.FindByID(ctx, teacherID)
+		foundTeacher, err := service.repository.FindByUsername(ctx, teacherUsername)
 		if err != nil {
-			log.Error("error while finding teacher data by id", logging.Error(err))
+			log.Error("error while finding teacher data by username", logging.Error(err))
 			tracing.SetSpanError(span, err)
 			return nil, handling.Process(err)
 		}
@@ -45,16 +44,16 @@ func (service *teacherServiceImpl) FindByID(ctx context.Context, teacherID uuid.
 
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			log.Error("find teacher by id deadline exceeded")
+			log.Error("find teacher by username deadline exceeded")
 			tracing.SetSpanError(span, err)
-			return nil, handling.Wrap(errFindTeacherByIDDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
+			return nil, handling.Wrap(errFindTeacherByUsernameDeadlineExceeded, handling.WithCode(codes.DeadlineExceeded))
 		}
 
-		log.Error("error while finding teacher by id", logging.Error(err))
+		log.Error("error while finding teacher by username", logging.Error(err))
 		tracing.SetSpanError(span, err)
 		return nil, handling.Wrap(err)
 	}
 
-	log.Info("teacher successfully found by id")
+	log.Info("teacher successfully found by username")
 	return foundTeacher, nil
 }

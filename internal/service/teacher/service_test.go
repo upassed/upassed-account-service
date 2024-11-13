@@ -2,6 +2,7 @@ package teacher_test
 
 import (
 	"context"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
@@ -32,6 +33,16 @@ func (m *mockTeacherRepository) Save(ctx context.Context, teacher *domain.Teache
 
 func (m *mockTeacherRepository) FindByID(ctx context.Context, teacherID uuid.UUID) (*domain.Teacher, error) {
 	args := m.Called(ctx, teacherID)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*domain.Teacher), args.Error(1)
+}
+
+func (m *mockTeacherRepository) FindByUsername(ctx context.Context, teacherUsername string) (*domain.Teacher, error) {
+	args := m.Called(ctx, teacherUsername)
 
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -123,6 +134,28 @@ func TestCreate_ErrorSavingToDatabase(t *testing.T) {
 	assert.Equal(t, expectedRepoError.Code(), convertedError.Code())
 }
 
+func TestCreate_DeadlineExceeded(t *testing.T) {
+	oldTimeout := cfg.Timeouts.EndpointExecutionTimeoutMS
+	cfg.Timeouts.EndpointExecutionTimeoutMS = "0"
+
+	logger := logging.New(config.EnvTesting)
+	repository := new(mockTeacherRepository)
+	teacherToSave := util.RandomBusinessTeacher()
+
+	repository.On("CheckDuplicateExists", mock.Anything, teacherToSave.ReportEmail, teacherToSave.Username).Return(false, nil)
+	repository.On("Save", mock.Anything, mock.Anything).Return(nil)
+
+	service := teacher.New(cfg, logger, repository)
+
+	_, err := service.Create(context.Background(), teacherToSave)
+	require.Error(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, codes.DeadlineExceeded, convertedError.Code())
+
+	cfg.Timeouts.EndpointExecutionTimeoutMS = oldTimeout
+}
+
 func TestCreate_HappyPath(t *testing.T) {
 	logger := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
@@ -139,16 +172,16 @@ func TestCreate_HappyPath(t *testing.T) {
 	assert.Equal(t, teacherToSave.ID, response.CreatedTeacherID)
 }
 
-func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
+func TestFindByUsername_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	logger := logging.New(config.EnvTesting)
 	teacherRepository := new(mockTeacherRepository)
-	teacherID := uuid.New()
+	teacherUsername := gofakeit.Username()
 
 	expectedRepoError := handling.New("repo layer error message", codes.NotFound)
-	teacherRepository.On("FindByID", mock.Anything, teacherID).Return(nil, expectedRepoError)
+	teacherRepository.On("FindByUsername", mock.Anything, teacherUsername).Return(nil, expectedRepoError)
 	service := teacher.New(cfg, logger, teacherRepository)
 
-	_, err := service.FindByID(context.Background(), teacherID)
+	_, err := service.FindByUsername(context.Background(), teacherUsername)
 	require.Error(t, err)
 
 	convertedError := status.Convert(err)
@@ -156,16 +189,37 @@ func TestFindByID_ErrorSearchingTeacherInDatabase(t *testing.T) {
 	assert.Equal(t, expectedRepoError.Error(), convertedError.Message())
 }
 
-func TestFindByID_HappyPath(t *testing.T) {
+func TestFindByUsername_ErrorDeadlineExceeded(t *testing.T) {
+	oldTimeout := cfg.Timeouts.EndpointExecutionTimeoutMS
+	cfg.Timeouts.EndpointExecutionTimeoutMS = "0"
+
 	logger := logging.New(config.EnvTesting)
 	repository := new(mockTeacherRepository)
-	teacherID := uuid.New()
+	teacherUsername := gofakeit.Username()
 	expectedFoundTeacher := teacher.ConvertToRepositoryTeacher(util.RandomBusinessTeacher())
 
-	repository.On("FindByID", mock.Anything, teacherID).Return(expectedFoundTeacher, nil)
+	repository.On("FindByUsername", mock.Anything, teacherUsername).Return(expectedFoundTeacher, nil)
 	service := teacher.New(cfg, logger, repository)
 
-	foundTeacher, err := service.FindByID(context.Background(), teacherID)
+	_, err := service.FindByUsername(context.Background(), teacherUsername)
+	require.Error(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, codes.DeadlineExceeded, convertedError.Code())
+
+	cfg.Timeouts.EndpointExecutionTimeoutMS = oldTimeout
+}
+
+func TestFindByUsername_HappyPath(t *testing.T) {
+	logger := logging.New(config.EnvTesting)
+	repository := new(mockTeacherRepository)
+	teacherUsername := gofakeit.Username()
+	expectedFoundTeacher := teacher.ConvertToRepositoryTeacher(util.RandomBusinessTeacher())
+
+	repository.On("FindByUsername", mock.Anything, teacherUsername).Return(expectedFoundTeacher, nil)
+	service := teacher.New(cfg, logger, repository)
+
+	foundTeacher, err := service.FindByUsername(context.Background(), teacherUsername)
 	require.NoError(t, err)
 
 	assert.Equal(t, teacher.ConvertToServiceTeacher(expectedFoundTeacher), foundTeacher)

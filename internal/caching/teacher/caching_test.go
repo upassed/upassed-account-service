@@ -2,7 +2,7 @@ package teacher_test
 
 import (
 	"context"
-	"github.com/google/uuid"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/caching"
@@ -72,17 +72,28 @@ func TestSaveTeacher_HappyPath(t *testing.T) {
 	err := redisClient.Save(ctx, teacherToSave)
 	require.NoError(t, err)
 
-	teacherFromCache, err := redisClient.GetByID(ctx, teacherToSave.ID)
+	teacherFromCache, err := redisClient.GetByUsername(ctx, teacherToSave.Username)
 	require.NoError(t, err)
 
 	assert.Equal(t, *teacherToSave, *teacherFromCache)
 }
 
-func TestFindTeacherByID_TeacherNotFound(t *testing.T) {
-	teacherID := uuid.New()
-	foundTeacher, err := redisClient.GetByID(context.Background(), teacherID)
+func TestFindTeacherByUsername_TeacherNotFound(t *testing.T) {
+	teacherUsername := gofakeit.Username()
+	foundTeacher, err := redisClient.GetByUsername(context.Background(), teacherUsername)
 	require.Error(t, err)
 
-	assert.ErrorIs(t, err, teacher.ErrTeacherIsNotPresentInCache)
+	assert.ErrorIs(t, err, teacher.ErrTeacherUsernameIsNotPresentInCache)
 	assert.Nil(t, foundTeacher)
+}
+
+func TestFindTeacherByUsername_TeacherFound(t *testing.T) {
+	teacherToSave := util.RandomDomainTeacher()
+	ctx := context.Background()
+	err := redisClient.Save(ctx, teacherToSave)
+	require.NoError(t, err)
+
+	foundTeacher, err := redisClient.GetByUsername(ctx, teacherToSave.Username)
+	require.NoError(t, err)
+	assert.NotNil(t, foundTeacher)
 }

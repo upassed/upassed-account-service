@@ -2,7 +2,6 @@ package teacher
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/caching/teacher"
 	"github.com/upassed/upassed-account-service/internal/config"
@@ -14,7 +13,7 @@ import (
 type Repository interface {
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 	Save(context.Context, *domain.Teacher) error
-	FindByID(context.Context, uuid.UUID) (*domain.Teacher, error)
+	FindByUsername(context.Context, string) (*domain.Teacher, error)
 }
 
 type teacherRepositoryImpl struct {

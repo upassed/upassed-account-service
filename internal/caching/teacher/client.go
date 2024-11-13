@@ -12,7 +12,9 @@ type RedisClient struct {
 	client *redis.Client
 }
 
-const keyFormat = "teacher:%s"
+const (
+	usernameKeyFormat = "teacherUsername:%s"
+)
 
 func New(client *redis.Client, cfg *config.Config, log *slog.Logger) *RedisClient {
 	return &RedisClient{

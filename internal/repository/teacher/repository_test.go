@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
@@ -113,23 +112,23 @@ func TestSave_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestFindByID_TeacherNotFound(t *testing.T) {
-	randomTeacherID := uuid.New()
+func TestFindByUsername_TeacherNotFound(t *testing.T) {
+	randomTeacherUsername := gofakeit.Username()
 
-	_, err := teacherRepository.FindByID(context.Background(), randomTeacherID)
+	_, err := teacherRepository.FindByUsername(context.Background(), randomTeacherUsername)
 	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-	assert.Equal(t, teacher.ErrTeacherNotFoundByID.Error(), convertedError.Message())
+	assert.Equal(t, teacher.ErrTeacherNotFoundByUsername.Error(), convertedError.Message())
 }
 
-func TestFindByID_HappyPath(t *testing.T) {
+func TestFindByUsername_HappyPath(t *testing.T) {
 	existingTeacher := util.RandomDomainTeacher()
 	err := teacherRepository.Save(context.Background(), existingTeacher)
 	require.NoError(t, err)
 
-	foundTeacher, err := teacherRepository.FindByID(context.Background(), existingTeacher.ID)
+	foundTeacher, err := teacherRepository.FindByUsername(context.Background(), existingTeacher.Username)
 	require.NoError(t, err)
 
 	assert.Equal(t, existingTeacher.ID, foundTeacher.ID)

@@ -8,13 +8,13 @@ import "model.proto";
 option go_package = "upassed.account.v1;client";
 
 service Teacher {
-    rpc FindByID(TeacherFindByIDRequest) returns (TeacherFindByIDResponse);
+  rpc FindByUsername(TeacherFindByUsernameRequest) returns (TeacherFindByUsernameResponse);
 }
 
-message TeacherFindByIDRequest {
-    string teacher_id = 1 [(validate.rules).string.uuid = true];
+message TeacherFindByUsernameRequest {
+  string teacher_username = 1 [(validate.rules).string = {min_len: 4, max_len: 30}];
 }
 
-message TeacherFindByIDResponse {
-    TeacherDTO teacher = 1;
+message TeacherFindByUsernameResponse {
+  TeacherDTO teacher = 1;
 }

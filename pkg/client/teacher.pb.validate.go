@@ -35,36 +35,32 @@ var (
 	_ = sort.Sort
 )
 
-// define the regex for a UUID once up-front
-var _teacher_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-
-// Validate checks the field values on TeacherFindByIDRequest with the rules
-// defined in the proto definition for this message. If any rules are
+// Validate checks the field values on TeacherFindByUsernameRequest with the
+// rules defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
-func (m *TeacherFindByIDRequest) Validate() error {
+func (m *TeacherFindByUsernameRequest) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on TeacherFindByIDRequest with the rules
-// defined in the proto definition for this message. If any rules are
+// ValidateAll checks the field values on TeacherFindByUsernameRequest with the
+// rules defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// TeacherFindByIDRequestMultiError, or nil if none found.
-func (m *TeacherFindByIDRequest) ValidateAll() error {
+// TeacherFindByUsernameRequestMultiError, or nil if none found.
+func (m *TeacherFindByUsernameRequest) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *TeacherFindByIDRequest) validate(all bool) error {
+func (m *TeacherFindByUsernameRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
 
 	var errors []error
 
-	if err := m._validateUuid(m.GetTeacherId()); err != nil {
-		err = TeacherFindByIDRequestValidationError{
-			field:  "TeacherId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+	if l := utf8.RuneCountInString(m.GetTeacherUsername()); l < 4 || l > 30 {
+		err := TeacherFindByUsernameRequestValidationError{
+			field:  "TeacherUsername",
+			reason: "value length must be between 4 and 30 runes, inclusive",
 		}
 		if !all {
 			return err
@@ -73,27 +69,19 @@ func (m *TeacherFindByIDRequest) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return TeacherFindByIDRequestMultiError(errors)
+		return TeacherFindByUsernameRequestMultiError(errors)
 	}
 
 	return nil
 }
 
-func (m *TeacherFindByIDRequest) _validateUuid(uuid string) error {
-	if matched := _teacher_uuidPattern.MatchString(uuid); !matched {
-		return errors.New("invalid uuid format")
-	}
-
-	return nil
-}
-
-// TeacherFindByIDRequestMultiError is an error wrapping multiple validation
-// errors returned by TeacherFindByIDRequest.ValidateAll() if the designated
-// constraints aren't met.
-type TeacherFindByIDRequestMultiError []error
+// TeacherFindByUsernameRequestMultiError is an error wrapping multiple
+// validation errors returned by TeacherFindByUsernameRequest.ValidateAll() if
+// the designated constraints aren't met.
+type TeacherFindByUsernameRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m TeacherFindByIDRequestMultiError) Error() string {
+func (m TeacherFindByUsernameRequestMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -102,11 +90,12 @@ func (m TeacherFindByIDRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m TeacherFindByIDRequestMultiError) AllErrors() []error { return m }
+func (m TeacherFindByUsernameRequestMultiError) AllErrors() []error { return m }
 
-// TeacherFindByIDRequestValidationError is the validation error returned by
-// TeacherFindByIDRequest.Validate if the designated constraints aren't met.
-type TeacherFindByIDRequestValidationError struct {
+// TeacherFindByUsernameRequestValidationError is the validation error returned
+// by TeacherFindByUsernameRequest.Validate if the designated constraints
+// aren't met.
+type TeacherFindByUsernameRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -114,24 +103,24 @@ type TeacherFindByIDRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e TeacherFindByIDRequestValidationError) Field() string { return e.field }
+func (e TeacherFindByUsernameRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e TeacherFindByIDRequestValidationError) Reason() string { return e.reason }
+func (e TeacherFindByUsernameRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e TeacherFindByIDRequestValidationError) Cause() error { return e.cause }
+func (e TeacherFindByUsernameRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e TeacherFindByIDRequestValidationError) Key() bool { return e.key }
+func (e TeacherFindByUsernameRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e TeacherFindByIDRequestValidationError) ErrorName() string {
-	return "TeacherFindByIDRequestValidationError"
+func (e TeacherFindByUsernameRequestValidationError) ErrorName() string {
+	return "TeacherFindByUsernameRequestValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e TeacherFindByIDRequestValidationError) Error() string {
+func (e TeacherFindByUsernameRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -143,14 +132,14 @@ func (e TeacherFindByIDRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sTeacherFindByIDRequest.%s: %s%s",
+		"invalid %sTeacherFindByUsernameRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = TeacherFindByIDRequestValidationError{}
+var _ error = TeacherFindByUsernameRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -158,24 +147,24 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = TeacherFindByIDRequestValidationError{}
+} = TeacherFindByUsernameRequestValidationError{}
 
-// Validate checks the field values on TeacherFindByIDResponse with the rules
-// defined in the proto definition for this message. If any rules are
+// Validate checks the field values on TeacherFindByUsernameResponse with the
+// rules defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
-func (m *TeacherFindByIDResponse) Validate() error {
+func (m *TeacherFindByUsernameResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on TeacherFindByIDResponse with the
-// rules defined in the proto definition for this message. If any rules are
-// violated, the result is a list of violation errors wrapped in
-// TeacherFindByIDResponseMultiError, or nil if none found.
-func (m *TeacherFindByIDResponse) ValidateAll() error {
+// ValidateAll checks the field values on TeacherFindByUsernameResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// TeacherFindByUsernameResponseMultiError, or nil if none found.
+func (m *TeacherFindByUsernameResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *TeacherFindByIDResponse) validate(all bool) error {
+func (m *TeacherFindByUsernameResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -186,7 +175,7 @@ func (m *TeacherFindByIDResponse) validate(all bool) error {
 		switch v := interface{}(m.GetTeacher()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, TeacherFindByIDResponseValidationError{
+				errors = append(errors, TeacherFindByUsernameResponseValidationError{
 					field:  "Teacher",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -194,7 +183,7 @@ func (m *TeacherFindByIDResponse) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, TeacherFindByIDResponseValidationError{
+				errors = append(errors, TeacherFindByUsernameResponseValidationError{
 					field:  "Teacher",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -203,7 +192,7 @@ func (m *TeacherFindByIDResponse) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetTeacher()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return TeacherFindByIDResponseValidationError{
+			return TeacherFindByUsernameResponseValidationError{
 				field:  "Teacher",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -212,19 +201,19 @@ func (m *TeacherFindByIDResponse) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return TeacherFindByIDResponseMultiError(errors)
+		return TeacherFindByUsernameResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// TeacherFindByIDResponseMultiError is an error wrapping multiple validation
-// errors returned by TeacherFindByIDResponse.ValidateAll() if the designated
-// constraints aren't met.
-type TeacherFindByIDResponseMultiError []error
+// TeacherFindByUsernameResponseMultiError is an error wrapping multiple
+// validation errors returned by TeacherFindByUsernameResponse.ValidateAll()
+// if the designated constraints aren't met.
+type TeacherFindByUsernameResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m TeacherFindByIDResponseMultiError) Error() string {
+func (m TeacherFindByUsernameResponseMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -233,11 +222,12 @@ func (m TeacherFindByIDResponseMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m TeacherFindByIDResponseMultiError) AllErrors() []error { return m }
+func (m TeacherFindByUsernameResponseMultiError) AllErrors() []error { return m }
 
-// TeacherFindByIDResponseValidationError is the validation error returned by
-// TeacherFindByIDResponse.Validate if the designated constraints aren't met.
-type TeacherFindByIDResponseValidationError struct {
+// TeacherFindByUsernameResponseValidationError is the validation error
+// returned by TeacherFindByUsernameResponse.Validate if the designated
+// constraints aren't met.
+type TeacherFindByUsernameResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -245,24 +235,24 @@ type TeacherFindByIDResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e TeacherFindByIDResponseValidationError) Field() string { return e.field }
+func (e TeacherFindByUsernameResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e TeacherFindByIDResponseValidationError) Reason() string { return e.reason }
+func (e TeacherFindByUsernameResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e TeacherFindByIDResponseValidationError) Cause() error { return e.cause }
+func (e TeacherFindByUsernameResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e TeacherFindByIDResponseValidationError) Key() bool { return e.key }
+func (e TeacherFindByUsernameResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e TeacherFindByIDResponseValidationError) ErrorName() string {
-	return "TeacherFindByIDResponseValidationError"
+func (e TeacherFindByUsernameResponseValidationError) ErrorName() string {
+	return "TeacherFindByUsernameResponseValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e TeacherFindByIDResponseValidationError) Error() string {
+func (e TeacherFindByUsernameResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -274,14 +264,14 @@ func (e TeacherFindByIDResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sTeacherFindByIDResponse.%s: %s%s",
+		"invalid %sTeacherFindByUsernameResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = TeacherFindByIDResponseValidationError{}
+var _ error = TeacherFindByUsernameResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -289,4 +279,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = TeacherFindByIDResponseValidationError{}
+} = TeacherFindByUsernameResponseValidationError{}

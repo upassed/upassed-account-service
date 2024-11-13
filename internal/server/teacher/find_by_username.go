@@ -2,22 +2,20 @@ package teacher
 
 import (
 	"context"
+	"github.com/upassed/upassed-account-service/internal/handling"
 	requestid "github.com/upassed/upassed-account-service/internal/middleware/common/request_id"
 	"github.com/upassed/upassed-account-service/internal/tracing"
+	"github.com/upassed/upassed-account-service/pkg/client"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-
-	"github.com/google/uuid"
-	"github.com/upassed/upassed-account-service/internal/handling"
-	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc/codes"
 )
 
-func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.TeacherFindByIDRequest) (*client.TeacherFindByIDResponse, error) {
-	spanContext, span := otel.Tracer(server.cfg.Tracing.TeacherTracerName).Start(ctx, "teacher#FindByID")
+func (server *teacherServerAPI) FindByUsername(ctx context.Context, request *client.TeacherFindByUsernameRequest) (*client.TeacherFindByUsernameResponse, error) {
+	spanContext, span := otel.Tracer(server.cfg.Tracing.TeacherTracerName).Start(ctx, "teacher#FindByUsername")
 	span.SetAttributes(
 		attribute.String(string(requestid.ContextKey), requestid.GetRequestIDFromContext(ctx)),
-		attribute.String("id", request.GetTeacherId()),
+		attribute.String("teacherUsername", request.GetTeacherUsername()),
 	)
 	defer span.End()
 
@@ -26,11 +24,11 @@ func (server *teacherServerAPI) FindByID(ctx context.Context, request *client.Te
 		return nil, handling.Wrap(err, handling.WithCode(codes.InvalidArgument))
 	}
 
-	teacher, err := server.service.FindByID(spanContext, uuid.MustParse(request.GetTeacherId()))
+	teacher, err := server.service.FindByUsername(spanContext, request.GetTeacherUsername())
 	if err != nil {
 		tracing.SetSpanError(span, err)
 		return nil, err
 	}
 
-	return ConvertToFindByIDResponse(teacher), nil
+	return ConvertToFindByUsernameResponse(teacher), nil
 }

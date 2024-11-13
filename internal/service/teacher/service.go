@@ -5,14 +5,13 @@ import (
 	"github.com/upassed/upassed-account-service/internal/config"
 	"log/slog"
 
-	"github.com/google/uuid"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	business "github.com/upassed/upassed-account-service/internal/service/model"
 )
 
 type Service interface {
 	Create(ctx context.Context, teacher *business.Teacher) (*business.TeacherCreateResponse, error)
-	FindByID(ctx context.Context, teacherID uuid.UUID) (*business.Teacher, error)
+	FindByUsername(ctx context.Context, teacherUsername string) (*business.Teacher, error)
 }
 
 type teacherServiceImpl struct {
@@ -24,7 +23,7 @@ type teacherServiceImpl struct {
 type teacherRepository interface {
 	CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error)
 	Save(context.Context, *domain.Teacher) error
-	FindByID(context.Context, uuid.UUID) (*domain.Teacher, error)
+	FindByUsername(context.Context, string) (*domain.Teacher, error)
 }
 
 func New(cfg *config.Config, log *slog.Logger, repository teacherRepository) Service {

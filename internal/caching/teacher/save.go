@@ -22,7 +22,7 @@ func (client *RedisClient) Save(ctx context.Context, teacher *domain.Teacher) er
 	defer span.End()
 
 	log := logging.Wrap(client.log,
-		logging.WithOp(client.GetByID),
+		logging.WithOp(client.Save),
 		logging.WithCtx(ctx),
 		logging.WithAny("username", teacher.Username),
 	)
@@ -35,7 +35,7 @@ func (client *RedisClient) Save(ctx context.Context, teacher *domain.Teacher) er
 	}
 
 	log.Info("saving teacher data to the cache")
-	if err := client.client.Set(ctx, fmt.Sprintf(keyFormat, teacher.ID.String()), jsonTeacherData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
+	if err := client.client.Set(ctx, fmt.Sprintf(usernameKeyFormat, teacher.Username), jsonTeacherData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
 		log.Error("unable to save teacher data to the cache", logging.Error(err))
 		return errSavingTeacherDataToCache
 	}

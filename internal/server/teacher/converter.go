@@ -5,8 +5,8 @@ import (
 	"github.com/upassed/upassed-account-service/pkg/client"
 )
 
-func ConvertToFindByIDResponse(teacher *business.Teacher) *client.TeacherFindByIDResponse {
-	return &client.TeacherFindByIDResponse{
+func ConvertToFindByUsernameResponse(teacher *business.Teacher) *client.TeacherFindByUsernameResponse {
+	return &client.TeacherFindByUsernameResponse{
 		Teacher: &client.TeacherDTO{
 			Id:          teacher.ID.String(),
 			FirstName:   teacher.FirstName,
