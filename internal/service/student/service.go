@@ -12,7 +12,7 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, student *business.Student) (*business.StudentCreateResponse, error)
-	FindByID(ctx context.Context, studentID uuid.UUID) (*business.Student, error)
+	FindByUsername(ctx context.Context, studentUsername string) (*business.Student, error)
 }
 
 type studentServiceImpl struct {
@@ -25,7 +25,7 @@ type studentServiceImpl struct {
 type studentRepository interface {
 	CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error)
 	Save(context.Context, *domain.Student) error
-	FindByID(context.Context, uuid.UUID) (*domain.Student, error)
+	FindByUsername(context.Context, string) (*domain.Student, error)
 }
 
 type groupRepository interface {

@@ -6,7 +6,9 @@ import (
 	"log/slog"
 )
 
-const keyFormat = "student:%s"
+const (
+	usernameKeyFormat = "studentUsername:%s"
+)
 
 type RedisClient struct {
 	cfg    *config.Config

@@ -9,9 +9,9 @@ import (
 	"github.com/upassed/upassed-account-service/internal/server/student"
 )
 
-func TestConvertToFindByIDResponse(t *testing.T) {
+func TestConvertToFindByUsernameResponse(t *testing.T) {
 	studentToConvert := util.RandomBusinessStudent()
-	response := student.ConvertToFindByIDResponse(studentToConvert)
+	response := student.ConvertToFindByUsernameResponse(studentToConvert)
 	require.NotNil(t, response)
 
 	assert.Equal(t, studentToConvert.ID.String(), response.GetStudent().GetId())

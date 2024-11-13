@@ -3,7 +3,6 @@ package student
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
@@ -15,41 +14,41 @@ import (
 )
 
 var (
-	errSearchingStudentByID = errors.New("error while searching student by id")
-	ErrStudentNotFoundByID  = errors.New("student by id not found in database")
+	errSearchingStudentByUsername = errors.New("error while searching student by username")
+	ErrStudentNotFoundByUsername  = errors.New("student by username not found in database")
 )
 
-func (repository *studentRepositoryImpl) FindByID(ctx context.Context, studentID uuid.UUID) (*domain.Student, error) {
-	spanContext, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#FindByID")
-	span.SetAttributes(attribute.String("id", studentID.String()))
+func (repository *studentRepositoryImpl) FindByUsername(ctx context.Context, studentUsername string) (*domain.Student, error) {
+	spanContext, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#FindByUsername")
+	span.SetAttributes(attribute.String("studentUsername", studentUsername))
 	defer span.End()
 
 	log := logging.Wrap(repository.log,
-		logging.WithOp(repository.FindByID),
+		logging.WithOp(repository.FindByUsername),
 		logging.WithCtx(ctx),
-		logging.WithAny("studentID", studentID),
+		logging.WithAny("studentUsername", studentUsername),
 	)
 
-	log.Info("started searching student by id in redis cache")
-	studentFromCache, err := repository.cache.GetByID(spanContext, studentID)
+	log.Info("started searching student by username in redis cache")
+	studentFromCache, err := repository.cache.GetByUsername(spanContext, studentUsername)
 	if err == nil {
-		log.Info("student was found in cache, not going to the database")
+		log.Info("student was found in cache by username, not going to the database")
 		return studentFromCache, nil
 	}
 
-	log.Info("started searching student in a database")
+	log.Info("started searching student by username in a database")
 	foundStudent := domain.Student{}
-	searchResult := repository.db.WithContext(ctx).Preload("Group").First(&foundStudent, studentID)
+	searchResult := repository.db.WithContext(ctx).Preload("Group").Where("username = ?", studentUsername).First(&foundStudent)
 	if err := searchResult.Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Error("student was not found in the database", logging.Error(err))
 			tracing.SetSpanError(span, err)
-			return nil, handling.New(ErrStudentNotFoundByID.Error(), codes.NotFound)
+			return nil, handling.New(ErrStudentNotFoundByUsername.Error(), codes.NotFound)
 		}
 
 		log.Error("error while searching student in the database", logging.Error(err))
 		tracing.SetSpanError(span, err)
-		return nil, handling.New(errSearchingStudentByID.Error(), codes.Internal)
+		return nil, handling.New(errSearchingStudentByUsername.Error(), codes.Internal)
 	}
 
 	log.Info("student was successfully found in a database")

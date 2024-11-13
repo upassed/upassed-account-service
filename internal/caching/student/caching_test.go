@@ -2,7 +2,7 @@ package student_test
 
 import (
 	"context"
-	"github.com/google/uuid"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/caching"
@@ -72,17 +72,29 @@ func TestSaveStudent_HappyPath(t *testing.T) {
 	err := redisClient.Save(ctx, studentToSave)
 	require.NoError(t, err)
 
-	studentFromCache, err := redisClient.GetByID(ctx, studentToSave.ID)
+	studentFromCache, err := redisClient.GetByUsername(ctx, studentToSave.Username)
 	require.NoError(t, err)
 
 	assert.Equal(t, *studentToSave, *studentFromCache)
 }
 
-func TestFindStudentByID_StudentNotFound(t *testing.T) {
-	studentID := uuid.New()
-	foundStudent, err := redisClient.GetByID(context.Background(), studentID)
+func TestFindStudentByUsername_StudentNotFound(t *testing.T) {
+	studentUsername := gofakeit.Username()
+	foundStudent, err := redisClient.GetByUsername(context.Background(), studentUsername)
 	require.Error(t, err)
 
 	assert.ErrorIs(t, err, student.ErrStudentIsNotPresentInCache)
 	assert.Nil(t, foundStudent)
+}
+
+func TestFindStudentByUsername_StudentFound(t *testing.T) {
+	studentToSave := util.RandomDomainStudent()
+	ctx := context.Background()
+	err := redisClient.Save(ctx, studentToSave)
+	require.NoError(t, err)
+
+	foundStudent, err := redisClient.GetByUsername(context.Background(), studentToSave.Username)
+	require.NoError(t, err)
+
+	assert.Equal(t, *studentToSave, *foundStudent)
 }

@@ -36,7 +36,7 @@ func (client *RedisClient) Save(ctx context.Context, student *domain.Student) er
 		return errMarshallingStudentData
 	}
 
-	if err := client.client.Set(ctx, fmt.Sprintf(keyFormat, student.ID.String()), jsonStudentData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
+	if err := client.client.Set(ctx, fmt.Sprintf(usernameKeyFormat, student.Username), jsonStudentData, client.cfg.GetRedisEntityTTL()).Err(); err != nil {
 		log.Error("unable to save student data to the cache", logging.Error(err))
 		tracing.SetSpanError(span, err)
 		return errSavingStudentDataToCache

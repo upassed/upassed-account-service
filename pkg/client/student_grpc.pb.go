@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Student_FindByID_FullMethodName = "/api.Student/FindByID"
+	Student_FindByUsername_FullMethodName = "/api.Student/FindByUsername"
 )
 
 // StudentClient is the client API for Student service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StudentClient interface {
-	FindByID(ctx context.Context, in *StudentFindByIDRequest, opts ...grpc.CallOption) (*StudentFindByIDResponse, error)
+	FindByUsername(ctx context.Context, in *StudentFindByUsernameRequest, opts ...grpc.CallOption) (*StudentFindByUsernameResponse, error)
 }
 
 type studentClient struct {
@@ -37,10 +37,10 @@ func NewStudentClient(cc grpc.ClientConnInterface) StudentClient {
 	return &studentClient{cc}
 }
 
-func (c *studentClient) FindByID(ctx context.Context, in *StudentFindByIDRequest, opts ...grpc.CallOption) (*StudentFindByIDResponse, error) {
+func (c *studentClient) FindByUsername(ctx context.Context, in *StudentFindByUsernameRequest, opts ...grpc.CallOption) (*StudentFindByUsernameResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StudentFindByIDResponse)
-	err := c.cc.Invoke(ctx, Student_FindByID_FullMethodName, in, out, cOpts...)
+	out := new(StudentFindByUsernameResponse)
+	err := c.cc.Invoke(ctx, Student_FindByUsername_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (c *studentClient) FindByID(ctx context.Context, in *StudentFindByIDRequest
 // All implementations must embed UnimplementedStudentServer
 // for forward compatibility.
 type StudentServer interface {
-	FindByID(context.Context, *StudentFindByIDRequest) (*StudentFindByIDResponse, error)
+	FindByUsername(context.Context, *StudentFindByUsernameRequest) (*StudentFindByUsernameResponse, error)
 	mustEmbedUnimplementedStudentServer()
 }
 
@@ -62,8 +62,8 @@ type StudentServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStudentServer struct{}
 
-func (UnimplementedStudentServer) FindByID(context.Context, *StudentFindByIDRequest) (*StudentFindByIDResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FindByID not implemented")
+func (UnimplementedStudentServer) FindByUsername(context.Context, *StudentFindByUsernameRequest) (*StudentFindByUsernameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindByUsername not implemented")
 }
 func (UnimplementedStudentServer) mustEmbedUnimplementedStudentServer() {}
 func (UnimplementedStudentServer) testEmbeddedByValue()                 {}
@@ -86,20 +86,20 @@ func RegisterStudentServer(s grpc.ServiceRegistrar, srv StudentServer) {
 	s.RegisterService(&Student_ServiceDesc, srv)
 }
 
-func _Student_FindByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StudentFindByIDRequest)
+func _Student_FindByUsername_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StudentFindByUsernameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StudentServer).FindByID(ctx, in)
+		return srv.(StudentServer).FindByUsername(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Student_FindByID_FullMethodName,
+		FullMethod: Student_FindByUsername_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StudentServer).FindByID(ctx, req.(*StudentFindByIDRequest))
+		return srv.(StudentServer).FindByUsername(ctx, req.(*StudentFindByUsernameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -112,8 +112,8 @@ var Student_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*StudentServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "FindByID",
-			Handler:    _Student_FindByID_Handler,
+			MethodName: "FindByUsername",
+			Handler:    _Student_FindByUsername_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

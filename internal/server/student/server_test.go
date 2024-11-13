@@ -3,13 +3,13 @@ package student_test
 import (
 	"context"
 	"fmt"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -39,8 +39,8 @@ func (m *mockStudentService) Create(ctx context.Context, student *business.Stude
 	return args.Get(0).(*business.StudentCreateResponse), args.Error(1)
 }
 
-func (m *mockStudentService) FindByID(ctx context.Context, studentID uuid.UUID) (*business.Student, error) {
-	args := m.Called(ctx, studentID)
+func (m *mockStudentService) FindByUsername(ctx context.Context, studentUsername string) (*business.Student, error) {
+	args := m.Called(ctx, studentUsername)
 
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -96,27 +96,27 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestFindByID_InvalidRequest(t *testing.T) {
-	request := client.StudentFindByIDRequest{
-		StudentId: "invalid_uuid",
+func TestFindByUsername_InvalidRequest(t *testing.T) {
+	request := client.StudentFindByUsernameRequest{
+		StudentUsername: "0",
 	}
 
-	_, err := studentClient.FindByID(context.Background(), &request)
+	_, err := studentClient.FindByUsername(context.Background(), &request)
 	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.InvalidArgument, convertedError.Code())
 }
 
-func TestFindByID_ServiceError(t *testing.T) {
-	request := client.StudentFindByIDRequest{
-		StudentId: uuid.NewString(),
+func TestFindByUsername_ServiceError(t *testing.T) {
+	request := client.StudentFindByUsernameRequest{
+		StudentUsername: gofakeit.Username(),
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	studentSvc.On("FindByID", mock.Anything, uuid.MustParse(request.StudentId)).Return(nil, handling.Process(expectedError))
+	studentSvc.On("FindByUsername", mock.Anything, request.GetStudentUsername()).Return(nil, handling.Process(expectedError))
 
-	_, err := studentClient.FindByID(context.Background(), &request)
+	_, err := studentClient.FindByUsername(context.Background(), &request)
 	require.Error(t, err)
 
 	convertedError := status.Convert(err)
@@ -126,20 +126,20 @@ func TestFindByID_ServiceError(t *testing.T) {
 	clearStudentServiceMockCalls()
 }
 
-func TestFindByID_HappyPath(t *testing.T) {
-	studentID := uuid.New()
-	request := client.StudentFindByIDRequest{
-		StudentId: studentID.String(),
+func TestFindByUsername_HappyPath(t *testing.T) {
+	studentUsername := gofakeit.Username()
+	request := client.StudentFindByUsernameRequest{
+		StudentUsername: studentUsername,
 	}
 
 	foundStudent := util.RandomBusinessStudent()
-	foundStudent.ID = studentID
-	studentSvc.On("FindByID", mock.Anything, studentID).Return(foundStudent, nil)
+	foundStudent.Username = studentUsername
+	studentSvc.On("FindByUsername", mock.Anything, studentUsername).Return(foundStudent, nil)
 
-	response, err := studentClient.FindByID(context.Background(), &request)
+	response, err := studentClient.FindByUsername(context.Background(), &request)
 	require.NoError(t, err)
 
-	assert.Equal(t, studentID.String(), response.GetStudent().GetId())
+	assert.Equal(t, studentUsername, response.GetStudent().GetUsername())
 
 	clearStudentServiceMockCalls()
 }

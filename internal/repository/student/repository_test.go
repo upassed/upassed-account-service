@@ -115,18 +115,18 @@ func TestSave_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestFindByID_StudentNotFound(t *testing.T) {
-	randomStudentID := uuid.New()
+func TestFindByUsername_StudentNotFound(t *testing.T) {
+	randomStudentUsername := gofakeit.Username()
 
-	_, err := studentRepository.FindByID(context.Background(), randomStudentID)
+	_, err := studentRepository.FindByUsername(context.Background(), randomStudentUsername)
 	require.Error(t, err)
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-	assert.Equal(t, student.ErrStudentNotFoundByID.Error(), convertedError.Message())
+	assert.Equal(t, student.ErrStudentNotFoundByUsername.Error(), convertedError.Message())
 }
 
-func TestFindByID_HappyPath(t *testing.T) {
+func TestFindByUsername_HappyPath(t *testing.T) {
 	existingStudent := util.RandomDomainStudent()
 	groupID := uuid.MustParse("5eead8d5-b868-4708-aa25-713ad8399233")
 	existingStudent.GroupID = groupID
@@ -135,7 +135,7 @@ func TestFindByID_HappyPath(t *testing.T) {
 	err := studentRepository.Save(context.Background(), existingStudent)
 	require.NoError(t, err)
 
-	foundStudent, err := studentRepository.FindByID(context.Background(), existingStudent.ID)
+	foundStudent, err := studentRepository.FindByUsername(context.Background(), existingStudent.Username)
 	require.NoError(t, err)
 
 	assert.Equal(t, existingStudent.ID, foundStudent.ID)

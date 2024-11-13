@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	domain "github.com/upassed/upassed-account-service/internal/repository/model"
@@ -15,37 +14,37 @@ import (
 )
 
 var (
-	ErrStudentIsNotPresentInCache     = errors.New("student id is not present as a key in the cache")
-	errFetchingStudentFromCache       = errors.New("unable to get student by id from the cache")
+	ErrStudentIsNotPresentInCache     = errors.New("student username is not present as a key in the cache")
+	errFetchingStudentFromCache       = errors.New("unable to get student by username from the cache")
 	errUnmarshallingStudentDataToJson = errors.New("unable to unmarshall student data from the cache to json format")
 )
 
-func (client *RedisClient) GetByID(ctx context.Context, studentID uuid.UUID) (*domain.Student, error) {
-	_, span := otel.Tracer(client.cfg.Tracing.StudentTracerName).Start(ctx, "redisClient#GetByID")
-	span.SetAttributes(attribute.String("id", studentID.String()))
+func (client *RedisClient) GetByUsername(ctx context.Context, studentUsername string) (*domain.Student, error) {
+	_, span := otel.Tracer(client.cfg.Tracing.StudentTracerName).Start(ctx, "redisClient#GetByUsername")
+	span.SetAttributes(attribute.String("studentUsername", studentUsername))
 	defer span.End()
 
 	log := logging.Wrap(client.log,
-		logging.WithOp(client.GetByID),
+		logging.WithOp(client.GetByUsername),
 		logging.WithCtx(ctx),
-		logging.WithAny("studentID", studentID),
+		logging.WithAny("studentUsername", studentUsername),
 	)
 
-	log.Info("getting student data from the cache")
-	studentData, err := client.client.Get(ctx, fmt.Sprintf(keyFormat, studentID.String())).Result()
+	log.Info("getting student data from the cache by username")
+	studentData, err := client.client.Get(ctx, fmt.Sprintf(usernameKeyFormat, studentUsername)).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			log.Error("student by id was not found in cache")
+			log.Error("student by username was not found in cache")
 			tracing.SetSpanError(span, err)
 			return nil, ErrStudentIsNotPresentInCache
 		}
 
-		log.Error("error while fetching student by id from cache", logging.Error(err))
+		log.Error("error while fetching student by username from cache", logging.Error(err))
 		tracing.SetSpanError(span, err)
 		return nil, errFetchingStudentFromCache
 	}
 
-	log.Info("student data found in cache, unmarshalling data from json")
+	log.Info("student data found in cache by username, unmarshalling data from json")
 	var student domain.Student
 	if err := json.Unmarshal([]byte(studentData), &student); err != nil {
 		log.Error("error while unmarshalling student data to json", logging.Error(err))

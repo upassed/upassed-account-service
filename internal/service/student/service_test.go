@@ -3,6 +3,7 @@ package student_test
 import (
 	"context"
 	"errors"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/upassed/upassed-account-service/internal/util"
 	"log"
 	"os"
@@ -30,8 +31,8 @@ func (m *mockStudentRepository) Save(ctx context.Context, student *domain.Studen
 	return args.Error(0)
 }
 
-func (m *mockStudentRepository) FindByID(ctx context.Context, studentID uuid.UUID) (*domain.Student, error) {
-	args := m.Called(ctx, studentID)
+func (m *mockStudentRepository) FindByUsername(ctx context.Context, studentUsername string) (*domain.Student, error) {
+	args := m.Called(ctx, studentUsername)
 
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -228,15 +229,15 @@ func TestCreate_HappyPath(t *testing.T) {
 	assert.Equal(t, studentToCreate.ID, response.CreatedStudentID)
 }
 
-func TestFindByID_ErrorSearchingStudentInDatabase(t *testing.T) {
+func TestFindByUsername_ErrorSearchingStudentInDatabase(t *testing.T) {
 	studentRepository := new(mockStudentRepository)
-	studentID := uuid.New()
+	studentUsername := gofakeit.Username()
 
 	expectedRepositoryError := errors.New("some repo error")
-	studentRepository.On("FindByID", mock.Anything, studentID).Return(nil, expectedRepositoryError)
+	studentRepository.On("FindByUsername", mock.Anything, studentUsername).Return(nil, expectedRepositoryError)
 
 	service := student.New(cfg, logging.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
-	_, err := service.FindByID(context.Background(), studentID)
+	_, err := service.FindByUsername(context.Background(), studentUsername)
 	require.Error(t, err)
 
 	convertedError := status.Convert(err)
@@ -244,15 +245,35 @@ func TestFindByID_ErrorSearchingStudentInDatabase(t *testing.T) {
 	assert.Equal(t, codes.Internal, convertedError.Code())
 }
 
-func TestFindByID_HappyPath(t *testing.T) {
+func TestFindByUsername_DeadlineExceeded(t *testing.T) {
+	oldTimeout := cfg.Timeouts.EndpointExecutionTimeoutMS
+	cfg.Timeouts.EndpointExecutionTimeoutMS = "0"
+
 	studentRepository := new(mockStudentRepository)
-	studentID := uuid.New()
+	studentUsername := gofakeit.Username()
 	foundStudent := util.RandomDomainStudent()
 
-	studentRepository.On("FindByID", mock.Anything, studentID).Return(foundStudent, nil)
+	studentRepository.On("FindByUsername", mock.Anything, studentUsername).Return(foundStudent, nil)
 
 	studentService := student.New(cfg, logging.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
-	response, err := studentService.FindByID(context.Background(), studentID)
+	_, err := studentService.FindByUsername(context.Background(), studentUsername)
+	require.Error(t, err)
+
+	convertedError := status.Convert(err)
+	assert.Equal(t, codes.DeadlineExceeded, convertedError.Code())
+
+	cfg.Timeouts.EndpointExecutionTimeoutMS = oldTimeout
+}
+
+func TestFindByUsername_HappyPath(t *testing.T) {
+	studentRepository := new(mockStudentRepository)
+	studentUsername := gofakeit.Username()
+	foundStudent := util.RandomDomainStudent()
+
+	studentRepository.On("FindByUsername", mock.Anything, studentUsername).Return(foundStudent, nil)
+
+	studentService := student.New(cfg, logging.New(config.EnvTesting), studentRepository, new(mockGroupRepository))
+	response, err := studentService.FindByUsername(context.Background(), studentUsername)
 	require.NoError(t, err)
 
 	assert.Equal(t, foundStudent, student.ConvertToRepositoryStudent(response))
