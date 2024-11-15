@@ -17,7 +17,7 @@ var (
 	errFindStudentByUsernameDeadlineExceeded = errors.New("find student by username deadline exceeded")
 )
 
-func (service *studentServiceImpl) FindByUsername(ctx context.Context, studentUsername string) (*business.Student, error) {
+func (service *serviceImpl) FindByUsername(ctx context.Context, studentUsername string) (*business.Student, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.StudentTracerName).Start(ctx, "studentService#FindByUsername")
 	span.SetAttributes(attribute.String("studentUsername", studentUsername))
 	defer span.End()

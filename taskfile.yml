@@ -18,3 +18,13 @@ tasks:
         cmds:
             - go clean -testcache
             - gotestsum --format-hide-empty-pkg --format-icons hivis -- -coverprofile=cover.out ./...
+    mockgen:
+        desc: "Generate all mocks"
+        cmds:
+            - rm -rf internal/util/mocks/*
+            - mockgen -source=internal/service/group/service.go -destination=internal/util/mocks/mock_group_service.go -package mocks -mock_names Service=GroupService,repository=unusedGroupRepo1 Service
+            - mockgen -source=internal/service/student/service.go -destination=internal/util/mocks/mock_student_service.go -package mocks -mock_names Service=StudentService,repository=unusedStudentRepo1,groupRepository=unusedGroupRepo2 Service
+            - mockgen -source=internal/service/teacher/service.go -destination=internal/util/mocks/mock_teacher_service.go -package mocks -mock_names Service=TeacherService,repository=unusedTeacherRepo1 Service
+            - mockgen -source=internal/repository/group/repository.go -destination=internal/util/mocks/mock_group_repository.go -package mocks -mock_names Repository=GroupRepository Repository
+            - mockgen -source=internal/repository/student/repository.go -destination=internal/util/mocks/mock_student_repository.go -package mocks -mock_names Repository=StudentRepository Repository
+            - mockgen -source=internal/repository/teacher/repository.go -destination=internal/util/mocks/mock_teacher_repository.go -package mocks -mock_names Repository=TeacherRepository Repository

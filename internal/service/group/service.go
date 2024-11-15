@@ -15,20 +15,20 @@ type Service interface {
 	FindByFilter(context.Context, *business.GroupFilter) ([]*business.Group, error)
 }
 
-type groupServiceImpl struct {
+type serviceImpl struct {
 	cfg        *config.Config
 	log        *slog.Logger
-	repository groupRepository
+	repository repository
 }
 
-type groupRepository interface {
+type repository interface {
 	FindByID(context.Context, uuid.UUID) (*domain.Group, error)
 	FindStudentsInGroup(context.Context, uuid.UUID) ([]*domain.Student, error)
 	FindByFilter(context.Context, *domain.GroupFilter) ([]*domain.Group, error)
 }
 
-func New(cfg *config.Config, log *slog.Logger, repository groupRepository) Service {
-	return &groupServiceImpl{
+func New(cfg *config.Config, log *slog.Logger, repository repository) Service {
+	return &serviceImpl{
 		cfg:        cfg,
 		log:        log,
 		repository: repository,

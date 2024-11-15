@@ -18,7 +18,7 @@ var (
 	errCreateStudentDeadlineExceeded = errors.New("create student deadline exceeded")
 )
 
-func (service *studentServiceImpl) Create(ctx context.Context, student *business.Student) (*business.StudentCreateResponse, error) {
+func (service *serviceImpl) Create(ctx context.Context, student *business.Student) (*business.StudentCreateResponse, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.StudentTracerName).Start(ctx, "studentService#Create")
 	span.SetAttributes(attribute.String("username", student.Username))
 	defer span.End()

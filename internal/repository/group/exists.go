@@ -17,7 +17,7 @@ var (
 	errCheckGroupExists = errors.New("error while checking if group exists in database")
 )
 
-func (repository *groupRepositoryImpl) Exists(ctx context.Context, groupID uuid.UUID) (bool, error) {
+func (repository *repositoryImpl) Exists(ctx context.Context, groupID uuid.UUID) (bool, error) {
 	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#Exists")
 	span.SetAttributes(attribute.String("id", groupID.String()))
 	defer span.End()

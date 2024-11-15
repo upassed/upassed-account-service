@@ -18,7 +18,7 @@ var (
 	errFindGroupsByFilterDeadlineExceeded = errors.New("find groups by filter timeout exceeded")
 )
 
-func (service *groupServiceImpl) FindByFilter(ctx context.Context, filter *business.GroupFilter) ([]*business.Group, error) {
+func (service *serviceImpl) FindByFilter(ctx context.Context, filter *business.GroupFilter) ([]*business.Group, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByFilter")
 	span.SetAttributes(
 		attribute.String("specializationCode", filter.SpecializationCode),

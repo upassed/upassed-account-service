@@ -16,7 +16,7 @@ type Repository interface {
 	FindByUsername(context.Context, string) (*domain.Teacher, error)
 }
 
-type teacherRepositoryImpl struct {
+type repositoryImpl struct {
 	db    *gorm.DB
 	cache *teacher.RedisClient
 	cfg   *config.Config
@@ -25,7 +25,7 @@ type teacherRepositoryImpl struct {
 
 func New(db *gorm.DB, redisClient *redis.Client, cfg *config.Config, log *slog.Logger) Repository {
 	cacheClient := teacher.New(redisClient, cfg, log)
-	return &teacherRepositoryImpl{
+	return &repositoryImpl{
 		db:    db,
 		cache: cacheClient,
 		cfg:   cfg,

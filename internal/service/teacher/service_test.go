@@ -3,61 +3,28 @@ package teacher_test
 import (
 	"context"
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/golang/mock/gomock"
 	"github.com/upassed/upassed-account-service/internal/util"
+	"github.com/upassed/upassed-account-service/internal/util/mocks"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
-	domain "github.com/upassed/upassed-account-service/internal/repository/model"
 	"github.com/upassed/upassed-account-service/internal/service/teacher"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type mockTeacherRepository struct {
-	mock.Mock
-}
-
-func (m *mockTeacherRepository) Save(ctx context.Context, teacher *domain.Teacher) error {
-	args := m.Called(ctx, teacher)
-	return args.Error(0)
-}
-
-func (m *mockTeacherRepository) FindByID(ctx context.Context, teacherID uuid.UUID) (*domain.Teacher, error) {
-	args := m.Called(ctx, teacherID)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).(*domain.Teacher), args.Error(1)
-}
-
-func (m *mockTeacherRepository) FindByUsername(ctx context.Context, teacherUsername string) (*domain.Teacher, error) {
-	args := m.Called(ctx, teacherUsername)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).(*domain.Teacher), args.Error(1)
-}
-
-func (m *mockTeacherRepository) CheckDuplicateExists(ctx context.Context, reportEmail, username string) (bool, error) {
-	args := m.Called(ctx, reportEmail, username)
-	return args.Bool(0), args.Error(1)
-}
-
 var (
-	cfg *config.Config
+	cfg        *config.Config
+	repository *mocks.TeacherRepository
+	service    teacher.Service
 )
 
 func TestMain(m *testing.M) {
@@ -76,19 +43,23 @@ func TestMain(m *testing.M) {
 		log.Fatal("unable to parse config: ", err)
 	}
 
+	ctrl := gomock.NewController(nil)
+	defer ctrl.Finish()
+
+	repository = mocks.NewTeacherRepository(ctrl)
+	service = teacher.New(cfg, logging.New(config.EnvTesting), repository)
+
 	exitCode := m.Run()
 	os.Exit(exitCode)
 }
 
 func TestCreate_ErrorCheckingDuplicateExistsOccurred(t *testing.T) {
-	logger := logging.New(config.EnvTesting)
-	repository := new(mockTeacherRepository)
 	duplicateTeacher := util.RandomBusinessTeacher()
 
 	expectedRepoError := handling.New("repo layer error message", codes.Internal)
-	repository.On("CheckDuplicateExists", mock.Anything, duplicateTeacher.ReportEmail, duplicateTeacher.Username).Return(false, expectedRepoError)
-
-	service := teacher.New(cfg, logger, repository)
+	repository.EXPECT().
+		CheckDuplicateExists(gomock.Any(), duplicateTeacher.ReportEmail, duplicateTeacher.Username).
+		Return(false, expectedRepoError)
 
 	_, err := service.Create(context.Background(), duplicateTeacher)
 	require.Error(t, err)
@@ -98,13 +69,11 @@ func TestCreate_ErrorCheckingDuplicateExistsOccurred(t *testing.T) {
 }
 
 func TestCreate_DuplicateExists(t *testing.T) {
-	logger := logging.New(config.EnvTesting)
-	repository := new(mockTeacherRepository)
 	duplicateTeacher := util.RandomBusinessTeacher()
 
-	repository.On("CheckDuplicateExists", mock.Anything, duplicateTeacher.ReportEmail, duplicateTeacher.Username).Return(true, nil)
-
-	service := teacher.New(cfg, logger, repository)
+	repository.EXPECT().
+		CheckDuplicateExists(gomock.Any(), duplicateTeacher.ReportEmail, duplicateTeacher.Username).
+		Return(true, nil)
 
 	_, err := service.Create(context.Background(), duplicateTeacher)
 	require.Error(t, err)
@@ -115,16 +84,16 @@ func TestCreate_DuplicateExists(t *testing.T) {
 }
 
 func TestCreate_ErrorSavingToDatabase(t *testing.T) {
-	logger := logging.New(config.EnvTesting)
-	repository := new(mockTeacherRepository)
 	teacherToSave := util.RandomBusinessTeacher()
 
-	repository.On("CheckDuplicateExists", mock.Anything, teacherToSave.ReportEmail, teacherToSave.Username).Return(false, nil)
+	repository.EXPECT().
+		CheckDuplicateExists(gomock.Any(), teacherToSave.ReportEmail, teacherToSave.Username).
+		Return(false, nil)
 
 	expectedRepoError := handling.New("repo layer error message", codes.DeadlineExceeded)
-	repository.On("Save", mock.Anything, mock.Anything).Return(expectedRepoError)
-
-	service := teacher.New(cfg, logger, repository)
+	repository.EXPECT().
+		Save(gomock.Any(), gomock.Any()).
+		Return(expectedRepoError)
 
 	_, err := service.Create(context.Background(), teacherToSave)
 	require.Error(t, err)
@@ -138,14 +107,15 @@ func TestCreate_DeadlineExceeded(t *testing.T) {
 	oldTimeout := cfg.Timeouts.EndpointExecutionTimeoutMS
 	cfg.Timeouts.EndpointExecutionTimeoutMS = "0"
 
-	logger := logging.New(config.EnvTesting)
-	repository := new(mockTeacherRepository)
 	teacherToSave := util.RandomBusinessTeacher()
 
-	repository.On("CheckDuplicateExists", mock.Anything, teacherToSave.ReportEmail, teacherToSave.Username).Return(false, nil)
-	repository.On("Save", mock.Anything, mock.Anything).Return(nil)
+	repository.EXPECT().
+		CheckDuplicateExists(gomock.Any(), teacherToSave.ReportEmail, teacherToSave.Username).
+		Return(false, nil)
 
-	service := teacher.New(cfg, logger, repository)
+	repository.EXPECT().
+		Save(gomock.Any(), gomock.Any()).
+		Return(nil)
 
 	_, err := service.Create(context.Background(), teacherToSave)
 	require.Error(t, err)
@@ -157,14 +127,15 @@ func TestCreate_DeadlineExceeded(t *testing.T) {
 }
 
 func TestCreate_HappyPath(t *testing.T) {
-	logger := logging.New(config.EnvTesting)
-	repository := new(mockTeacherRepository)
 	teacherToSave := util.RandomBusinessTeacher()
 
-	repository.On("CheckDuplicateExists", mock.Anything, teacherToSave.ReportEmail, teacherToSave.Username).Return(false, nil)
-	repository.On("Save", mock.Anything, mock.Anything).Return(nil)
+	repository.EXPECT().
+		CheckDuplicateExists(gomock.Any(), teacherToSave.ReportEmail, teacherToSave.Username).
+		Return(false, nil)
 
-	service := teacher.New(cfg, logger, repository)
+	repository.EXPECT().
+		Save(gomock.Any(), gomock.Any()).
+		Return(nil)
 
 	response, err := service.Create(context.Background(), teacherToSave)
 	require.NoError(t, err)
@@ -173,13 +144,12 @@ func TestCreate_HappyPath(t *testing.T) {
 }
 
 func TestFindByUsername_ErrorSearchingTeacherInDatabase(t *testing.T) {
-	logger := logging.New(config.EnvTesting)
-	teacherRepository := new(mockTeacherRepository)
 	teacherUsername := gofakeit.Username()
 
 	expectedRepoError := handling.New("repo layer error message", codes.NotFound)
-	teacherRepository.On("FindByUsername", mock.Anything, teacherUsername).Return(nil, expectedRepoError)
-	service := teacher.New(cfg, logger, teacherRepository)
+	repository.EXPECT().
+		FindByUsername(gomock.Any(), teacherUsername).
+		Return(nil, expectedRepoError)
 
 	_, err := service.FindByUsername(context.Background(), teacherUsername)
 	require.Error(t, err)
@@ -193,13 +163,12 @@ func TestFindByUsername_ErrorDeadlineExceeded(t *testing.T) {
 	oldTimeout := cfg.Timeouts.EndpointExecutionTimeoutMS
 	cfg.Timeouts.EndpointExecutionTimeoutMS = "0"
 
-	logger := logging.New(config.EnvTesting)
-	repository := new(mockTeacherRepository)
 	teacherUsername := gofakeit.Username()
 	expectedFoundTeacher := teacher.ConvertToRepositoryTeacher(util.RandomBusinessTeacher())
 
-	repository.On("FindByUsername", mock.Anything, teacherUsername).Return(expectedFoundTeacher, nil)
-	service := teacher.New(cfg, logger, repository)
+	repository.EXPECT().
+		FindByUsername(gomock.Any(), teacherUsername).
+		Return(expectedFoundTeacher, nil)
 
 	_, err := service.FindByUsername(context.Background(), teacherUsername)
 	require.Error(t, err)
@@ -211,13 +180,12 @@ func TestFindByUsername_ErrorDeadlineExceeded(t *testing.T) {
 }
 
 func TestFindByUsername_HappyPath(t *testing.T) {
-	logger := logging.New(config.EnvTesting)
-	repository := new(mockTeacherRepository)
 	teacherUsername := gofakeit.Username()
 	expectedFoundTeacher := teacher.ConvertToRepositoryTeacher(util.RandomBusinessTeacher())
 
-	repository.On("FindByUsername", mock.Anything, teacherUsername).Return(expectedFoundTeacher, nil)
-	service := teacher.New(cfg, logger, repository)
+	repository.EXPECT().
+		FindByUsername(gomock.Any(), teacherUsername).
+		Return(expectedFoundTeacher, nil)
 
 	foundTeacher, err := service.FindByUsername(context.Background(), teacherUsername)
 	require.NoError(t, err)

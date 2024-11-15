@@ -18,7 +18,7 @@ var (
 	errSearchingStudentsInGroup = errors.New("error while searching students in group")
 )
 
-func (repository *groupRepositoryImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*domain.Student, error) {
+func (repository *repositoryImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*domain.Student, error) {
 	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindStudentsInGroup")
 	span.SetAttributes(attribute.String("id", groupID.String()))
 	defer span.End()

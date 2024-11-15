@@ -18,7 +18,7 @@ type Repository interface {
 	Exists(context.Context, uuid.UUID) (bool, error)
 }
 
-type groupRepositoryImpl struct {
+type repositoryImpl struct {
 	db    *gorm.DB
 	cache *group.RedisClient
 	cfg   *config.Config
@@ -27,7 +27,7 @@ type groupRepositoryImpl struct {
 
 func New(db *gorm.DB, redisClient *redis.Client, cfg *config.Config, log *slog.Logger) Repository {
 	cacheClient := group.New(redisClient, cfg, log)
-	return &groupRepositoryImpl{
+	return &repositoryImpl{
 		db:    db,
 		cache: cacheClient,
 		cfg:   cfg,

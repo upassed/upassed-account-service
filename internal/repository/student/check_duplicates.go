@@ -17,7 +17,7 @@ var (
 	errCountingDuplicatesStudent = errors.New("error while counting duplicate students")
 )
 
-func (repository *studentRepositoryImpl) CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error) {
+func (repository *repositoryImpl) CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error) {
 	_, span := otel.Tracer(repository.cfg.Tracing.StudentTracerName).Start(ctx, "studentRepository#CheckDuplicateExists")
 	span.SetAttributes(
 		attribute.String("educationalEmail", educationalEmail),

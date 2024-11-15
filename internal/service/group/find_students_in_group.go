@@ -20,7 +20,7 @@ var (
 	errFindStudentsInGroupDeadlineExceeded = errors.New("find students in group deadline exceeded")
 )
 
-func (service *groupServiceImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*business.Student, error) {
+func (service *serviceImpl) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*business.Student, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindStudentsInGroup")
 	span.SetAttributes(attribute.String("id", groupID.String()))
 	defer span.End()

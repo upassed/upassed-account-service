@@ -3,7 +3,9 @@ package group_test
 import (
 	"context"
 	"fmt"
+	"github.com/golang/mock/gomock"
 	"github.com/upassed/upassed-account-service/internal/util"
+	"github.com/upassed/upassed-account-service/internal/util/mocks"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,7 +14,6 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/handling"
@@ -26,43 +27,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type mockGroupService struct {
-	mock.Mock
-}
-
-func (m *mockGroupService) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*business.Student, error) {
-	args := m.Called(ctx, groupID)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).([]*business.Student), args.Error(1)
-}
-
-func (m *mockGroupService) FindByID(ctx context.Context, groupID uuid.UUID) (*business.Group, error) {
-	args := m.Called(ctx, groupID)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).(*business.Group), args.Error(1)
-}
-
-func (m *mockGroupService) FindByFilter(ctx context.Context, filter *business.GroupFilter) ([]*business.Group, error) {
-	args := m.Called(ctx, filter)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).([]*business.Group), args.Error(1)
-}
-
 var (
 	groupClient client.GroupClient
-	groupSvc    *mockGroupService
+	groupSvc    *mocks.GroupService
 )
 
 func TestMain(m *testing.M) {
@@ -82,7 +49,10 @@ func TestMain(m *testing.M) {
 	}
 
 	logger := logging.New(cfg.Env)
-	groupSvc = new(mockGroupService)
+	ctrl := gomock.NewController(nil)
+	defer ctrl.Finish()
+
+	groupSvc = mocks.NewGroupService(ctrl)
 	groupServer := server.New(server.AppServerCreateParams{
 		Config:       cfg,
 		Log:          logger,
@@ -113,7 +83,9 @@ func TestFindStudentsInGroup_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(nil, handling.Process(expectedError))
+	groupSvc.EXPECT().
+		FindStudentsInGroup(gomock.Any(), uuid.MustParse(request.GetGroupId())).
+		Return(nil, handling.Process(expectedError))
 
 	_, err := groupClient.FindStudentsInGroup(context.Background(), &request)
 	require.Error(t, err)
@@ -121,8 +93,6 @@ func TestFindStudentsInGroup_ServiceError(t *testing.T) {
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedError.Error(), convertedError.Message())
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-
-	clearGroupServiceMockCalls()
 }
 
 func TestFindStudentsInGroup_HappyPath(t *testing.T) {
@@ -136,7 +106,9 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 		util.RandomBusinessStudent(),
 	}
 
-	groupSvc.On("FindStudentsInGroup", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(studentsInGroup, nil)
+	groupSvc.EXPECT().
+		FindStudentsInGroup(gomock.Any(), uuid.MustParse(request.GetGroupId())).
+		Return(studentsInGroup, nil)
 
 	response, err := groupClient.FindStudentsInGroup(context.Background(), &request)
 	require.NoError(t, err)
@@ -145,8 +117,6 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 	for idx := range studentsInGroup {
 		assertStudentsEqual(t, studentsInGroup[idx], response.GetStudentsInGroup()[idx])
 	}
-
-	clearGroupServiceMockCalls()
 }
 
 func TestFindByID_ServiceLayerError(t *testing.T) {
@@ -155,7 +125,9 @@ func TestFindByID_ServiceLayerError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(nil, expectedError)
+	groupSvc.EXPECT().
+		FindByID(gomock.Any(), uuid.MustParse(request.GetGroupId())).
+		Return(nil, expectedError)
 
 	_, err := groupClient.FindByID(context.Background(), &request)
 	require.Error(t, err)
@@ -163,8 +135,6 @@ func TestFindByID_ServiceLayerError(t *testing.T) {
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedError.Error(), convertedError.Message())
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-
-	clearGroupServiceMockCalls()
 }
 
 func TestFindByID_HappyPath(t *testing.T) {
@@ -173,7 +143,9 @@ func TestFindByID_HappyPath(t *testing.T) {
 	}
 
 	expectedFoundGroup := util.RandomBusinessGroup()
-	groupSvc.On("FindByID", mock.Anything, uuid.MustParse(request.GetGroupId())).Return(expectedFoundGroup, nil)
+	groupSvc.EXPECT().
+		FindByID(gomock.Any(), uuid.MustParse(request.GetGroupId())).
+		Return(expectedFoundGroup, nil)
 
 	response, err := groupClient.FindByID(context.Background(), &request)
 	require.NoError(t, err)
@@ -181,8 +153,6 @@ func TestFindByID_HappyPath(t *testing.T) {
 	assert.Equal(t, expectedFoundGroup.ID.String(), response.GetGroup().GetId())
 	assert.Equal(t, expectedFoundGroup.SpecializationCode, response.GetGroup().GetSpecializationCode())
 	assert.Equal(t, expectedFoundGroup.GroupNumber, response.GetGroup().GetGroupNumber())
-
-	clearGroupServiceMockCalls()
 }
 
 func TestFindByFilter_InvalidRequest(t *testing.T) {
@@ -196,8 +166,6 @@ func TestFindByFilter_InvalidRequest(t *testing.T) {
 
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.InvalidArgument, convertedError.Code())
-
-	clearGroupServiceMockCalls()
 }
 
 func TestFindByFilter_ServiceError(t *testing.T) {
@@ -207,7 +175,9 @@ func TestFindByFilter_ServiceError(t *testing.T) {
 	}
 
 	expectedServiceError := handling.New("some service error", codes.DeadlineExceeded)
-	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return(nil, expectedServiceError)
+	groupSvc.EXPECT().
+		FindByFilter(gomock.Any(), gomock.Any()).
+		Return(nil, expectedServiceError)
 
 	_, err := groupClient.SearchByFilter(context.Background(), &request)
 	require.Error(t, err)
@@ -215,8 +185,6 @@ func TestFindByFilter_ServiceError(t *testing.T) {
 	convertedError := status.Convert(err)
 	assert.Equal(t, codes.DeadlineExceeded, convertedError.Code())
 	assert.Equal(t, expectedServiceError.Error(), convertedError.Message())
-
-	clearGroupServiceMockCalls()
 }
 
 func TestFindByFilter_HappyPath(t *testing.T) {
@@ -231,7 +199,9 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 		util.RandomBusinessGroup(),
 	}
 
-	groupSvc.On("FindByFilter", mock.Anything, mock.Anything).Return(expectedMatchedGroups, nil)
+	groupSvc.EXPECT().
+		FindByFilter(gomock.Any(), gomock.Any()).
+		Return(expectedMatchedGroups, nil)
 
 	response, err := groupClient.SearchByFilter(context.Background(), &request)
 	require.NoError(t, err)
@@ -240,11 +210,4 @@ func TestFindByFilter_HappyPath(t *testing.T) {
 	for idx := range expectedMatchedGroups {
 		assertGroupsEqual(t, expectedMatchedGroups[idx], response.GetMatchedGroups()[idx])
 	}
-
-	clearGroupServiceMockCalls()
-}
-
-func clearGroupServiceMockCalls() {
-	groupSvc.ExpectedCalls = nil
-	groupSvc.Calls = nil
 }

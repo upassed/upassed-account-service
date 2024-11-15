@@ -19,7 +19,7 @@ var (
 	ErrGroupNotFoundByID  = errors.New("group by id not found in database")
 )
 
-func (repository *groupRepositoryImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
+func (repository *repositoryImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindByID")
 	span.SetAttributes(attribute.String("id", groupID.String()))
 	defer span.End()

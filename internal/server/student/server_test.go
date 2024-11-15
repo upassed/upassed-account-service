@@ -4,20 +4,20 @@ import (
 	"context"
 	"fmt"
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/golang/mock/gomock"
 	"github.com/upassed/upassed-account-service/internal/util"
+	"github.com/upassed/upassed-account-service/internal/util/mocks"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/handling"
 	"github.com/upassed/upassed-account-service/internal/logging"
 	"github.com/upassed/upassed-account-service/internal/server"
-	business "github.com/upassed/upassed-account-service/internal/service/model"
 	"github.com/upassed/upassed-account-service/pkg/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -25,33 +25,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type mockStudentService struct {
-	mock.Mock
-}
-
-func (m *mockStudentService) Create(ctx context.Context, student *business.Student) (*business.StudentCreateResponse, error) {
-	args := m.Called(ctx, student)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).(*business.StudentCreateResponse), args.Error(1)
-}
-
-func (m *mockStudentService) FindByUsername(ctx context.Context, studentUsername string) (*business.Student, error) {
-	args := m.Called(ctx, studentUsername)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).(*business.Student), args.Error(1)
-}
-
 var (
 	studentClient client.StudentClient
-	studentSvc    *mockStudentService
+	studentSvc    *mocks.StudentService
 )
 
 func TestMain(m *testing.M) {
@@ -71,7 +47,10 @@ func TestMain(m *testing.M) {
 	}
 
 	logger := logging.New(cfg.Env)
-	studentSvc = new(mockStudentService)
+	ctrl := gomock.NewController(nil)
+	defer ctrl.Finish()
+
+	studentSvc = mocks.NewStudentService(ctrl)
 	studentServer := server.New(server.AppServerCreateParams{
 		Config:         cfg,
 		Log:            logger,
@@ -114,7 +93,9 @@ func TestFindByUsername_ServiceError(t *testing.T) {
 	}
 
 	expectedError := handling.New("some service error", codes.NotFound)
-	studentSvc.On("FindByUsername", mock.Anything, request.GetStudentUsername()).Return(nil, handling.Process(expectedError))
+	studentSvc.EXPECT().
+		FindByUsername(gomock.Any(), request.GetStudentUsername()).
+		Return(nil, handling.Process(expectedError))
 
 	_, err := studentClient.FindByUsername(context.Background(), &request)
 	require.Error(t, err)
@@ -122,8 +103,6 @@ func TestFindByUsername_ServiceError(t *testing.T) {
 	convertedError := status.Convert(err)
 	assert.Equal(t, expectedError.Error(), convertedError.Message())
 	assert.Equal(t, codes.NotFound, convertedError.Code())
-
-	clearStudentServiceMockCalls()
 }
 
 func TestFindByUsername_HappyPath(t *testing.T) {
@@ -134,17 +113,12 @@ func TestFindByUsername_HappyPath(t *testing.T) {
 
 	foundStudent := util.RandomBusinessStudent()
 	foundStudent.Username = studentUsername
-	studentSvc.On("FindByUsername", mock.Anything, studentUsername).Return(foundStudent, nil)
+	studentSvc.EXPECT().
+		FindByUsername(gomock.Any(), request.GetStudentUsername()).
+		Return(foundStudent, nil)
 
 	response, err := studentClient.FindByUsername(context.Background(), &request)
 	require.NoError(t, err)
 
 	assert.Equal(t, studentUsername, response.GetStudent().GetUsername())
-
-	clearStudentServiceMockCalls()
-}
-
-func clearStudentServiceMockCalls() {
-	studentSvc.ExpectedCalls = nil
-	studentSvc.Calls = nil
 }

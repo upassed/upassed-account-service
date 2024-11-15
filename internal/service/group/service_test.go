@@ -3,7 +3,9 @@ package group_test
 import (
 	"context"
 	"errors"
+	"github.com/golang/mock/gomock"
 	"github.com/upassed/upassed-account-service/internal/util"
+	"github.com/upassed/upassed-account-service/internal/util/mocks"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,7 +14,6 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/upassed/upassed-account-service/internal/config"
 	"github.com/upassed/upassed-account-service/internal/logging"
@@ -23,42 +24,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type mockGroupRepository struct {
-	mock.Mock
-}
-
-func (m *mockGroupRepository) FindStudentsInGroup(ctx context.Context, groupID uuid.UUID) ([]*domain.Student, error) {
-	args := m.Called(ctx, groupID)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).([]*domain.Student), args.Error(1)
-}
-
-func (m *mockGroupRepository) FindByID(ctx context.Context, groupID uuid.UUID) (*domain.Group, error) {
-	args := m.Called(ctx, groupID)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).(*domain.Group), args.Error(1)
-}
-
-func (m *mockGroupRepository) FindByFilter(ctx context.Context, filter *domain.GroupFilter) ([]*domain.Group, error) {
-	args := m.Called(ctx, filter)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).([]*domain.Group), args.Error(1)
-}
-
 var (
-	cfg *config.Config
+	cfg        *config.Config
+	service    group.Service
+	repository *mocks.GroupRepository
 )
 
 func TestMain(m *testing.M) {
@@ -77,18 +46,23 @@ func TestMain(m *testing.M) {
 		log.Fatal("unable to parse config: ", err)
 	}
 
+	ctrl := gomock.NewController(nil)
+	defer ctrl.Finish()
+
+	repository = mocks.NewGroupRepository(ctrl)
+	service = group.New(cfg, logging.New(config.EnvTesting), repository)
+
 	exitCode := m.Run()
 	os.Exit(exitCode)
 }
 
 func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
-	groupRepository := new(mockGroupRepository)
-
 	groupID := uuid.New()
 	expectedRepositoryError := errors.New("some repo error")
-	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return(nil, expectedRepositoryError)
+	repository.EXPECT().
+		FindStudentsInGroup(gomock.Any(), groupID).
+		Return(nil, expectedRepositoryError)
 
-	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindStudentsInGroup(context.Background(), groupID)
 	require.Error(t, err)
 
@@ -98,8 +72,6 @@ func TestFindStudentsInGroup_ErrorInRepositoryLayer(t *testing.T) {
 }
 
 func TestFindStudentsInGroup_HappyPath(t *testing.T) {
-	groupRepository := new(mockGroupRepository)
-
 	groupID := uuid.New()
 	expectedStudentsInGroup := []*domain.Student{
 		util.RandomDomainStudent(),
@@ -107,9 +79,10 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 		util.RandomDomainStudent(),
 	}
 
-	groupRepository.On("FindStudentsInGroup", mock.Anything, groupID).Return(expectedStudentsInGroup, nil)
+	repository.EXPECT().
+		FindStudentsInGroup(gomock.Any(), groupID).
+		Return(expectedStudentsInGroup, nil)
 
-	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	actualFoundStudentsInGroup, err := service.FindStudentsInGroup(context.Background(), groupID)
 	require.NoError(t, err)
 
@@ -117,13 +90,13 @@ func TestFindStudentsInGroup_HappyPath(t *testing.T) {
 }
 
 func TestFindByID_RepositoryError(t *testing.T) {
-	groupRepository := new(mockGroupRepository)
-
 	groupID := uuid.New()
 	expectedRepositoryError := errors.New("some repo error")
-	groupRepository.On("FindByID", mock.Anything, groupID).Return(nil, expectedRepositoryError)
 
-	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
+	repository.EXPECT().
+		FindByID(gomock.Any(), groupID).
+		Return(nil, expectedRepositoryError)
+
 	_, err := service.FindByID(context.Background(), groupID)
 	require.Error(t, err)
 
@@ -133,15 +106,14 @@ func TestFindByID_RepositoryError(t *testing.T) {
 }
 
 func TestFindByID_HappyPath(t *testing.T) {
-	groupRepository := new(mockGroupRepository)
-
 	groupID := uuid.New()
 	expectedFoundGroup := util.RandomDomainGroup()
 	expectedFoundGroup.ID = groupID
 
-	groupRepository.On("FindByID", mock.Anything, groupID).Return(expectedFoundGroup, nil)
+	repository.EXPECT().
+		FindByID(gomock.Any(), groupID).
+		Return(expectedFoundGroup, nil)
 
-	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	foundGroup, err := service.FindByID(context.Background(), groupID)
 	require.NoError(t, err)
 
@@ -151,17 +123,16 @@ func TestFindByID_HappyPath(t *testing.T) {
 }
 
 func TestFindByFilter_RepositoryError(t *testing.T) {
-	groupRepository := new(mockGroupRepository)
-
 	groupFilter := &business.GroupFilter{
 		SpecializationCode: gofakeit.WeekDay(),
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
 	expectedRepositoryError := errors.New("some repo error")
-	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return(nil, expectedRepositoryError)
+	repository.EXPECT().
+		FindByFilter(gomock.Any(), gomock.Any()).
+		Return(nil, expectedRepositoryError)
 
-	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	_, err := service.FindByFilter(context.Background(), groupFilter)
 	require.Error(t, err)
 
@@ -171,17 +142,16 @@ func TestFindByFilter_RepositoryError(t *testing.T) {
 }
 
 func TestFindByFilter_HappyPath(t *testing.T) {
-	groupRepository := new(mockGroupRepository)
-
 	groupFilter := &business.GroupFilter{
 		SpecializationCode: gofakeit.WeekDay(),
 		GroupNumber:        gofakeit.WeekDay(),
 	}
 
 	foundMatchedGroups := []*domain.Group{util.RandomDomainGroup(), util.RandomDomainGroup(), util.RandomDomainGroup()}
-	groupRepository.On("FindByFilter", mock.Anything, mock.Anything).Return(foundMatchedGroups, nil)
+	repository.EXPECT().
+		FindByFilter(gomock.Any(), gomock.Any()).
+		Return(foundMatchedGroups, nil)
 
-	service := group.New(cfg, logging.New(config.EnvTesting), groupRepository)
 	response, err := service.FindByFilter(context.Background(), groupFilter)
 	require.NoError(t, err)
 

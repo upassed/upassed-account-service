@@ -19,7 +19,7 @@ var (
 
 const sqlContainsFormat = "%%%s%%"
 
-func (repository *groupRepositoryImpl) FindByFilter(ctx context.Context, filter *domain.GroupFilter) ([]*domain.Group, error) {
+func (repository *repositoryImpl) FindByFilter(ctx context.Context, filter *domain.GroupFilter) ([]*domain.Group, error) {
 	_, span := otel.Tracer(repository.cfg.Tracing.GroupTracerName).Start(ctx, "groupRepository#FindByFilter")
 	span.SetAttributes(
 		attribute.String("specializationCode", filter.SpecializationCode),

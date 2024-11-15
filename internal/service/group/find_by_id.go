@@ -19,7 +19,7 @@ var (
 	errFindGroupByIDDeadlineExceeded = errors.New("find group by id timeout exceeded")
 )
 
-func (service *groupServiceImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*business.Group, error) {
+func (service *serviceImpl) FindByID(ctx context.Context, groupID uuid.UUID) (*business.Group, error) {
 	spanContext, span := otel.Tracer(service.cfg.Tracing.GroupTracerName).Start(ctx, "groupService#FindByID")
 	span.SetAttributes(attribute.String("id", groupID.String()))
 	defer span.End()

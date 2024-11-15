@@ -18,7 +18,7 @@ var (
 	ErrTeacherNotFoundByUsername  = errors.New("teacher by username  not found in database")
 )
 
-func (repository *teacherRepositoryImpl) FindByUsername(ctx context.Context, teacherUsername string) (*domain.Teacher, error) {
+func (repository *repositoryImpl) FindByUsername(ctx context.Context, teacherUsername string) (*domain.Teacher, error) {
 	spanContext, span := otel.Tracer(repository.cfg.Tracing.TeacherTracerName).Start(ctx, "teacherRepository#FindByUsername")
 	span.SetAttributes(attribute.String("teacherUsername", teacherUsername))
 	defer span.End()

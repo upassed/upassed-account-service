@@ -15,14 +15,14 @@ type Service interface {
 	FindByUsername(ctx context.Context, studentUsername string) (*business.Student, error)
 }
 
-type studentServiceImpl struct {
+type serviceImpl struct {
 	cfg               *config.Config
 	log               *slog.Logger
-	studentRepository studentRepository
+	studentRepository repository
 	groupRepository   groupRepository
 }
 
-type studentRepository interface {
+type repository interface {
 	CheckDuplicateExists(ctx context.Context, educationalEmail, username string) (bool, error)
 	Save(context.Context, *domain.Student) error
 	FindByUsername(context.Context, string) (*domain.Student, error)
@@ -33,8 +33,8 @@ type groupRepository interface {
 	FindByID(context.Context, uuid.UUID) (*domain.Group, error)
 }
 
-func New(cfg *config.Config, log *slog.Logger, studentRepository studentRepository, groupRepository groupRepository) Service {
-	return &studentServiceImpl{
+func New(cfg *config.Config, log *slog.Logger, studentRepository repository, groupRepository groupRepository) Service {
+	return &serviceImpl{
 		cfg:               cfg,
 		log:               log,
 		studentRepository: studentRepository,
